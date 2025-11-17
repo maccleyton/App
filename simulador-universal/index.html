@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Universal 3D - 10 Simuladores</title>
+    <link rel="stylesheet" href="styles.css">
+	<!-- Three.js para visualização 3D -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>	
+</head>
+<body>
+    <div id="app">
+        <nav id="sidebar">
+            <div class="logo">
+                <h2>⚛️ Simulador Universal</h2>
+                <p style="font-size: 0.8rem; color: #888;">10 Simuladores Científicos</p>
+            </div>
+            <ul class="nav-menu">
+                <li data-simulator="nuclear" class="active">
+                    <span class="icon">☢️</span>
+                    <span>Nuclear</span>
+                </li>
+                <li data-simulator="quantum">
+                    <span class="icon">⚛️</span>
+                    <span>Quântico</span>
+                </li>
+                <li data-simulator="cosmic">
+                    <span class="icon">🌌</span>
+                    <span>Cósmico</span>
+                </li>
+                <li data-simulator="molecular">
+                    <span class="icon">🧬</span>
+                    <span>Molecular</span>
+                </li>
+                <li data-simulator="physics">
+                    <span class="icon">⚡</span>
+                    <span>Físico</span>
+                </li>
+                <li data-simulator="biological">
+                    <span class="icon">🦠</span>
+                    <span>Biológico</span>
+                </li>
+                <li data-simulator="archaeological">
+                    <span class="icon">🦴</span>
+                    <span>Arqueológico</span>
+                </li>
+                <li data-simulator="thermodynamic">
+                    <span class="icon">🔥</span>
+                    <span>Termodinâmico</span>
+                </li>
+                <li data-simulator="climatic">
+                    <span class="icon">🌪️</span>
+                    <span>Climático</span>
+                </li>
+                <li data-simulator="cosmicai" style="background: linear-gradient(90deg, #ff00ff, #00ffff); border-radius: 5px;">
+                    <span class="icon">🌌🤖</span>
+                    <span style="font-weight: bold;">IA Cósmica</span>
+                </li>
+            </ul>
+        </nav>
+
+        <main id="main-content">
+            <div id="canvas-container">
+                <canvas id="canvas3d"></canvas>
+            </div>
+
+            <div id="control-panel">
+                <div class="panel-header">
+                    <h3 id="simulator-title">Simulador Nuclear</h3>
+                    <button id="toggle-panel" class="btn-icon">▼</button>
+                </div>
+
+                <div id="panel-content" class="panel-body">
+                    <div class="control-section">
+                        <h4>⏯️ Controles</h4>
+                        <div class="control-buttons">
+                            <button id="btn-play" class="btn btn-primary">▶️ Play</button>
+                            <button id="btn-pause" class="btn">⏸️ Pause</button>
+                            <button id="btn-reset" class="btn">🔄 Reset</button>
+                        </div>
+                        <div class="control-group">
+                            <label>Velocidade: <span id="speed-value">1.0x</span></label>
+                            <input type="range" id="speed-slider" min="0.1" max="10" step="0.1" value="1">
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h4>🌡️ Físicos</h4>
+                        <div class="control-group">
+                            <label>Temperatura: <span id="temp-value">298</span> K</label>
+                            <input type="range" id="temp-slider" min="1" max="10000" step="1" value="298">
+                        </div>
+                        <div class="control-group">
+                            <label>Pressão: <span id="pressure-value">1.0</span> atm</label>
+                            <input type="range" id="pressure-slider" min="0" max="1000" step="0.1" value="1">
+                        </div>
+                        <div class="control-group">
+                            <label>Gravidade: <span id="gravity-value">9.8</span> m/s²</label>
+                            <input type="range" id="gravity-slider" min="0" max="100" step="0.1" value="9.8">
+                        </div>
+                    </div>
+
+                    <div id="specific-controls" class="control-section">
+                    </div>
+
+                    <div class="control-section">
+                        <h4>📊 Stats</h4>
+                        <div id="stats-display">
+                            <div class="stat-item">
+                                <span class="stat-label">FPS:</span>
+                                <span id="fps-value" class="stat-value">60</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Partículas:</span>
+                                <span id="particles-value" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Energia:</span>
+                                <span id="energy-value" class="stat-value">0 J</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/core/SceneManager.js"></script>
+    <script src="js/core/PhysicsEngine.js"></script>
+    <script src="js/simulators/NuclearSimulator.js"></script>
+    <script src="js/simulators/QuantumSimulator.js"></script>
+    <script src="js/simulators/CosmicSimulator.js"></script>
+    <script src="js/simulators/MolecularSimulator.js"></script>
+    <script src="js/simulators/PhysicsSimulator.js"></script>
+    <script src="js/simulators/BiologicalSimulator.js"></script>
+    <script src="js/simulators/ArchaeologicalSimulator.js"></script>
+    <script src="js/simulators/ThermodynamicSimulator.js"></script>
+    <script src="js/simulators/ClimaticSimulator.js"></script>
+    <script src="js/simulators/CosmicAISimulator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

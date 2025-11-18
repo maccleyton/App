@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Químico - Tabela Periódica Interativa</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fa-solid fa-flask"></i>
+            <h1 class="header-title">Laboratório Virtual</h1>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Buscar elementos..."
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="back-button" id="toGoBackBtn">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                <i class="fa-solid fa-sun" id="themeIcon"></i>
+            </button>
+            <button class="user-menu">
+                <i class="fa-solid fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <!-- COLUNA ESQUERDA - TABELA PERIÓDICA -->
+        <section class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fa-solid fa-table-cells"></i>
+                    <div class="section-title">Tabela Periódica</div>
+                </div>
+            </div>
+            
+            <div class="left-scroll">
+                <div class="elements-list" id="periodicTable"></div>
+            </div>
+        </section>
+
+        <!-- COLUNA CENTRAL - INFORMAÇÕES DO ELEMENTO -->
+        <section class="center-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <div class="section-title">Ferramentas e Instrumentos</div>
+                </div>
+            </div>
+			
+
+            <div class="center-scroll">
+                <!-- Adicionar Energia -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Adicionar Energia</div>
+                    </div>
+                </div>
+
+                <!-- Campo Magnético -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Campo Magnético</div>
+                    </div>
+                </div>
+
+                <!-- Controlar Temperatura -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Controlar Temperatura</div>
+                    </div>
+				</div>
+
+                <!-- Espectrômetro -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Espectrômetro</div>
+                    </div>
+                </div>
+
+                <!-- Detector de Radiação -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Detector de Radiação</div>
+                    </div>
+                </div>
+
+                <!-- Medidor de pH -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Medidor de pH</div>
+                    </div>
+                </div>
+
+                <!-- Termômetro -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Termômetro</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+					
+        <!-- COLUNA DIREITA - VISUALIZAÇÃO 3D -->
+        <section class="right-panel card">
+            <div class="right-card">
+                <div class="tabs-row">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab('visualization', this)">
+                            <i class="fa-solid fa-eye"></i>
+                            Visualização
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('structure', this)">
+                            <i class="fa-solid fa-cube"></i>
+                            Estrutura
+                        </button>						
+						<div class="status-item">
+							<div class="status-dot"></div>
+							<span>Sistema Online</span>
+						</div>
+						<div class="status-item">
+							<span>⚛️ Elemento: <span id="current-element">Hidrogênio</span></span>
+						</div>
+						<div class="status-item">
+							<span>🧬 Elétrons: <span id="electron-count">1</span></span>
+						</div>
+						<div class="status-item">
+							<span>🔥 Estado: <span id="element-state">Gasoso</span></span>
+						</div>
+						<div class="status-item">
+							<span>🌡️ Temperatura: <span id="current-temperature">25°C</span></span>
+						</div>
+                    </div>
+                </div>
+
+                <!-- ABA: VISUALIZAÇÃO 3D -->
+                <div id="tab-visualization" class="tab-content active">
+                    <div class="canvas-3d-container">
+                        <canvas id="atom3DCanvas"></canvas>
+                    </div>
+
+					<div class="atom-canvas" id="atom-canvas">
+						<div class="atom-display" id="atom-display">
+							<!-- Partículas térmicas -->
+							<div class="thermal-particles" id="thermal-particles"></div>
+							<!-- Linhas de campo magnético -->
+							<div class="magnetic-field-lines" id="magnetic-field-lines">
+								<div class="field-line"></div>
+								<div class="field-line"></div>
+								<div class="field-line"></div>
+								<div class="field-line"></div>
+							</div>
+							<!-- Órbitas e elétrons serão gerados dinamicamente via JavaScript -->
+						</div>
+					</div>
+
+
+<!-- Painel de Informações do Elemento -->
+<div class="element-info-panel" id="element-info">
+	<div class="element-header">
+		<div class="element-symbol" id="info-symbol">H</div>
+		<div>
+			<div class="element-name" id="info-name">Hidrogênio</div>
+			<div id="info-group">Não Metal</div>
+		</div>
+	</div>
+	<div class="property-grid">
+		<div class="property">
+			<div class="property-label">Número Atômico</div>
+			<div class="property-value" id="info-atomic-number">1</div>
+		</div>
+		<div class="property">
+			<div class="property-label">Massa Atômica</div>
+			<div class="property-value" id="info-atomic-mass">1.008 u</div>
+		</div>
+		<div class="property">
+			<div class="property-label">Configuração Eletrônica</div>
+			<div class="property-value" id="info-electron-config">1s¹</div>
+		</div>
+		<div class="property">
+			<div class="property-label">Eletronegatividade</div>
+			<div class="property-value" id="info-electronegativity">2.20</div>
+		</div>
+		<div class="property">
+			<div class="property-label">Ponto de Fusão</div>
+			<div class="property-value" id="info-melting-point">-259°C</div>
+		</div>
+		<div class="property">
+			<div class="property-label">Ponto de Ebulição</div>
+			<div class="property-value" id="info-boiling-point">-253°C</div>
+		</div>
+	</div>
+</div>
+
+<!-- Painel de Reação -->
+<div class="reaction-panel">
+	<div class="reaction-formula" id="reaction-formula">
+		Átomo Selecionado
+	</div>
+	<div class="reaction-status" id="reaction-status">
+		✅ Sistema estável
+	</div>
+</div>
+
+<!-- Painel de Energia -->
+<div class="energy-panel" id="energy-panel" style="display: none;">
+	<h3>⚡ Adicionar Energia</h3>
+	<div class="energy-controls">
+		<label>Nível de Energia (eV):</label>
+		<input type="range" class="energy-slider" id="energy-slider" min="1" max="20" value="5" step="0.1">
+		<div class="energy-value" id="energy-value">5.0 eV</div>
+	</div>
+	<div class="energy-buttons">
+		<button class="control-btn energy" id="excite-btn">Excitar Elétrons</button>
+		<button class="control-btn" id="reset-energy-btn">Resetar</button>
+	</div>
+	<div style="margin-top: 15px; font-size: 0.8rem; opacity: 0.8;">
+		<div>🎯 Elétrons excitados: <span id="excited-count">0</span></div>
+		<div>💫 Fótons emitidos: <span id="photon-count">0</span></div>
+	</div>
+</div>
+
+<!-- Painel Magnético -->
+<div class="magnetic-panel" id="magnetic-panel" style="display: none;">
+	<h3>🧲 Campo Magnético</h3>
+	<div class="magnetic-controls">
+		<label>Intensidade do Campo (T):</label>
+		<input type="range" class="magnetic-slider" id="magnetic-slider" min="0" max="10" value="0" step="0.1">
+		<div class="magnetic-value" id="magnetic-value">0.0 T</div>
+		
+		<label style="margin-top: 15px; display: block;">Direção do Campo:</label>
+		<div class="field-direction">
+			<button class="direction-btn active" data-direction="up">↑ Norte</button>
+			<button class="direction-btn" data-direction="down">↓ Sul</button>
+		</div>
+	</div>
+	<div class="magnetic-buttons">
+		<button class="control-btn magnetic" id="apply-magnetic-btn">Aplicar Campo</button>
+		<button class="control-btn" id="reset-magnetic-btn">Desligar</button>
+	</div>
+	<div style="margin-top: 15px; font-size: 0.8rem; opacity: 0.8;">
+		<div>🎯 Efeito Zeeman: <span id="zeeman-effect">Inativo</span></div>
+		<div>🧭 Spin alinhados: <span id="spin-aligned">0</span></div>
+	</div>
+</div>
+
+<!-- Painel de Temperatura -->
+<div class="temperature-panel" id="temperature-panel" style="display: none;">
+	<h3>🌡️ Controlar Temperatura</h3>
+	<div class="temperature-controls">
+		<label>Temperatura (°C):</label>
+		<input type="range" class="temperature-slider" id="temperature-slider" min="-273" max="10000" value="25" step="1">
+		
+		<div class="state-indicator">
+			<span>❄️ Sólido</span>
+			<span>💧 Líquido</span>
+			<span>🔥 Gás</span>
+			<span>⚡ Plasma</span>
+		</div>
+		
+		<div class="state-markers">
+			<span>-273°C</span>
+			<span>0°C</span>
+			<span>100°C</span>
+			<span>10000°C</span>
+		</div>
+		
+		<div class="temperature-value normal" id="temperature-value">25°C</div>
+		
+		<div class="preset-temperatures">
+			<button class="preset-btn cold" data-temp="-200">❄️ Criogênico</button>
+			<button class="preset-btn normal" data-temp="25">🌡 Ambiente</button>
+			<button class="preset-btn hot" data-temp="500">🔥 Quente</button>
+			<button class="preset-btn plasma" data-temp="5000">⚡ Plasma</button>
+		</div>
+	</div>
+	<div class="temperature-buttons">
+		<button class="control-btn temperature" id="apply-temperature-btn">Aplicar Temperatura</button>
+		<button class="control-btn" id="reset-temperature-btn">Resetar</button>
+	</div>
+	<div style="margin-top: 15px; font-size: 0.8rem; opacity: 0.8;">
+		<div>🎯 Estado Físico: <span id="physical-state">Gasoso</span></div>
+		<div>📈 Energia Térmica: <span id="thermal-energy">0 eV</span></div>
+	</div>
+</div>
+
+
+
+                    
+                    <div class="canvas-controls">
+                        <button class="control-btn active" onclick="setViewMode('orbital', this)">
+                            <i class="fa-solid fa-circle-notch"></i>
+                            Órbitas
+                        </button>
+                        <button class="control-btn" onclick="setViewMode('cloud', this)">
+                            <i class="fa-solid fa-cloud"></i>
+                            Nuvem
+                        </button>
+                        <button class="control-btn" onclick="setViewMode('nucleus', this)">
+                            <i class="fa-solid fa-bullseye"></i>
+                            Núcleo
+                        </button>
+                        <button class="control-btn" onclick="toggleAnimation(this)">
+                            <i class="fa-solid fa-play"></i>
+                            Animar
+                        </button>
+						<div class="status-item">
+							<span>📏 Escala: <span id="scale-value">1nm</span></span>
+						</div>
+						<div class="status-item">
+							<span>⏱️ Tempo: <span id="time-scale">1.0x</span></span>
+						</div>
+                    </div>
+                </div>
+
+
+
+
+
+
+
+
+                <!-- ABA: ESTRUTURA -->
+                <div id="tab-structure" class="tab-content">
+                    <div class="atom-info-panel">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-atom"></i>
+                            <div class="section-title">Estrutura Atômica</div>
+                        </div>
+						
+						<div class="info-grid">
+							<div class="info-slot">
+								<div class="info-slot-label">Nome</div>
+								<div class="info-slot-value" id="infoName">Hidrogênio</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Símbolo</div>
+								<div class="info-slot-value" id="infoSymbol">H</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Número Atômico</div>
+								<div class="info-slot-value" id="infoNumber">1</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Massa Atômica</div>
+								<div class="info-slot-value" id="infoMass">1.008 u</div>
+							</div>
+						</div>
+						<div class="info-grid">
+							<div class="info-slot">
+								<div class="info-slot-label">Estado</div>
+								<div class="info-slot-value" id="infoState">Gasoso</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Densidade</div>
+								<div class="info-slot-value" id="infoDensity">0.0000899 g/cm³</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Ponto de Fusão</div>
+								<div class="info-slot-value" id="infoMelting">-259.16 °C</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Ponto de Ebulição</div>
+								<div class="info-slot-value" id="infoBoiling">-252.87 °C</div>
+							</div>
+						</div>
+						<div class="info-grid">
+							<div class="info-slot">
+								<div class="info-slot-label">Eletronegatividade</div>
+								<div class="info-slot-value" id="infoElectronegativity">2.20</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Configuração Eletrônica</div>
+								<div class="info-slot-value" id="infoConfiguration">1s¹</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Raio Atômico</div>
+								<div class="info-slot-value" id="infoRadius">53 pm</div>
+							</div>
+							<div class="info-slot">
+								<div class="info-slot-label">Descoberto em</div>
+								<div class="info-slot-value" id="infoDiscovered">1766</div>
+							</div>
+						</div>
+						<div class="info-grid">
+							<div class="info-slot">
+								<div class="atom-info-label">Prótons</div>
+								<div class="atom-info-value" id="protonCount">1</div>
+							</div>
+							<div class="info-slot">
+								<div class="atom-info-label">Nêutrons</div>
+								<div class="atom-info-value" id="neutronCount">0</div>
+							</div>
+							<div class="info-slot">
+								<div class="atom-info-label">Elétrons</div>
+								<div class="atom-info-value" id="electronCount">1</div>
+							</div>
+						</div>
+						
+                        <div style="font-size: var(--font-sm); color: var(--text-secondary); line-height: 1.6;">
+                            <p id="structureDescription">Selecione um elemento para visualizar sua estrutura atômica detalhada.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+    <script src="quantum_lab.js"></script>
+</body>
+</html>

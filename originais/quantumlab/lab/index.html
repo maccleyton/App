@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>?? Quantum Lab - Simulador At?mico</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-atom"></i>
+            <h1 class="header-title">Quantum Lab</h1>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Buscar elemento..." id="searchInput">
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="back-button" title="Voltar">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle" title="Alternar tema">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="user-menu" title="Menu do usu芍rio">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN LAYOUT -->
+    <main class="app-main">
+        
+        <!-- COLUNA 1: Tabela Peri車dica -->
+        <div class="left-panel">
+            <div class="left-scroll">
+                <div class="panel-card">
+                    <div class="section-header">
+                        <i class="fas fa-table"></i>
+                        <h2 class="section-title">Tabela Peri車dica</h2>
+                    </div>
+                    <div class="elements-list" id="periodicTableList">
+                        <!-- Elementos ser?o inseridos via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUNA 2: Ferramentas/Instrumentos -->
+        <div class="center-panel">
+            <div class="center-scroll">
+                <div class="panel-card">
+                    <div class="section-header">
+                        <i class="fas fa-tools"></i>
+                        <h2 class="section-title">Ferramentas</h2>
+                    </div>
+                    <div class="elements-list">
+                        <button class="element-item tool-btn" data-tool="energy">
+                            <i class="fas fa-bolt" style="color: var(--fusion-orange); font-size: 16px;"></i>
+                            <span class="element-name">Adicionar Energia</span>
+                        </button>
+                        <button class="element-item tool-btn" data-tool="magnetic">
+                            <i class="fas fa-magnet" style="color: var(--magnetic-blue); font-size: 16px;"></i>
+                            <span class="element-name">Campo Magn谷tico</span>
+                        </button>
+                        <button class="element-item tool-btn" data-tool="temperature">
+                            <i class="fas fa-temperature-high" style="color: var(--hot-red); font-size: 16px;"></i>
+                            <span class="element-name">Controlar Temperatura</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <div class="section-header">
+                        <i class="fas fa-microscope"></i>
+                        <h2 class="section-title">Instrumentos</h2>
+                    </div>
+                    <div class="elements-list">
+                        <button class="element-item tool-btn" data-tool="spectrometer">
+                            <i class="fas fa-chart-line" style="color: var(--quantum-blue); font-size: 16px;"></i>
+                            <span class="element-name">Espectr?metro</span>
+                        </button>
+                        <button class="element-item tool-btn" data-tool="radiation">
+                            <i class="fas fa-radiation" style="color: var(--danger-red); font-size: 16px;"></i>
+                            <span class="element-name">Detector de Radia??o</span>
+                        </button>
+                        <button class="element-item tool-btn" data-tool="ph">
+                            <i class="fas fa-flask" style="color: var(--radioactive-green); font-size: 16px;"></i>
+                            <span class="element-name">Medidor de pH</span>
+                        </button>
+                        <button class="element-item tool-btn" data-tool="thermometer">
+                            <i class="fas fa-thermometer-half" style="color: var(--cold-blue); font-size: 16px;"></i>
+                            <span class="element-name">Term?metro</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 芍REA PRINCIPAL: Canvas + Pain谷is 角 Direita -->
+        <div class="right-panel" style="display: flex; gap: 0; padding: 0;">
+            
+            <!-- Canvas 3D (70% da largura) -->
+            <div style="flex: 1; min-width: 0; background: var(--cosmic-dark); position: relative; display: flex; flex-direction: column;">
+                
+                <!-- Controles do Canvas -->
+                <div style="position: absolute; top: 12px; left: 12px; z-index: 10; display: flex; gap: 6px;">
+                    <button class="control-btn active" id="toggleRotation" title="Toggle rota??o">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                    <button class="control-btn" id="toggleOrbits" title="Toggle 車rbitas">
+                        <i class="fas fa-circle-notch"></i>
+                    </button>
+                    <button class="control-btn" id="toggleCloud" title="Nuvem eletr?nica">
+                        <i class="fas fa-cloud"></i>
+                    </button>
+                    <button class="control-btn" id="resetView" title="Resetar visualiza??o">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                </div>
+
+                <!-- Info do Canvas -->
+                <div style="position: absolute; top: 12px; right: 12px; z-index: 10; display: flex; gap: 6px;">
+                    <span class="status-item" style="font-size: var(--font-xs); padding: 4px 8px;">?? Escala: 1nm</span>
+                    <span class="status-item" style="font-size: var(--font-xs); padding: 4px 8px;">?? Tempo: 1.0x</span>
+                </div>
+
+                <!-- Canvas Principal -->
+                <div id="atomViewer" style="flex: 1; width: 100%; height: 100%;"></div>
+
+                <!-- Status inferior -->
+                <div style="padding: 8px 12px; background: rgba(10, 10, 31, 0.8); border-top: 1px solid var(--border-color); display: flex; justify-content: center;">
+                    <span class="status-item" style="font-size: var(--font-xs);">? Sistema est芍vel</span>
+                </div>
+            </div>
+
+            <!-- Pain谷is 角 Direita (30% da largura) -->
+            <div style="width: 360px; background: var(--surface-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; overflow-y: auto; max-height: calc(100vh - 60px);">
+                <div style="padding: 12px; display: flex; flex-direction: column; gap: 12px;">
+                    
+                    <!-- Painel de Informa??es do Elemento (sempre vis赤vel) -->
+                    <div class="info-card" id="elementInfoCard">
+                        <div class="section-header">
+                            <span class="element-symbol" id="elementSymbol" style="font-size: 24px; min-width: auto;">H</span>
+                            <div>
+                                <h2 class="section-title" id="elementName">Hidrog那nio</h2>
+                                <p style="font-size: var(--font-xs); color: var(--text-tertiary); margin: 0;" id="elementCategory">N?o Metal</p>
+                            </div>
+                        </div>
+                        
+                        <div class="info-grid" id="elementInfoGrid">
+                            <div class="info-slot">
+                                <span class="info-slot-label">N迆mero At?mico</span>
+                                <span class="info-slot-value" id="atomicNumber">1</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Massa At?mica</span>
+                                <span class="info-slot-value" id="atomicMass">1.008 u</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Config. Eletr?nica</span>
+                                <span class="info-slot-value" id="electronConfig">1s1</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Eletronegatividade</span>
+                                <span class="info-slot-value" id="electronegativity">2.20</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Ponto de Fus?o</span>
+                                <span class="info-slot-value" id="meltingPoint">-259～C</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Ponto de Ebuli??o</span>
+                                <span class="info-slot-value" id="boilingPoint">-253～C</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- M車DULO: Adicionar Energia -->
+                    <div class="info-card module-card" id="module-energy" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-bolt" style="color: var(--fusion-orange);"></i>
+                            <h2 class="section-title">Adicionar Energia</h2>
+                        </div>
+                        
+                        <div class="info-slot">
+                            <span class="info-slot-label">N赤vel de Energia (eV):</span>
+                            <input type="range" min="0" max="15" step="0.5" value="5" class="energy-slider" id="energySlider" style="width: 100%; margin: 8px 0;">
+                            <span class="info-slot-value" id="energyValue">5.0 eV</span>
+                        </div>
+                        
+                        <div style="display: flex; gap: 6px; margin-top: 8px;">
+                            <button class="control-btn" id="exciteElectronsBtn">
+                                <i class="fas fa-bolt"></i> Excitar El谷trons
+                            </button>
+                            <button class="control-btn" id="resetEnergyBtn">
+                                <i class="fas fa-redo"></i> Resetar
+                            </button>
+                        </div>
+                        
+                        <div class="info-grid" style="margin-top: 12px;">
+                            <div class="info-slot">
+                                <span class="info-slot-label">?? El谷trons excitados:</span>
+                                <span class="info-slot-value" id="excitedCount">0</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">?? F車tons emitidos:</span>
+                                <span class="info-slot-value" id="photonCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- M車DULO: Campo Magn谷tico -->
+                    <div class="info-card module-card" id="module-magnetic" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-magnet" style="color: var(--magnetic-blue);"></i>
+                            <h2 class="section-title">Campo Magn谷tico</h2>
+                        </div>
+                        
+                        <div class="info-slot">
+                            <span class="info-slot-label">Intensidade do Campo (T):</span>
+                            <input type="range" min="0" max="5" step="0.1" value="0" class="magnetic-slider" id="magneticSlider" style="width: 100%; margin: 8px 0;">
+                            <span class="info-slot-value" id="magneticValue">0.0 T</span>
+                        </div>
+                        
+                        <div class="info-slot" style="margin-top: 8px;">
+                            <span class="info-slot-label">Dire??o do Campo:</span>
+                            <div style="display: flex; gap: 6px; margin-top: 4px;">
+                                <button class="control-btn" id="magneticNorthBtn">∥ Norte</button>
+                                <button class="control-btn" id="magneticSouthBtn">∣ Sul</button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 6px; margin-top: 8px;">
+                            <button class="control-btn" id="applyMagneticBtn">
+                                <i class="fas fa-play"></i> Aplicar Campo
+                            </button>
+                            <button class="control-btn" id="stopMagneticBtn">
+                                <i class="fas fa-stop"></i> Desligar
+                            </button>
+                        </div>
+                        
+                        <div class="info-grid" style="margin-top: 12px;">
+                            <div class="info-slot">
+                                <span class="info-slot-label">?? Efeito Zeeman:</span>
+                                <span class="info-slot-value" id="zeemanStatus">Inativo</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">?? Spin alinhados:</span>
+                                <span class="info-slot-value" id="spinCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- M車DULO: Controlar Temperatura -->
+                    <div class="info-card module-card" id="module-temperature" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-temperature-high" style="color: var(--hot-red);"></i>
+                            <h2 class="section-title">Controlar Temperatura</h2>
+                        </div>
+                        
+                        <div class="info-slot">
+                            <span class="info-slot-label">Temperatura (～C):</span>
+                            <div style="font-size: 9px; color: var(--text-tertiary); display: flex; justify-content: space-between; margin: 4px 0;">
+                                <span>?? S車lido</span>
+                                <span>?? L赤quido</span>
+                                <span>?? G芍s</span>
+                                <span>? Plasma</span>
+                            </div>
+                            <input type="range" min="-273" max="10000" step="1" value="25" class="temp-slider" id="tempSlider" style="width: 100%; margin: 4px 0;">
+                            <div style="font-size: 9px; color: var(--text-tertiary); display: flex; justify-content: space-between;">
+                                <span>-273～C</span>
+                                <span>0～C</span>
+                                <span>100～C</span>
+                                <span>10000～C</span>
+                            </div>
+                            <span class="info-slot-value" id="tempValue">25～C</span>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px;">
+                            <button class="control-btn" data-temp="-200">?? Criog那nico</button>
+                            <button class="control-btn" data-temp="25">?? Ambiente</button>
+                            <button class="control-btn" data-temp="1000">?? Quente</button>
+                            <button class="control-btn" data-temp="10000">? Plasma</button>
+                        </div>
+                        
+                        <div style="display: flex; gap: 6px; margin-top: 8px;">
+                            <button class="control-btn" id="applyTempBtn">
+                                <i class="fas fa-check"></i> Aplicar Temperatura
+                            </button>
+                            <button class="control-btn" id="resetTempBtn">
+                                <i class="fas fa-redo"></i> Resetar
+                            </button>
+                        </div>
+                        
+                        <div class="info-grid" style="margin-top: 12px;">
+                            <div class="info-slot">
+                                <span class="info-slot-label">?? Estado F赤sico:</span>
+                                <span class="info-slot-value" id="matterState">Gasoso</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">?? Energia T谷rmica:</span>
+                                <span class="info-slot-value" id="thermalEnergy">0 eV</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- M車DULO: Espectr?metro -->
+                    <div class="info-card module-card" id="module-spectrometer" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-chart-line" style="color: var(--quantum-blue);"></i>
+                            <h2 class="section-title">Espectr?metro</h2>
+                        </div>
+                        <div style="height: 120px; background: var(--surface-alt); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin: 8px 0; position: relative;">
+                            <canvas id="spectrometerCanvas" style="width: 100%; height: 100%;"></canvas>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <span class="info-slot-label">Comprimento de onda:</span>
+                                <span class="info-slot-value" id="wavelength">656 nm</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Intensidade:</span>
+                                <span class="info-slot-value" id="spectroIntensity">75%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- M車DULO: Detector de Radia??o -->
+                    <div class="info-card module-card" id="module-radiation" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-radiation" style="color: var(--danger-red);"></i>
+                            <h2 class="section-title">Detector de Radia??o</h2>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <span class="info-slot-label">Tipo detectado:</span>
+                                <span class="info-slot-value" id="radiationType">Nenhuma</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Intensidade:</span>
+                                <span class="info-slot-value" id="radiationLevel">0 Sv/h</span>
+                            </div>
+                        </div>
+                        <button class="control-btn" id="startRadiationBtn" style="width: 100%; margin-top: 8px;">
+                            <i class="fas fa-play"></i> Iniciar Detec??o
+                        </button>
+                    </div>
+
+                    <!-- M車DULO: Medidor de pH -->
+                    <div class="info-card module-card" id="module-ph" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-flask" style="color: var(--radioactive-green);"></i>
+                            <h2 class="section-title">Medidor de pH</h2>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <span class="info-slot-label">Valor de pH:</span>
+                                <span class="info-slot-value" id="phValue">7.0</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Classifica??o:</span>
+                                <span class="info-slot-value" id="phClassification">Neutro</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- M車DULO: Term?metro -->
+                    <div class="info-card module-card" id="module-thermometer" style="display: none;">
+                        <div class="section-header">
+                            <i class="fas fa-thermometer-half" style="color: var(--cold-blue);"></i>
+                            <h2 class="section-title">Term?metro</h2>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <span class="info-slot-label">Temperatura:</span>
+                                <span class="info-slot-value" id="thermometerValue">25～C</span>
+                            </div>
+                            <div class="info-slot">
+                                <span class="info-slot-label">Estado:</span>
+                                <span class="info-slot-value" id="thermometerState">Normal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="app.js"></script>
+    <script src="modules.js"></script>
+
+</body>
+</html>

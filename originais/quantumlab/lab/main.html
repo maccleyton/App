@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Quantum Lab - Simulador Atômico</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link href="style.css" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fa-solid fa-atom"></i>
+            <h1 class="header-title">Quantum Lab</h1>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar elemento..." autocomplete="off">
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="back-button" id="toGoBackBtn">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <button class="user-menu">
+                <i class="fa-solid fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN LAYOUT -->
+    <main class="app-main">
+        
+        <!-- COLUNA 1: Tabela Periódica -->
+        <section class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fa-solid fa-table-cells"></i>
+                    <div class="section-title">Tabela Periódica</div>
+                </div>
+            </div>
+            
+            <div class="left-scroll">
+                <div class="elements-list" id="periodicTable">
+                    <!-- Elementos serão inseridos via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUNA 2: Ferramentas e Instrumentos -->
+        <section class="center-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fa-solid fa-tools"></i>
+                    <div class="section-title">Ferramentas</div>
+                </div>
+            </div>
+            
+            <div class="center-scroll">
+                <!-- Ferramentas -->
+                <div class="info-card tool-item" data-tool="energy">
+                    <div class="section-header">
+                        <i class="fa-solid fa-bolt" style="color: var(--fusion-orange);"></i>
+                        <div class="section-title">Adicionar Energia</div>
+                    </div>
+                </div>
+
+                <div class="info-card tool-item" data-tool="magnetic">
+                    <div class="section-header">
+                        <i class="fa-solid fa-magnet" style="color: var(--magnetic-blue);"></i>
+                        <div class="section-title">Campo Magnético</div>
+                    </div>
+                </div>
+
+                <div class="info-card tool-item" data-tool="temperature">
+                    <div class="section-header">
+                        <i class="fa-solid fa-temperature-high" style="color: var(--hot-red);"></i>
+                        <div class="section-title">Controlar Temperatura</div>
+                    </div>
+                </div>
+
+                <!-- Instrumentos -->
+                <div class="info-card tool-item" data-tool="spectrometer">
+                    <div class="section-header">
+                        <i class="fa-solid fa-chart-line" style="color: var(--quantum-blue);"></i>
+                        <div class="section-title">Espectrômetro</div>
+                    </div>
+                </div>
+
+                <div class="info-card tool-item" data-tool="radiation">
+                    <div class="section-header">
+                        <i class="fa-solid fa-radiation" style="color: var(--danger-red);"></i>
+                        <div class="section-title">Detector de Radiação</div>
+                    </div>
+                </div>
+
+                <div class="info-card tool-item" data-tool="ph">
+                    <div class="section-header">
+                        <i class="fa-solid fa-flask" style="color: var(--radioactive-green);"></i>
+                        <div class="section-title">Medidor de pH</div>
+                    </div>
+                </div>
+
+                <div class="info-card tool-item" data-tool="thermometer">
+                    <div class="section-header">
+                        <i class="fa-solid fa-thermometer-half" style="color: var(--cold-blue);"></i>
+                        <div class="section-title">Termômetro</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUNA 3: Canvas + Painéis à Direita -->
+        <section class="right-panel card">
+            <div class="right-card">
+                
+                <!-- Tabs e Status -->
+                <div class="tabs-row">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab('visualization', this)">
+                            <i class="fa-solid fa-eye"></i> Visualização
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('structure', this)">
+                            <i class="fa-solid fa-cube"></i> Estrutura
+                        </button>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-dot"></div>
+                        <span>Sistema Online</span>
+                    </div>
+                </div>
+
+                <!-- CONTEÚDO: Visualização -->
+                <div id="tab-visualization" class="tab-content active">
+                    
+                    <!-- Canvas 3D Principal -->
+                    <div class="canvas-3d-container">
+                        <div id="atomViewer"></div>
+                    </div>
+
+                    <!-- Controles do Canvas -->
+                    <div class="canvas-controls">
+                        <button class="control-btn active" onclick="toggleViewMode('orbital', this)">
+                            <i class="fa-solid fa-circle-notch"></i> Órbitas
+                        </button>
+                        <button class="control-btn" onclick="toggleViewMode('cloud', this)">
+                            <i class="fa-solid fa-cloud"></i> Nuvem
+                        </button>
+                        <button class="control-btn" onclick="toggleViewMode('nucleus', this)">
+                            <i class="fa-solid fa-bullseye"></i> Núcleo
+                        </button>
+                        <button class="control-btn" onclick="toggleAnimation(this)">
+                            <i class="fa-solid fa-play"></i> Animar
+                        </button>
+                    </div>
+
+                    <!-- Status do Canvas -->
+                    <div class="canvas-status-row">
+                        <div class="status-item">
+                            <span>📏 Escala:</span> <span id="scale-value">1nm</span>
+                        </div>
+                        <div class="status-item">
+                            <span>⏱️ Tempo:</span> <span id="time-scale">1.0x</span>
+                        </div>
+                    </div>
+
+                    <!-- PAINEL: Informações do Elemento (sempre visível) -->
+                    <div class="info-card" id="element-info-card">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <span class="element-symbol" id="info-symbol" style="font-size: 24px; font-weight: bold; color: var(--accent); min-width: auto;">H</span>
+                            <div>
+                                <div class="section-title" id="info-name">Hidrogênio</div>
+                                <div id="info-group" style="font-size: var(--font-xs); color: var(--text-tertiary);">Não Metal</div>
+                            </div>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Número Atômico</div>
+                                <div class="info-slot-value" id="info-atomic-number">1</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Massa Atômica</div>
+                                <div class="info-slot-value" id="info-atomic-mass">1.008 u</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Config. Eletrônica</div>
+                                <div class="info-slot-value" id="info-electron-config">1s¹</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Eletronegatividade</div>
+                                <div class="info-slot-value" id="info-electronegativity">2.20</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Ponto de Fusão</div>
+                                <div class="info-slot-value" id="info-melting-point">-259°C</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Ponto de Ebulição</div>
+                                <div class="info-slot-value" id="info-boiling-point">-253°C</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO: Adicionar Energia -->
+                    <div class="info-card module-panel" id="module-energy" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-bolt" style="color: var(--fusion-orange);"></i>
+                            <div class="section-title">Adicionar Energia</div>
+                        </div>
+                        
+                        <div class="info-slot" style="margin-bottom: var(--space-md);">
+                            <div class="info-slot-label">Nível de Energia (eV):</div>
+                            <input type="range" class="energy-slider" id="energy-slider" min="1" max="20" value="5" step="0.1" style="width: 100%; margin: var(--space-sm) 0;">
+                            <div class="info-slot-value" id="energy-value">5.0 eV</div>
+                        </div>
+                        
+                        <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-md);">
+                            <button class="control-btn energy" id="excite-btn">
+                                <i class="fa-solid fa-bolt"></i> Excitar Elétrons
+                            </button>
+                            <button class="control-btn" id="reset-energy-btn">
+                                <i class="fa-solid fa-redo"></i> Resetar
+                            </button>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Elétrons excitados</div>
+                                <div class="info-slot-value" id="excited-count">0</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Fótons emitidos</div>
+                                <div class="info-slot-value" id="photon-count">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO: Campo Magnético -->
+                    <div class="info-card module-panel" id="module-magnetic" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-magnet" style="color: var(--magnetic-blue);"></i>
+                            <div class="section-title">Campo Magnético</div>
+                        </div>
+                        
+                        <div class="info-slot" style="margin-bottom: var(--space-md);">
+                            <div class="info-slot-label">Intensidade do Campo (T):</div>
+                            <input type="range" class="magnetic-slider" id="magnetic-slider" min="0" max="10" value="0" step="0.1" style="width: 100%; margin: var(--space-sm) 0;">
+                            <div class="info-slot-value" id="magnetic-value">0.0 T</div>
+                            
+                            <label style="margin-top: var(--space-md); display: block; font-size: var(--font-xs); color: var(--text-secondary); margin-bottom: var(--space-xs);">Direção do Campo:</label>
+                            <div class="field-direction" style="display: flex; gap: var(--space-xs);">
+                                <button class="control-btn active" data-direction="up">↑ Norte</button>
+                                <button class="control-btn" data-direction="down">↓ Sul</button>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-md);">
+                            <button class="control-btn magnetic" id="apply-magnetic-btn">
+                                <i class="fa-solid fa-play"></i> Aplicar Campo
+                            </button>
+                            <button class="control-btn" id="reset-magnetic-btn">
+                                <i class="fa-solid fa-stop"></i> Desligar
+                            </button>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Efeito Zeeman</div>
+                                <div class="info-slot-value" id="zeeman-effect">Inativo</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Spin alinhados</div>
+                                <div class="info-slot-value" id="spin-aligned">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO: Controlar Temperatura -->
+                    <div class="info-card module-panel" id="module-temperature" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-temperature-high" style="color: var(--hot-red);"></i>
+                            <div class="section-title">Controlar Temperatura</div>
+                        </div>
+                        
+                        <div class="info-slot" style="margin-bottom: var(--space-md);">
+                            <div class="info-slot-label">Temperatura (°C):</div>
+                            
+                            <div class="state-indicator" style="font-size: 8px; color: var(--text-tertiary); display: flex; justify-content: space-between; margin: var(--space-xs) 0;">
+                                <span>❄️ Sólido</span>
+                                <span>💧 Líquido</span>
+                                <span>🔥 Gás</span>
+                                <span>⚡ Plasma</span>
+                            </div>
+                            
+                            <input type="range" class="temperature-slider" id="temperature-slider" min="-273" max="10000" value="25" step="1" style="width: 100%; margin: var(--space-xs) 0;">
+                            
+                            <div class="state-markers" style="font-size: 8px; color: var(--text-tertiary); display: flex; justify-content: space-between;">
+                                <span>-273°C</span>
+                                <span>0°C</span>
+                                <span>100°C</span>
+                                <span>10000°C</span>
+                            </div>
+                            
+                            <div class="info-slot-value" id="temperature-value">25°C</div>
+                        </div>
+                        
+                        <div class="preset-temperatures" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-xs); margin-bottom: var(--space-md);">
+                            <button class="control-btn" data-temp="-200">❄️ Criogênico</button>
+                            <button class="control-btn" data-temp="25">🌡 Ambiente</button>
+                            <button class="control-btn" data-temp="500">🔥 Quente</button>
+                            <button class="control-btn" data-temp="5000">⚡ Plasma</button>
+                        </div>
+                        
+                        <div style="display: flex; gap: var(--space-xs); margin-bottom: var(--space-md);">
+                            <button class="control-btn temperature" id="apply-temperature-btn">
+                                <i class="fa-solid fa-check"></i> Aplicar Temperatura
+                            </button>
+                            <button class="control-btn" id="reset-temperature-btn">
+                                <i class="fa-solid fa-redo"></i> Resetar
+                            </button>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Estado Físico</div>
+                                <div class="info-slot-value" id="physical-state">Gasoso</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Energia Térmica</div>
+                                <div class="info-slot-value" id="thermal-energy">0 eV</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO: Espectrômetro -->
+                    <div class="info-card module-panel" id="module-spectrometer" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-chart-line" style="color: var(--quantum-blue);"></i>
+                            <div class="section-title">Espectrômetro</div>
+                        </div>
+                        
+                        <div style="height: 120px; background: var(--surface-alt); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: var(--space-md);">
+                            <canvas id="spectrometer-canvas" style="width: 100%; height: 100%;"></canvas>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Comprimento de onda</div>
+                                <div class="info-slot-value" id="wavelength">656 nm</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Intensidade</div>
+                                <div class="info-slot-value" id="spectro-intensity">75%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO: Detector de Radiação -->
+                    <div class="info-card module-panel" id="module-radiation" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-radiation" style="color: var(--danger-red);"></i>
+                            <div class="section-title">Detector de Radiação</div>
+                        </div>
+                        
+                        <div class="info-grid" style="margin-bottom: var(--space-md);">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Tipo detectado</div>
+                                <div class="info-slot-value" id="radiation-type">Nenhuma</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Intensidade</div>
+                                <div class="info-slot-value" id="radiation-level">0 Sv/h</div>
+                            </div>
+                        </div>
+                        
+                        <button class="control-btn" id="start-radiation-btn" style="width: 100%;">
+                            <i class="fa-solid fa-play"></i> Iniciar Detecção
+                        </button>
+                    </div>
+
+                    <!-- MÓDULO: Medidor de pH -->
+                    <div class="info-card module-panel" id="module-ph" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-flask" style="color: var(--radioactive-green);"></i>
+                            <div class="section-title">Medidor de pH</div>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Valor de pH</div>
+                                <div class="info-slot-value" id="ph-value">7.0</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Classificação</div>
+                                <div class="info-slot-value" id="ph-classification">Neutro</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO: Termômetro -->
+                    <div class="info-card module-panel" id="module-thermometer" style="display: none;">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-thermometer-half" style="color: var(--cold-blue);"></i>
+                            <div class="section-title">Termômetro</div>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-slot">
+                                <div class="info-slot-label">Temperatura</div>
+                                <div class="info-slot-value" id="thermometer-value">25°C</div>
+                            </div>
+                            <div class="info-slot">
+                                <div class="info-slot-label">Estado</div>
+                                <div class="info-slot-value" id="thermometer-state">Normal</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CONTEÚDO: Estrutura (aba 2) -->
+                <div id="tab-structure" class="tab-content">
+                    <div class="atom-info-panel">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-atom"></i>
+                            <div class="section-title">Estrutura Atômica Detalhada</div>
+                        </div>
+                        
+                        <div class="info-grid" id="detailed-info">
+                            <!-- Será preenchido via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="app.js"></script>
+    <script src="quantum-modules.js"></script>
+
+</body>
+</html>

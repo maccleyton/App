@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório Virtual de Química</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #00BF93;
+            --color-secondary: #06B6D4;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+            
+            /* Element colors */
+            --color-alkali: #FF6B6B;
+            --color-alkaline: #FFA726;
+            --color-transition: #42A5F5;
+            --color-post-transition: #66BB6A;
+            --color-metalloid: #26C6DA;
+            --color-nonmetal: #7E57C2;
+            --color-halogen: #EC407A;
+            --color-noble: #AB47BC;
+            --color-lanthanide: #8D6E63;
+            --color-actinide: #78909C;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(0, 191, 147, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(22, 22, 22, 0.5);
+            border-color: var(--color-primary);
+            color: var(--color-text-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(0, 191, 147, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Periodic Table */
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            gap: 0.25rem;
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem;
+        }
+
+        .element {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-border);
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 0.25rem;
+            position: relative;
+        }
+
+        .element:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(0, 191, 147, 0.5);
+        }
+
+        .element-number {
+            font-size: 0.6rem;
+            color: var(--color-text-secondary);
+        }
+
+        .element-symbol {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 0.125rem 0;
+        }
+
+        .element-name {
+            font-size: 0.5rem;
+            color: var(--color-text-secondary);
+            text-align: center;
+        }
+
+        .element-mass {
+            font-size: 0.5rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Element categories */
+        .alkali-metal { background: var(--color-alkali); }
+        .alkaline-earth { background: var(--color-alkaline); }
+        .transition-metal { background: var(--color-transition); }
+        .post-transition { background: var(--color-post-transition); }
+        .metalloid { background: var(--color-metalloid); }
+        .nonmetal { background: var(--color-nonmetal); }
+        .halogen { background: var(--color-halogen); }
+        .noble-gas { background: var(--color-noble); }
+        .lanthanide { background: var(--color-lanthanide); }
+        .actinide { background: var(--color-actinide); }
+
+        .element.selected {
+            box-shadow: 0 0 30px rgba(0, 191, 147, 0.8);
+            border-color: var(--color-primary);
+            transform: scale(1.15);
+        }
+
+        /* Element Info Panel */
+        .element-info {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .info-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .info-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        /* Reaction Simulator */
+        .reaction-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 191, 147, 0.1);
+        }
+
+        select.control-input {
+            cursor: pointer;
+        }
+
+        /* Reaction Display */
+        .reaction-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 2px solid var(--color-border);
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .reaction-arrow {
+            color: var(--color-secondary);
+            font-size: 2rem;
+            margin: 0 1rem;
+        }
+
+        .compound {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 191, 147, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        /* Reaction Info */
+        .reaction-info {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 3px solid var(--color-secondary);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .reaction-info h4 {
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: #10B981;
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '> ';
+            color: var(--color-primary);
+        }
+
+        /* Legend */
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 0.25rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .periodic-table {
+                grid-template-columns: repeat(18, minmax(40px, 1fr));
+                gap: 0.15rem;
+            }
+            
+            .element-name {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .periodic-table {
+                overflow-x: auto;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+
+            .reaction-display {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 LABORATÓRIO VIRTUAL DE QUÍMICA</h1>
+            <p class="subtitle">Explore a tabela periódica e simule reações químicas com visualização 3D</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="periodic-table">⚛️ Tabela Periódica</button>
+            <button class="tab-button" data-tab="reactions">🧪 Simulador de Reações</button>
+        </div>
+
+        <!-- TAB 1: Tabela Periódica -->
+        <div id="periodic-table" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <span>⚛️</span>
+                    <h3 class="card-title">Tabela Periódica dos Elementos</h3>
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color alkali-metal"></div>
+                        <span>Metais Alcalinos</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color alkaline-earth"></div>
+                        <span>Metais Alcalino-Terrosos</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color transition-metal"></div>
+                        <span>Metais de Transição</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color post-transition"></div>
+                        <span>Pós-Transição</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color metalloid"></div>
+                        <span>Metaloides</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color nonmetal"></div>
+                        <span>Não-Metais</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color halogen"></div>
+                        <span>Halogênios</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color noble-gas"></div>
+                        <span>Gases Nobres</span>
+                    </div>
+                </div>
+
+                <div class="periodic-table" id="periodic-table-grid"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📊</span>
+                    <h3 class="card-title">Informações do Elemento</h3>
+                </div>
+
+                <div class="element-info">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <h2 id="element-name" style="color: var(--color-primary);">Selecione um elemento</h2>
+                        <p id="element-symbol" style="font-size: 3rem; font-weight: 700; margin: 0.5rem 0;">-</p>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Número Atômico</div>
+                            <div class="info-value" id="atomic-number">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Massa Atômica</div>
+                            <div class="info-value" id="atomic-mass">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Estado Físico</div>
+                            <div class="info-value" id="state">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Categoria</div>
+                            <div class="info-value" id="category">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Densidade</div>
+                            <div class="info-value" id="density">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Ponto de Fusão</div>
+                            <div class="info-value" id="melting-point">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Ponto de Ebulição</div>
+                            <div class="info-value" id="boiling-point">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Eletronegatividade</div>
+                            <div class="info-value" id="electronegativity">-</div>
+                        </div>
+                    </div>
+
+                    <div class="info-item" style="margin-top: 1rem;">
+                        <div class="info-label">Configuração Eletrônica</div>
+                        <div class="info-value" id="electron-config" style="font-size: 0.95rem;">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Simulador de Reações -->
+        <div id="reactions" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span>🧪</span>
+                    <h3 class="card-title">Simulador de Reações Químicas</h3>
+                </div>
+
+                <div class="reaction-controls">
+                    <div class="control-group">
+                        <label class="control-label">Reagente 1</label>
+                        <select class="control-input" id="reagent1" onchange="updateReaction()">
+                            <optgroup label="Ácidos">
+                                <option value="HCl">HCl (Ácido Clorídrico)</option>
+                                <option value="H2SO4">H₂SO₄ (Ácido Sulfúrico)</option>
+                                <option value="HNO3">HNO₃ (Ácido Nítrico)</option>
+                                <option value="CH3COOH">CH₃COOH (Ácido Acético)</option>
+                            </optgroup>
+                            <optgroup label="Bases">
+                                <option value="NaOH">NaOH (Hidróxido de Sódio)</option>
+                                <option value="KOH">KOH (Hidróxido de Potássio)</option>
+                                <option value="Ca(OH)2">Ca(OH)₂ (Hidróxido de Cálcio)</option>
+                                <option value="NH3">NH₃ (Amônia)</option>
+                            </optgroup>
+                            <optgroup label="Sais">
+                                <option value="NaCl">NaCl (Cloreto de Sódio)</option>
+                                <option value="CaCO3">CaCO₃ (Carbonato de Cálcio)</option>
+                                <option value="AgNO3">AgNO₃ (Nitrato de Prata)</option>
+                            </optgroup>
+                            <optgroup label="Metais">
+                                <option value="Zn">Zn (Zinco)</option>
+                                <option value="Fe">Fe (Ferro)</option>
+                                <option value="Mg">Mg (Magnésio)</option>
+                                <option value="Cu">Cu (Cobre)</option>
+                            </optgroup>
+                            <optgroup label="Outros">
+                                <option value="O2">O₂ (Oxigênio)</option>
+                                <option value="H2">H₂ (Hidrogênio)</option>
+                                <option value="CH4">CH₄ (Metano)</option>
+                                <option value="C2H5OH">C₂H₅OH (Etanol)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Reagente 2</label>
+                        <select class="control-input" id="reagent2" onchange="updateReaction()">
+                            <optgroup label="Ácidos">
+                                <option value="HCl">HCl (Ácido Clorídrico)</option>
+                                <option value="H2SO4">H₂SO₄ (Ácido Sulfúrico)</option>
+                                <option value="HNO3">HNO₃ (Ácido Nítrico)</option>
+                            </optgroup>
+                            <optgroup label="Bases">
+                                <option value="NaOH" selected>NaOH (Hidróxido de Sódio)</option>
+                                <option value="KOH">KOH (Hidróxido de Potássio)</option>
+                                <option value="Ca(OH)2">Ca(OH)₂ (Hidróxido de Cálcio)</option>
+                            </optgroup>
+                            <optgroup label="Sais">
+                                <option value="NaCl">NaCl (Cloreto de Sódio)</option>
+                                <option value="CaCO3">CaCO₃ (Carbonato de Cálcio)</option>
+                            </optgroup>
+                            <optgroup label="Metais">
+                                <option value="Zn">Zn (Zinco)</option>
+                                <option value="Fe">Fe (Ferro)</option>
+                            </optgroup>
+                            <optgroup label="Outros">
+                                <option value="O2">O₂ (Oxigênio)</option>
+                                <option value="H2">H₂ (Hidrogênio)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura (°C)</label>
+                        <input type="number" class="control-input" id="temperature" value="25" min="-50" max="500">
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Catalisador</label>
+                        <select class="control-input" id="catalyst">
+                            <option value="none">Nenhum</option>
+                            <option value="Pt">Platina (Pt)</option>
+                            <option value="Ni">Níquel (Ni)</option>
+                            <option value="Fe">Ferro (Fe)</option>
+                            <option value="H2SO4">H₂SO₄</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="reaction-display" id="reaction-equation">
+                    <span class="compound">HCl</span>
+                    <span class="reaction-arrow">+</span>
+                    <span class="compound">NaOH</span>
+                    <span class="reaction-arrow">→</span>
+                    <span class="compound">NaCl</span>
+                    <span class="reaction-arrow">+</span>
+                    <span class="compound">H₂O</span>
+                </div>
+
+                <div class="viewer-3d" id="reaction-viewer"></div>
+
+                <div class="reaction-info" id="reaction-info">
+                    <h4>Neutralização Ácido-Base</h4>
+                    <p><strong>Tipo:</strong> Reação de Neutralização</p>
+                    <p><strong>Características:</strong> Ácido reage com base formando sal e água</p>
+                    <p><strong>Entalpia:</strong> ΔH = -57.3 kJ/mol (exotérmica)</p>
+                    <p><strong>pH Final:</strong> Aproximadamente 7 (neutro)</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Tipo de Reação</div>
+                        <div class="stat-value" id="reaction-type">Neutralização</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">ΔH (Entalpia)</div>
+                        <div class="stat-value" id="enthalpy">-57.3 kJ/mol</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Estado</div>
+                        <div class="stat-value" id="reaction-state">Exotérmica</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">pH Final</div>
+                        <div class="stat-value" id="ph-final">7.0</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="simulateReaction()">▶️ Simular Reação</button>
+                    <button class="btn btn-secondary" onclick="resetReaction()">🔄 Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="balanceEquation()">⚖️ Balancear Equação</button>
+                </div>
+
+                <div class="console" id="reaction-console">
+                    <div class="console-line">Sistema de reação inicializado</div>
+                </div>
+            </div>
+
+            <!-- Exemplos de Reações -->
+            <div class="card">
+                <div class="card-header">
+                    <span>📚</span>
+                    <h3 class="card-title">Exemplos de Reações Comuns</h3>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                    <div class="info-item" style="cursor: pointer;" onclick="loadExample('neutralization')">
+                        <div class="info-label">Neutralização</div>
+                        <div class="info-value" style="font-size: 0.9rem;">HCl + NaOH → NaCl + H₂O</div>
+                    </div>
+
+                    <div class="info-item" style="cursor: pointer;" onclick="loadExample('carbonate')">
+                        <div class="info-label">Ácido + Carbonato</div>
+                        <div class="info-value" style="font-size: 0.9rem;">2HCl + CaCO₃ → CaCl₂ + H₂O + CO₂</div>
+                    </div>
+
+                    <div class="info-item" style="cursor: pointer;" onclick="loadExample('metal-acid')">
+                        <div class="info-label">Metal + Ácido</div>
+                        <div class="info-value" style="font-size: 0.9rem;">Zn + 2HCl → ZnCl₂ + H₂</div>
+                    </div>
+
+                    <div class="info-item" style="cursor: pointer;" onclick="loadExample('combustion')">
+                        <div class="info-label">Combustão</div>
+                        <div class="info-value" style="font-size: 0.9rem;">CH₄ + 2O₂ → CO₂ + 2H₂O</div>
+                    </div>
+
+                    <div class="info-item" style="cursor: pointer;" onclick="loadExample('synthesis')">
+                        <div class="info-label">Síntese</div>
+                        <div class="info-value" style="font-size: 0.9rem;">2H₂ + O₂ → 2H₂O</div>
+                    </div>
+
+                    <div class="info-item" style="cursor: pointer;" onclick="loadExample('decomposition')">
+                        <div class="info-label">Decomposição</div>
+                        <div class="info-value" style="font-size: 0.9rem;">2H₂O → 2H₂ + O₂</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            selectedElement: null,
+            currentReaction: null,
+            reactionRunning: false
+        };
+
+        // Three.js objects
+        let scene, camera, renderer, controls;
+        let moleculeGroup, particleSystem;
+
+        // ==================== PERIODIC TABLE DATA ====================
+        const elements = {
+            1: { symbol: 'H', name: 'Hidrogênio', mass: 1.008, category: 'nonmetal', state: 'gás', density: 0.089, melt: -259, boil: -253, electroneg: 2.20, config: '1s¹', group: 1, period: 1 },
+            2: { symbol: 'He', name: 'Hélio', mass: 4.003, category: 'noble-gas', state: 'gás', density: 0.178, melt: -272, boil: -269, electroneg: '-', config: '1s²', group: 18, period: 1 },
+            3: { symbol: 'Li', name: 'Lítio', mass: 6.941, category: 'alkali-metal', state: 'sólido', density: 0.534, melt: 180, boil: 1342, electroneg: 0.98, config: '[He] 2s¹', group: 1, period: 2 },
+            4: { symbol: 'Be', name: 'Berílio', mass: 9.012, category: 'alkaline-earth', state: 'sólido', density: 1.85, melt: 1287, boil: 2470, electroneg: 1.57, config: '[He] 2s²', group: 2, period: 2 },
+            5: { symbol: 'B', name: 'Boro', mass: 10.811, category: 'metalloid', state: 'sólido', density: 2.34, melt: 2075, boil: 4000, electroneg: 2.04, config: '[He] 2s² 2p¹', group: 13, period: 2 },
+            6: { symbol: 'C', name: 'Carbono', mass: 12.011, category: 'nonmetal', state: 'sólido', density: 2.26, melt: 3550, boil: 4827, electroneg: 2.55, config: '[He] 2s² 2p²', group: 14, period: 2 },
+            7: { symbol: 'N', name: 'Nitrogênio', mass: 14.007, category: 'nonmetal', state: 'gás', density: 1.25, melt: -210, boil: -196, electroneg: 3.04, config: '[He] 2s² 2p³', group: 15, period: 2 },
+            8: { symbol: 'O', name: 'Oxigênio', mass: 15.999, category: 'nonmetal', state: 'gás', density: 1.43, melt: -218, boil: -183, electroneg: 3.44, config: '[He] 2s² 2p⁴', group: 16, period: 2 },
+            9: { symbol: 'F', name: 'Flúor', mass: 18.998, category: 'halogen', state: 'gás', density: 1.70, melt: -220, boil: -188, electroneg: 3.98, config: '[He] 2s² 2p⁵', group: 17, period: 2 },
+            10: { symbol: 'Ne', name: 'Neônio', mass: 20.180, category: 'noble-gas', state: 'gás', density: 0.900, melt: -249, boil: -246, electroneg: '-', config: '[He] 2s² 2p⁶', group: 18, period: 2 },
+            11: { symbol: 'Na', name: 'Sódio', mass: 22.990, category: 'alkali-metal', state: 'sólido', density: 0.971, melt: 98, boil: 883, electroneg: 0.93, config: '[Ne] 3s¹', group: 1, period: 3 },
+            12: { symbol: 'Mg', name: 'Magnésio', mass: 24.305, category: 'alkaline-earth', state: 'sólido', density: 1.74, melt: 650, boil: 1090, electroneg: 1.31, config: '[Ne] 3s²', group: 2, period: 3 },
+            13: { symbol: 'Al', name: 'Alumínio', mass: 26.982, category: 'post-transition', state: 'sólido', density: 2.70, melt: 660, boil: 2519, electroneg: 1.61, config: '[Ne] 3s² 3p¹', group: 13, period: 3 },
+            14: { symbol: 'Si', name: 'Silício', mass: 28.086, category: 'metalloid', state: 'sólido', density: 2.33, melt: 1414, boil: 3265, electroneg: 1.90, config: '[Ne] 3s² 3p²', group: 14, period: 3 },
+            15: { symbol: 'P', name: 'Fósforo', mass: 30.974, category: 'nonmetal', state: 'sólido', density: 1.82, melt: 44, boil: 280, electroneg: 2.19, config: '[Ne] 3s² 3p³', group: 15, period: 3 },
+            16: { symbol: 'S', name: 'Enxofre', mass: 32.065, category: 'nonmetal', state: 'sólido', density: 2.07, melt: 115, boil: 445, electroneg: 2.58, config: '[Ne] 3s² 3p⁴', group: 16, period: 3 },
+            17: { symbol: 'Cl', name: 'Cloro', mass: 35.453, category: 'halogen', state: 'gás', density: 3.21, melt: -102, boil: -34, electroneg: 3.16, config: '[Ne] 3s² 3p⁵', group: 17, period: 3 },
+            18: { symbol: 'Ar', name: 'Argônio', mass: 39.948, category: 'noble-gas', state: 'gás', density: 1.78, melt: -189, boil: -186, electroneg: '-', config: '[Ne] 3s² 3p⁶', group: 18, period: 3 },
+            19: { symbol: 'K', name: 'Potássio', mass: 39.098, category: 'alkali-metal', state: 'sólido', density: 0.862, melt: 63, boil: 759, electroneg: 0.82, config: '[Ar] 4s¹', group: 1, period: 4 },
+            20: { symbol: 'Ca', name: 'Cálcio', mass: 40.078, category: 'alkaline-earth', state: 'sólido', density: 1.54, melt: 842, boil: 1484, electroneg: 1.00, config: '[Ar] 4s²', group: 2, period: 4 },
+            // Transition metals (simplified - add more as needed)
+            26: { symbol: 'Fe', name: 'Ferro', mass: 55.845, category: 'transition-metal', state: 'sólido', density: 7.87, melt: 1538, boil: 2861, electroneg: 1.83, config: '[Ar] 3d⁶ 4s²', group: 8, period: 4 },
+            29: { symbol: 'Cu', name: 'Cobre', mass: 63.546, category: 'transition-metal', state: 'sólido', density: 8.96, melt: 1085, boil: 2562, electroneg: 1.90, config: '[Ar] 3d¹⁰ 4s¹', group: 11, period: 4 },
+            30: { symbol: 'Zn', name: 'Zinco', mass: 65.380, category: 'transition-metal', state: 'sólido', density: 7.13, melt: 420, boil: 907, electroneg: 1.65, config: '[Ar] 3d¹⁰ 4s²', group: 12, period: 4 },
+            35: { symbol: 'Br', name: 'Bromo', mass: 79.904, category: 'halogen', state: 'líquido', density: 3.12, melt: -7, boil: 59, electroneg: 2.96, config: '[Ar] 3d¹⁰ 4s² 4p⁵', group: 17, period: 4 },
+            36: { symbol: 'Kr', name: 'Criptônio', mass: 83.798, category: 'noble-gas', state: 'gás', density: 3.75, melt: -157, boil: -153, electroneg: 3.00, config: '[Ar] 3d¹⁰ 4s² 4p⁶', group: 18, period: 4 },
+            47: { symbol: 'Ag', name: 'Prata', mass: 107.868, category: 'transition-metal', state: 'sólido', density: 10.5, melt: 962, boil: 2162, electroneg: 1.93, config: '[Kr] 4d¹⁰ 5s¹', group: 11, period: 5 },
+            53: { symbol: 'I', name: 'Iodo', mass: 126.904, category: 'halogen', state: 'sólido', density: 4.93, melt: 114, boil: 184, electroneg: 2.66, config: '[Kr] 4d¹⁰ 5s² 5p⁵', group: 17, period: 5 },
+            79: { symbol: 'Au', name: 'Ouro', mass: 196.967, category: 'transition-metal', state: 'sólido', density: 19.3, melt: 1064, boil: 2856, electroneg: 2.54, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s¹', group: 11, period: 6 }
+        };
+
+        // Reaction database
+        const reactions = {
+            'HCl+NaOH': {
+                equation: 'HCl + NaOH → NaCl + H₂O',
+                products: ['NaCl', 'H₂O'],
+                type: 'Neutralização',
+                enthalpy: -57.3,
+                state: 'Exotérmica',
+                ph: 7.0,
+                description: 'Reação de neutralização entre ácido forte e base forte',
+                info: 'Ácido reage com base formando sal e água'
+            },
+            'HCl+CaCO3': {
+                equation: '2HCl + CaCO₃ → CaCl₂ + H₂O + CO₂',
+                products: ['CaCl₂', 'H₂O', 'CO₂'],
+                type: 'Efervescência',
+                enthalpy: -15.2,
+                state: 'Exotérmica',
+                ph: 7.0,
+                description: 'Ácido reage com carbonato liberando gás carbônico',
+                info: 'Reação característica com liberação de CO₂ (efervescência)'
+            },
+            'Zn+HCl': {
+                equation: 'Zn + 2HCl → ZnCl₂ + H₂',
+                products: ['ZnCl₂', 'H₂'],
+                type: 'Deslocamento',
+                enthalpy: -152.4,
+                state: 'Exotérmica',
+                ph: 2.0,
+                description: 'Metal reage com ácido liberando hidrogênio',
+                info: 'Reação de simples troca com liberação de gás H₂'
+            },
+            'CH4+O2': {
+                equation: 'CH₄ + 2O₂ → CO₂ + 2H₂O',
+                products: ['CO₂', 'H₂O'],
+                type: 'Combustão',
+                enthalpy: -890.0,
+                state: 'Exotérmica',
+                ph: 7.0,
+                description: 'Combustão completa do metano',
+                info: 'Reação exotérmica com liberação de energia'
+            },
+            'H2+O2': {
+                equation: '2H₂ + O₂ → 2H₂O',
+                products: ['H₂O'],
+                type: 'Síntese',
+                enthalpy: -285.8,
+                state: 'Exotérmica',
+                ph: 7.0,
+                description: 'Formação de água a partir dos elementos',
+                info: 'Reação de síntese altamente exotérmica'
+            },
+            'H2O+energy': {
+                equation: '2H₂O → 2H₂ + O₂',
+                products: ['H₂', 'O₂'],
+                type: 'Decomposição',
+                enthalpy: 285.8,
+                state: 'Endotérmica',
+                ph: 7.0,
+                description: 'Eletrólise da água',
+                info: 'Decomposição da água por energia elétrica'
+            }
+        };
+
+        // Atom colors for 3D visualization
+        const atomColors = {
+            'H': 0xE8E8E8,
+            'C': 0x404040,
+            'N': 0x0000FF,
+            'O': 0xFF0000,
+            'S': 0xFFFF00,
+            'Cl': 0x00FF00,
+            'Na': 0x8B00FF,
+            'Ca': 0x808090,
+            'Zn': 0x7DA7D9,
+            'Fe': 0xE06633
+        };
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initializePeriodicTable();
+            initialize3DViewer();
+            updateReaction();
+        });
+
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        }
+
+        // ==================== PERIODIC TABLE ====================
+        function initializePeriodicTable() {
+            const grid = document.getElementById('periodic-table-grid');
+            
+            // Create all 118 element positions (7 periods x 18 groups)
+            for (let period = 1; period <= 7; period++) {
+                for (let group = 1; group <= 18; group++) {
+                    // Find element at this position
+                    const element = Object.values(elements).find(el => 
+                        el.period === period && el.group === group
+                    );
+
+                    if (element) {
+                        const atomicNumber = Object.keys(elements).find(key => 
+                            elements[key] === element
+                        );
+                        
+                        const elementDiv = document.createElement('div');
+                        elementDiv.className = `element ${element.category}`;
+                        elementDiv.dataset.number = atomicNumber;
+                        elementDiv.innerHTML = `
+                            <div class="element-number">${atomicNumber}</div>
+                            <div class="element-symbol">${element.symbol}</div>
+                            <div class="element-name">${element.name}</div>
+                            <div class="element-mass">${element.mass.toFixed(2)}</div>
+                        `;
+                        elementDiv.onclick = () => selectElement(atomicNumber);
+                        grid.appendChild(elementDiv);
+                    } else {
+                        // Empty space
+                        const emptyDiv = document.createElement('div');
+                        grid.appendChild(emptyDiv);
+                    }
+                }
+            }
+        }
+
+        function selectElement(atomicNumber) {
+            const element = elements[atomicNumber];
+            if (!element) return;
+
+            // Update selected state
+            document.querySelectorAll('.element').forEach(el => el.classList.remove('selected'));
+            document.querySelector(`[data-number="${atomicNumber}"]`).classList.add('selected');
+
+            state.selectedElement = element;
+
+            // Update info panel
+            document.getElementById('element-name').textContent = element.name;
+            document.getElementById('element-symbol').textContent = element.symbol;
+            document.getElementById('atomic-number').textContent = atomicNumber;
+            document.getElementById('atomic-mass').textContent = `${element.mass.toFixed(3)} u`;
+            document.getElementById('state').textContent = element.state.charAt(0).toUpperCase() + element.state.slice(1);
+            document.getElementById('category').textContent = getCategoryName(element.category);
+            document.getElementById('density').textContent = `${element.density} g/cm³`;
+            document.getElementById('melting-point').textContent = `${element.melt}°C`;
+            document.getElementById('boiling-point').textContent = `${element.boil}°C`;
+            document.getElementById('electronegativity').textContent = element.electroneg;
+            document.getElementById('electron-config').textContent = element.config;
+        }
+
+        function getCategoryName(category) {
+            const names = {
+                'alkali-metal': 'Metal Alcalino',
+                'alkaline-earth': 'Metal Alcalino-Terroso',
+                'transition-metal': 'Metal de Transição',
+                'post-transition': 'Metal Pós-Transição',
+                'metalloid': 'Metaloide',
+                'nonmetal': 'Não-Metal',
+                'halogen': 'Halogênio',
+                'noble-gas': 'Gás Nobre',
+                'lanthanide': 'Lantanídeo',
+                'actinide': 'Actinídeo'
+            };
+            return names[category] || category;
+        }
+
+        // ==================== 3D VIEWER ====================
+        function initialize3DViewer() {
+            const container = document.getElementById('reaction-viewer');
+            if (!container) return;
+
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a0a);
+
+            // Create camera
+            camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 0, 10);
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+
+            // Create molecule group
+            moleculeGroup = new THREE.Group();
+            scene.add(moleculeGroup);
+
+            // Add orbit controls if available
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+            }
+
+            // Start animation loop
+            animate3D();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            
+            if (controls) {
+                controls.update();
+            }
+            
+            if (moleculeGroup && state.reactionRunning) {
+                moleculeGroup.rotation.y += 0.01;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function drawMolecule(formula) {
+            // Clear previous molecules
+            while (moleculeGroup.children.length > 0) {
+                moleculeGroup.remove(moleculeGroup.children[0]);
+            }
+
+            // Parse formula and create atoms
+            const atoms = parseFormula(formula);
+            
+            atoms.forEach((atom, index) => {
+                const geometry = new THREE.SphereGeometry(0.3, 32, 32);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: atomColors[atom.element] || 0x808080,
+                    shininess: 30
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                
+                // Position atoms in a line (simplified)
+                sphere.position.x = (index - atoms.length / 2) * 1.5;
+                sphere.position.y = Math.sin(index) * 0.5;
+                
+                moleculeGroup.add(sphere);
+            });
+        }
+
+        function parseFormula(formula) {
+            const atoms = [];
+            const regex = /([A-Z][a-z]?)(\d*)/g;
+            let match;
+            
+            while ((match = regex.exec(formula)) !== null) {
+                const element = match[1];
+                const count = parseInt(match[2]) || 1;
+                
+                for (let i = 0; i < count; i++) {
+                    atoms.push({ element });
+                }
+            }
+            
+            return atoms;
+        }
+
+        // ==================== REACTIONS ====================
+        function updateReaction() {
+            const reagent1 = document.getElementById('reagent1').value;
+            const reagent2 = document.getElementById('reagent2').value;
+            
+            const reactionKey = `${reagent1}+${reagent2}`;
+            const reverseKey = `${reagent2}+${reagent1}`;
+            
+            const reaction = reactions[reactionKey] || reactions[reverseKey];
+            
+            if (reaction) {
+                state.currentReaction = reaction;
+                displayReaction(reaction);
+            } else {
+                displayUnknownReaction(reagent1, reagent2);
+            }
+        }
+
+        function displayReaction(reaction) {
+            document.getElementById('reaction-equation').innerHTML = reaction.equation.replace(
+                /([A-Z][a-z]?[₀-₉]*\([A-Z]+\)[₀-₉]*|[A-Z][a-z]?[₀-₉]*)/g,
+                '<span class="compound">$1</span>'
+            ).replace(/\+/g, '<span class="reaction-arrow">+</span>')
+              .replace(/→/g, '<span class="reaction-arrow">→</span>');
+
+            document.getElementById('reaction-type').textContent = reaction.type;
+            document.getElementById('enthalpy').textContent = `${reaction.enthalpy > 0 ? '+' : ''}${reaction.enthalpy.toFixed(1)} kJ/mol`;
+            document.getElementById('reaction-state').textContent = reaction.state;
+            document.getElementById('ph-final').textContent = reaction.ph.toFixed(1);
+
+            document.getElementById('reaction-info').innerHTML = `
+                <h4>${reaction.type}</h4>
+                <p><strong>Tipo:</strong> ${reaction.type}</p>
+                <p><strong>Características:</strong> ${reaction.info}</p>
+                <p><strong>Entalpia:</strong> ΔH = ${reaction.enthalpy} kJ/mol (${reaction.state.toLowerCase()})</p>
+                <p><strong>pH Final:</strong> ${reaction.ph}</p>
+                <p>${reaction.description}</p>
+            `;
+        }
+
+        function displayUnknownReaction(r1, r2) {
+            document.getElementById('reaction-equation').innerHTML = `
+                <span class="compound">${r1}</span>
+                <span class="reaction-arrow">+</span>
+                <span class="compound">${r2}</span>
+                <span class="reaction-arrow">→</span>
+                <span class="compound">?</span>
+            `;
+
+            document.getElementById('reaction-type').textContent = 'Desconhecida';
+            document.getElementById('enthalpy').textContent = '?';
+            document.getElementById('reaction-state').textContent = '?';
+            document.getElementById('ph-final').textContent = '?';
+
+            document.getElementById('reaction-info').innerHTML = `
+                <h4>Reação Desconhecida</h4>
+                <p>Esta combinação de reagentes não está no banco de dados.</p>
+                <p>Tente selecionar outros reagentes ou consulte uma tabela de reações químicas.</p>
+            `;
+        }
+
+        function simulateReaction() {
+            if (!state.currentReaction) {
+                addConsoleMessage('Nenhuma reação conhecida para simular');
+                return;
+            }
+
+            state.reactionRunning = true;
+            
+            addConsoleMessage('Iniciando simulação da reação...');
+            addConsoleMessage(`Tipo: ${state.currentReaction.type}`);
+            addConsoleMessage(`ΔH = ${state.currentReaction.enthalpy} kJ/mol`);
+            
+            // Draw reactants
+            const reagent1 = document.getElementById('reagent1').value;
+            drawMolecule(reagent1);
+            addConsoleMessage(`Reagente 1: ${reagent1} adicionado`);
+
+            setTimeout(() => {
+                addConsoleMessage('Misturando reagentes...');
+                addConsoleMessage(`Temperatura: ${document.getElementById('temperature').value}°C`);
+            }, 1000);
+
+            setTimeout(() => {
+                // Draw products
+                if (state.currentReaction.products[0]) {
+                    drawMolecule(state.currentReaction.products[0]);
+                }
+                addConsoleMessage('Produtos formados!');
+                addConsoleMessage(`Reação ${state.currentReaction.state.toLowerCase()} completa`);
+                state.reactionRunning = false;
+            }, 3000);
+        }
+
+        function resetReaction() {
+            state.reactionRunning = false;
+            
+            // Clear molecule viewer
+            while (moleculeGroup.children.length > 0) {
+                moleculeGroup.remove(moleculeGroup.children[0]);
+            }
+            
+            addConsoleMessage('Sistema reiniciado');
+        }
+
+        function balanceEquation() {
+            if (!state.currentReaction) {
+                addConsoleMessage('Selecione uma reação primeiro');
+                return;
+            }
+
+            addConsoleMessage('Equação já está balanceada!');
+            addConsoleMessage(`Equação: ${state.currentReaction.equation}`);
+        }
+
+        function loadExample(type) {
+            const examples = {
+                'neutralization': ['HCl', 'NaOH'],
+                'carbonate': ['HCl', 'CaCO3'],
+                'metal-acid': ['Zn', 'HCl'],
+                'combustion': ['CH4', 'O2'],
+                'synthesis': ['H2', 'O2'],
+                'decomposition': ['H2O', 'none']
+            };
+
+            const [r1, r2] = examples[type] || ['HCl', 'NaOH'];
+            
+            document.getElementById('reagent1').value = r1;
+            if (r2 !== 'none') {
+                document.getElementById('reagent2').value = r2;
+            }
+            
+            updateReaction();
+            addConsoleMessage(`Exemplo carregado: ${type}`);
+        }
+
+        function addConsoleMessage(message) {
+            const consoleElement = document.getElementById('reaction-console');
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            // Keep only last 10 messages
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

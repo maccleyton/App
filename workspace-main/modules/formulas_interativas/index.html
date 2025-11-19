@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fórmulas Interativas - Workspace</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-function"></i>
+            <h1 class="header-title">Fórmulas Interativas</h1>
+        </div>
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Buscar fórmulas..." id="searchInput">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="back-button" id="historyBtn" title="Histórico">
+                <i class="fas fa-history"></i>
+            </button>
+            <button class="theme-toggle" id="clearBtn" title="Limpar campos">
+                <i class="fas fa-eraser"></i>
+            </button>
+            <button class="user-menu" id="exportBtn" title="Exportar resultados">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Painel Esquerdo - Fórmulas -->
+        <div class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-bookmark"></i>
+                    <h2 class="section-title">Fórmulas</h2>
+                </div>
+                <div class="class-filters">
+                    <button class="filter-btn active" data-filter="all">Todas</button>
+                    <button class="filter-btn" data-filter="math">Matemática</button>
+                    <button class="filter-btn" data-filter="physics">Física</button>
+                    <button class="filter-btn" data-filter="chemistry">Química</button>
+                    <button class="filter-btn" data-filter="finance">Financeiro</button>
+                </div>
+                <div class="elements-list" id="formulasList">
+                    <!-- Fórmulas de Matemática -->
+                    <div class="element-item formula-item" data-formula="quadratic" data-category="math">
+                        <span class="element-number"><i class="fas fa-superscript"></i></span>
+                        <span class="element-symbol">x²</span>
+                        <span class="element-name">Equação Quadrática</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="pythagorean" data-category="math">
+                        <span class="element-number"><i class="fas fa-triangle"></i></span>
+                        <span class="element-symbol">a²+b²</span>
+                        <span class="element-name">Teorema de Pitágoras</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="circle" data-category="math">
+                        <span class="element-number"><i class="fas fa-circle"></i></span>
+                        <span class="element-symbol">πr²</span>
+                        <span class="element-name">Área do Círculo</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="compound-interest" data-category="finance">
+                        <span class="element-number"><i class="fas fa-chart-line"></i></span>
+                        <span class="element-symbol">J comp</span>
+                        <span class="element-name">Juros Compostos</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="velocity" data-category="physics">
+                        <span class="element-number"><i class="fas fa-tachometer-alt"></i></span>
+                        <span class="element-symbol">v = d/t</span>
+                        <span class="element-name">Velocidade Média</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="kinetic-energy" data-category="physics">
+                        <span class="element-number"><i class="fas fa-bolt"></i></span>
+                        <span class="element-symbol">Ec = mv²/2</span>
+                        <span class="element-name">Energia Cinética</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="gravity" data-category="physics">
+                        <span class="element-number"><i class="fas fa-globe"></i></span>
+                        <span class="element-symbol">Fg</span>
+                        <span class="element-name">Força Gravitacional</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="molar-mass" data-category="chemistry">
+                        <span class="element-number"><i class="fas fa-flask"></i></span>
+                        <span class="element-symbol">M = m/n</span>
+                        <span class="element-name">Massa Molar</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="density" data-category="physics">
+                        <span class="element-number"><i class="fas fa-weight"></i></span>
+                        <span class="element-symbol">ρ = m/V</span>
+                        <span class="element-name">Densidade</span>
+                    </div>
+                    <div class="element-item formula-item" data-formula="ideal-gas" data-category="chemistry">
+                        <span class="element-number"><i class="fas fa-cloud"></i></span>
+                        <span class="element-symbol">PV=nRT</span>
+                        <span class="element-name">Gases Ideais</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Central - Calculadora -->
+        <div class="center-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-calculator"></i>
+                    <h2 class="section-title">Calculadora Interativa</h2>
+                    <div style="margin-left: auto; font-size: var(--font-xs); color: var(--text-tertiary);" id="formulaCategory">
+                        Selecione uma fórmula
+                    </div>
+                </div>
+                <div class="center-scroll" style="height: calc(100% - 40px);">
+                    <!-- Área da Fórmula Selecionada -->
+                    <div id="calculatorArea">
+                        <div class="empty-state">
+                            <i class="fas fa-function"></i>
+                            <h3>Selecione uma fórmula para começar</h3>
+                            <p>Escolha uma fórmula da lista ao lado para visualizar os campos de entrada e calcular resultados interativos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Direito - Resultados e Histórico -->
+        <div class="right-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-chart-bar"></i>
+                    <h2 class="section-title">Resultados</h2>
+                    <button class="filter-btn" id="clearHistoryBtn" style="margin-left: auto;">Limpar</button>
+                </div>
+                <div class="center-scroll" id="resultsPanel">
+                    <div class="empty-state" id="emptyResults">
+                        <i class="fas fa-chart-line"></i>
+                        <p>Os resultados aparecerão aqui</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Quântico</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #6366F1;
+            --color-secondary: #8B5CF6;
+            --color-accent: #EC4899;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '⚛️ ';
+        }
+
+        /* Chart */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚛️ SIMULADOR QUÂNTICO</h1>
+            <p class="subtitle">Mecânica Quântica • Orbitais • Superposição • Emaranhamento • Computação Quântica</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="orbitals">🌀 Orbitais</button>
+            <button class="tab-button" data-tab="wave">〰️ Função de Onda</button>
+            <button class="tab-button" data-tab="doubleslit">🔦 Dupla Fenda</button>
+            <button class="tab-button" data-tab="tunneling">🚇 Tunelamento</button>
+            <button class="tab-button" data-tab="entanglement">🔗 Emaranhamento</button>
+            <button class="tab-button" data-tab="qcomputing">💻 Computação Q</button>
+        </div>
+
+        <!-- TAB 1: Orbitais Atômicos -->
+        <div id="orbitals" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌀</span>
+                        <h3 class="card-title">Orbitais Atômicos 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="orbital-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Orbital</div>
+                            <div class="stat-value" id="orbital-type">1s</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Energia</div>
+                            <div class="stat-value" id="orbital-energy">-13.6 eV</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Elétrons</div>
+                            <div class="stat-value" id="orbital-electrons">2</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Nó(s)</div>
+                            <div class="stat-value" id="orbital-nodes">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Orbital:</label>
+                        <select class="control-input" id="orbital-select" onchange="changeOrbital()">
+                            <optgroup label="s orbitals">
+                                <option value="1s" selected>1s</option>
+                                <option value="2s">2s</option>
+                                <option value="3s">3s</option>
+                            </optgroup>
+                            <optgroup label="p orbitals">
+                                <option value="2p">2p</option>
+                                <option value="3p">3p</option>
+                            </optgroup>
+                            <optgroup label="d orbitals">
+                                <option value="3d">3d</option>
+                                <option value="4d">4d</option>
+                            </optgroup>
+                            <optgroup label="f orbitals">
+                                <option value="4f">4f</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade de Rotação:</label>
+                        <input type="range" id="rotation-speed" min="0" max="10" value="3" step="1">
+                        <span id="rotation-value">3x</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Opacidade:</label>
+                        <input type="range" id="opacity" min="0" max="100" value="70" step="5">
+                        <span id="opacity-value">70%</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="animateOrbital()">▶️ Animar</button>
+                        <button class="btn btn-secondary" onclick="resetOrbital()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="orbital-console">
+                        <div class="console-line">Orbital 1s visualizado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Função de Onda -->
+        <div id="wave" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>〰️</span>
+                        <h3 class="card-title">Função de Onda (ψ)</h3>
+                    </div>
+                    <div class="viewer-3d" id="wave-viewer"></div>
+                    <div class="chart-container">
+                        <canvas id="wave-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Parâmetros</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Onda:</label>
+                        <select class="control-input" id="wave-type">
+                            <option value="sine">Senoidal</option>
+                            <option value="gaussian">Gaussiana</option>
+                            <option value="square">Quadrada</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Comprimento de Onda (λ):</label>
+                        <input type="range" id="wavelength" min="10" max="100" value="50" step="5">
+                        <span id="wavelength-value">50 nm</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Amplitude:</label>
+                        <input type="range" id="amplitude" min="1" max="10" value="5" step="1">
+                        <span id="amplitude-value">5</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Probabilidade</div>
+                            <div class="stat-value" id="probability">|ψ|²</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Energia</div>
+                            <div class="stat-value" id="wave-energy">2.48 eV</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startWave()">▶️ Propagar</button>
+                        <button class="btn btn-secondary" onclick="collapseWave()">📉 Colapsar</button>
+                    </div>
+
+                    <div class="console" id="wave-console">
+                        <div class="console-line">Função de onda inicializada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Dupla Fenda -->
+        <div id="doubleslit" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔦</span>
+                        <h3 class="card-title">Experimento da Dupla Fenda</h3>
+                    </div>
+                    <div class="viewer-3d" id="slit-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Partículas</div>
+                            <div class="stat-value" id="particle-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Padrão</div>
+                            <div class="stat-value" id="pattern-type">Interferência</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Observador</div>
+                            <div class="stat-value" id="observer-status">Desligado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Configuração</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa de Emissão:</label>
+                        <input type="range" id="emission-rate" min="1" max="20" value="5" step="1">
+                        <span id="emission-value">5 /s</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Distância entre Fendas:</label>
+                        <input type="range" id="slit-distance" min="10" max="50" value="25" step="5">
+                        <span id="slit-value">25 μm</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Observador Ativo:</label>
+                        <input type="checkbox" id="observer-toggle" onchange="toggleObserver()">
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startExperiment()">▶️ Iniciar</button>
+                        <button class="btn btn-secondary" onclick="stopExperiment()">⏹️ Parar</button>
+                        <button class="btn btn-secondary" onclick="clearScreen()">🧹 Limpar</button>
+                    </div>
+
+                    <div class="console" id="slit-console">
+                        <div class="console-line">Experimento da dupla fenda pronto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Tunelamento Quântico -->
+        <div id="tunneling" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🚇</span>
+                        <h3 class="card-title">Tunelamento Quântico</h3>
+                    </div>
+                    <div class="viewer-3d" id="tunnel-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Probabilidade</div>
+                            <div class="stat-value" id="tunnel-prob">15%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Energia Barreira</div>
+                            <div class="stat-value" id="barrier-energy">5 eV</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Partículas Tuneladas</div>
+                            <div class="stat-value" id="tunneled">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Taxa de Sucesso</div>
+                            <div class="stat-value" id="success-rate">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Parâmetros da Barreira</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Altura da Barreira:</label>
+                        <input type="range" id="barrier-height" min="1" max="10" value="5" step="1">
+                        <span id="barrier-value">5 eV</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Largura da Barreira:</label>
+                        <input type="range" id="barrier-width" min="1" max="10" value="3" step="1">
+                        <span id="width-value">3 nm</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Energia da Partícula:</label>
+                        <input type="range" id="particle-energy" min="1" max="8" value="4" step="1">
+                        <span id="particle-value">4 eV</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startTunneling()">▶️ Iniciar</button>
+                        <button class="btn btn-secondary" onclick="stopTunneling()">⏸️ Pausar</button>
+                        <button class="btn btn-secondary" onclick="resetTunneling()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="tunnel-console">
+                        <div class="console-line">Tunelamento quântico configurado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Emaranhamento Quântico -->
+        <div id="entanglement" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔗</span>
+                        <h3 class="card-title">Emaranhamento Quântico</h3>
+                    </div>
+                    <div class="viewer-3d" id="entangle-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Partícula A</div>
+                            <div class="stat-value" id="particle-a">⬆️ Spin Up</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Partícula B</div>
+                            <div class="stat-value" id="particle-b">⬇️ Spin Down</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Correlação</div>
+                            <div class="stat-value" id="correlation">100%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Distância</div>
+                            <div class="stat-value" id="distance">1000 km</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Distância entre Partículas:</label>
+                        <input type="range" id="entangle-distance" min="1" max="100" value="10" step="1">
+                        <span id="entangle-dist-value">1000 km</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="createEntanglement()">🔗 Criar Emaranhamento</button>
+                        <button class="btn btn-primary" onclick="measureParticleA()">📏 Medir A</button>
+                        <button class="btn btn-primary" onclick="measureParticleB()">📏 Medir B</button>
+                        <button class="btn btn-secondary" onclick="resetEntanglement()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="entangle-console">
+                        <div class="console-line">Sistema de emaranhamento inicializado</div>
+                        <div class="console-line">Partículas em superposição</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Computação Quântica -->
+        <div id="qcomputing" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>💻</span>
+                        <h3 class="card-title">Qubits e Portas Quânticas</h3>
+                    </div>
+                    <div class="viewer-3d" id="qubit-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Qubits</div>
+                            <div class="stat-value" id="qubit-count">3</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Estados</div>
+                            <div class="stat-value" id="state-count">8</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Portas</div>
+                            <div class="stat-value" id="gate-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Fidelidade</div>
+                            <div class="stat-value" id="fidelity">98%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Portas Quânticas</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Número de Qubits:</label>
+                        <input type="range" id="num-qubits" min="1" max="5" value="3" step="1">
+                        <span id="qubits-value">3</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Selecionar Porta:</label>
+                        <select class="control-input" id="gate-select">
+                            <option value="hadamard">Hadamard (H)</option>
+                            <option value="pauli-x">Pauli-X</option>
+                            <option value="pauli-y">Pauli-Y</option>
+                            <option value="pauli-z">Pauli-Z</option>
+                            <option value="cnot">CNOT</option>
+                            <option value="toffoli">Toffoli</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="applyGate()">⚡ Aplicar Porta</button>
+                        <button class="btn btn-primary" onclick="measureQubits()">📏 Medir</button>
+                        <button class="btn btn-secondary" onclick="resetCircuit()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="qubit-console">
+                        <div class="console-line">Circuito quântico inicializado</div>
+                        <div class="console-line">3 qubits no estado |000⟩</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'orbitals',
+            orbital: {
+                type: '1s',
+                rotationSpeed: 3,
+                opacity: 0.7,
+                animating: false
+            },
+            wave: {
+                type: 'sine',
+                wavelength: 50,
+                amplitude: 5,
+                running: false
+            },
+            doubleslit: {
+                emissionRate: 5,
+                slitDistance: 25,
+                observerActive: false,
+                particleCount: 0,
+                running: false
+            },
+            tunneling: {
+                barrierHeight: 5,
+                barrierWidth: 3,
+                particleEnergy: 4,
+                tunneled: 0,
+                total: 0,
+                running: false
+            },
+            entanglement: {
+                distance: 10,
+                particleA: null,
+                particleB: null,
+                measured: false
+            },
+            qcomputing: {
+                numQubits: 3,
+                gates: [],
+                state: [1, 0, 0, 0, 0, 0, 0, 0] // |000⟩
+            }
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+
+        // Chart
+        let waveChart;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initializeControls();
+            initialize3DScenes();
+            initializeChart();
+            animate();
+        });
+
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function initializeControls() {
+            // Orbital controls
+            document.getElementById('rotation-speed')?.addEventListener('input', (e) => {
+                state.orbital.rotationSpeed = parseInt(e.target.value);
+                document.getElementById('rotation-value').textContent = `${e.target.value}x`;
+            });
+
+            document.getElementById('opacity')?.addEventListener('input', (e) => {
+                state.orbital.opacity = parseInt(e.target.value) / 100;
+                document.getElementById('opacity-value').textContent = `${e.target.value}%`;
+            });
+
+            // Wave controls
+            document.getElementById('wavelength')?.addEventListener('input', (e) => {
+                state.wave.wavelength = parseInt(e.target.value);
+                document.getElementById('wavelength-value').textContent = `${e.target.value} nm`;
+            });
+
+            document.getElementById('amplitude')?.addEventListener('input', (e) => {
+                state.wave.amplitude = parseInt(e.target.value);
+                document.getElementById('amplitude-value').textContent = e.target.value;
+            });
+
+            // Double slit controls
+            document.getElementById('emission-rate')?.addEventListener('input', (e) => {
+                state.doubleslit.emissionRate = parseInt(e.target.value);
+                document.getElementById('emission-value').textContent = `${e.target.value} /s`;
+            });
+
+            document.getElementById('slit-distance')?.addEventListener('input', (e) => {
+                state.doubleslit.slitDistance = parseInt(e.target.value);
+                document.getElementById('slit-value').textContent = `${e.target.value} μm`;
+            });
+
+            // Tunneling controls
+            document.getElementById('barrier-height')?.addEventListener('input', (e) => {
+                state.tunneling.barrierHeight = parseInt(e.target.value);
+                document.getElementById('barrier-value').textContent = `${e.target.value} eV`;
+                updateTunnelingProbability();
+            });
+
+            document.getElementById('barrier-width')?.addEventListener('input', (e) => {
+                state.tunneling.barrierWidth = parseInt(e.target.value);
+                document.getElementById('width-value').textContent = `${e.target.value} nm`;
+                updateTunnelingProbability();
+            });
+
+            document.getElementById('particle-energy')?.addEventListener('input', (e) => {
+                state.tunneling.particleEnergy = parseInt(e.target.value);
+                document.getElementById('particle-value').textContent = `${e.target.value} eV`;
+                updateTunnelingProbability();
+            });
+
+            // Entanglement controls
+            document.getElementById('entangle-distance')?.addEventListener('input', (e) => {
+                state.entanglement.distance = parseInt(e.target.value);
+                document.getElementById('entangle-dist-value').textContent = `${e.target.value * 100} km`;
+            });
+
+            // Quantum computing controls
+            document.getElementById('num-qubits')?.addEventListener('input', (e) => {
+                state.qcomputing.numQubits = parseInt(e.target.value);
+                document.getElementById('qubits-value').textContent = e.target.value;
+                const states = Math.pow(2, state.qcomputing.numQubits);
+                document.getElementById('state-count').textContent = states;
+            });
+        }
+
+        // ==================== 3D SCENES ====================
+        function initialize3DScenes() {
+            initializeOrbitalScene();
+            initializeWaveScene();
+            initializeSlitScene();
+            initializeTunnelScene();
+            initializeEntangleScene();
+            initializeQubitScene();
+        }
+
+        function initializeOrbitalScene() {
+            const container = document.getElementById('orbital-viewer');
+            if (!container) return;
+
+            scenes.orbital = new THREE.Scene();
+            scenes.orbital.background = new THREE.Color(0x000000);
+
+            cameras.orbital = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.orbital.position.set(0, 0, 10);
+
+            renderers.orbital = new THREE.WebGLRenderer({ antialias: true });
+            renderers.orbital.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.orbital.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.orbital.add(ambientLight);
+
+            // Create s orbital
+            const geometry = new THREE.SphereGeometry(2, 32, 32);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x6366F1,
+                transparent: true,
+                opacity: 0.7,
+                emissive: 0x6366F1,
+                emissiveIntensity: 0.2
+            });
+            const orbital = new THREE.Mesh(geometry, material);
+            scenes.orbital.add(orbital);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.orbital = new THREE.OrbitControls(cameras.orbital, renderers.orbital.domElement);
+            }
+        }
+
+        function initializeWaveScene() {
+            const container = document.getElementById('wave-viewer');
+            if (!container) return;
+
+            scenes.wave = new THREE.Scene();
+            scenes.wave.background = new THREE.Color(0x000000);
+
+            cameras.wave = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.wave.position.set(0, 10, 20);
+
+            renderers.wave = new THREE.WebGLRenderer({ antialias: true });
+            renderers.wave.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.wave.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.wave.add(ambientLight);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.wave = new THREE.OrbitControls(cameras.wave, renderers.wave.domElement);
+            }
+        }
+
+        function initializeSlitScene() {
+            const container = document.getElementById('slit-viewer');
+            if (!container) return;
+
+            scenes.slit = new THREE.Scene();
+            scenes.slit.background = new THREE.Color(0x000000);
+
+            cameras.slit = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.slit.position.set(0, 0, 20);
+
+            renderers.slit = new THREE.WebGLRenderer({ antialias: true });
+            renderers.slit.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.slit.domElement);
+
+            // Create slits
+            const slitGeometry = new THREE.BoxGeometry(0.2, 10, 0.1);
+            const slitMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+            
+            const slit1 = new THREE.Mesh(slitGeometry, slitMaterial);
+            slit1.position.set(-2, 0, 0);
+            scenes.slit.add(slit1);
+
+            const slit2 = new THREE.Mesh(slitGeometry, slitMaterial);
+            slit2.position.set(2, 0, 0);
+            scenes.slit.add(slit2);
+        }
+
+        function initializeTunnelScene() {
+            const container = document.getElementById('tunnel-viewer');
+            if (!container) return;
+
+            scenes.tunnel = new THREE.Scene();
+            scenes.tunnel.background = new THREE.Color(0x000000);
+
+            cameras.tunnel = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.tunnel.position.set(0, 5, 15);
+
+            renderers.tunnel = new THREE.WebGLRenderer({ antialias: true });
+            renderers.tunnel.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.tunnel.domElement);
+
+            // Create barrier
+            const barrierGeometry = new THREE.BoxGeometry(2, 5, 0.5);
+            const barrierMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xFF6B6B,
+                transparent: true,
+                opacity: 0.5
+            });
+            const barrier = new THREE.Mesh(barrierGeometry, barrierMaterial);
+            scenes.tunnel.add(barrier);
+
+            const light = new THREE.PointLight(0xFFFFFF, 1, 100);
+            light.position.set(0, 10, 10);
+            scenes.tunnel.add(light);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.tunnel = new THREE.OrbitControls(cameras.tunnel, renderers.tunnel.domElement);
+            }
+        }
+
+        function initializeEntangleScene() {
+            const container = document.getElementById('entangle-viewer');
+            if (!container) return;
+
+            scenes.entangle = new THREE.Scene();
+            scenes.entangle.background = new THREE.Color(0x000000);
+
+            cameras.entangle = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.entangle.position.set(0, 0, 20);
+
+            renderers.entangle = new THREE.WebGLRenderer({ antialias: true });
+            renderers.entangle.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.entangle.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.entangle.add(ambientLight);
+
+            // Particle A
+            const particleA = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 32, 32),
+                new THREE.MeshPhongMaterial({ color: 0x6366F1, emissive: 0x6366F1, emissiveIntensity: 0.3 })
+            );
+            particleA.position.set(-5, 0, 0);
+            scenes.entangle.add(particleA);
+
+            // Particle B
+            const particleB = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 32, 32),
+                new THREE.MeshPhongMaterial({ color: 0xEC4899, emissive: 0xEC4899, emissiveIntensity: 0.3 })
+            );
+            particleB.position.set(5, 0, 0);
+            scenes.entangle.add(particleB);
+
+            // Connection line
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-5, 0, 0),
+                new THREE.Vector3(5, 0, 0)
+            ]);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x8B5CF6 });
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            scenes.entangle.add(line);
+        }
+
+        function initializeQubitScene() {
+            const container = document.getElementById('qubit-viewer');
+            if (!container) return;
+
+            scenes.qubit = new THREE.Scene();
+            scenes.qubit.background = new THREE.Color(0x000000);
+
+            cameras.qubit = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.qubit.position.set(0, 0, 15);
+
+            renderers.qubit = new THREE.WebGLRenderer({ antialias: true });
+            renderers.qubit.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.qubit.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.qubit.add(ambientLight);
+
+            // Create Bloch spheres for qubits
+            for (let i = 0; i < 3; i++) {
+                const sphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(1.5, 32, 32),
+                    new THREE.MeshPhongMaterial({ 
+                        color: 0x6366F1,
+                        transparent: true,
+                        opacity: 0.3,
+                        wireframe: true
+                    })
+                );
+                sphere.position.x = (i - 1) * 5;
+                scenes.qubit.add(sphere);
+
+                // State vector
+                const arrow = new THREE.ArrowHelper(
+                    new THREE.Vector3(0, 1, 0),
+                    new THREE.Vector3((i - 1) * 5, 0, 0),
+                    1.5,
+                    0xEC4899,
+                    0.5,
+                    0.3
+                );
+                scenes.qubit.add(arrow);
+            }
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.qubit = new THREE.OrbitControls(cameras.qubit, renderers.qubit.domElement);
+            }
+        }
+
+        // ==================== CHART ====================
+        function initializeChart() {
+            const ctx = document.getElementById('wave-chart');
+            if (!ctx) return;
+
+            waveChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'ψ(x)',
+                        data: [],
+                        borderColor: '#6366F1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }, {
+                        label: '|ψ(x)|²',
+                        data: [],
+                        borderColor: '#EC4899',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E4E4E7' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' }
+                        },
+                        y: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' }
+                        }
+                    }
+                }
+            });
+
+            // Initialize with sine wave
+            updateWaveChart();
+        }
+
+        function updateWaveChart() {
+            if (!waveChart) return;
+
+            waveChart.data.labels = [];
+            waveChart.data.datasets[0].data = [];
+            waveChart.data.datasets[1].data = [];
+
+            for (let x = 0; x <= 100; x += 2) {
+                waveChart.data.labels.push(x);
+                const psi = state.wave.amplitude * Math.sin((2 * Math.PI * x) / state.wave.wavelength);
+                waveChart.data.datasets[0].data.push(psi);
+                waveChart.data.datasets[1].data.push(psi * psi);
+            }
+
+            waveChart.update();
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            Object.keys(scenes).forEach(key => {
+                if (scenes[key] && cameras[key] && renderers[key]) {
+                    if (controls[key]) controls[key].update();
+                    renderers[key].render(scenes[key], cameras[key]);
+                }
+            });
+
+            // Rotate orbitals
+            if (state.orbital.animating && scenes.orbital) {
+                scenes.orbital.children.forEach(child => {
+                    if (child.geometry) {
+                        child.rotation.y += 0.01 * state.orbital.rotationSpeed;
+                    }
+                });
+            }
+        }
+
+        // ==================== ORBITAL FUNCTIONS ====================
+        function changeOrbital() {
+            state.orbital.type = document.getElementById('orbital-select').value;
+            document.getElementById('orbital-type').textContent = state.orbital.type;
+            
+            const energies = {
+                '1s': -13.6, '2s': -3.4, '3s': -1.51,
+                '2p': -3.4, '3p': -1.51,
+                '3d': -1.51, '4d': -0.85,
+                '4f': -0.85
+            };
+            
+            document.getElementById('orbital-energy').textContent = `${energies[state.orbital.type]} eV`;
+            addConsoleMessage('orbital', `Orbital ${state.orbital.type} selecionado`);
+        }
+
+        function animateOrbital() {
+            state.orbital.animating = !state.orbital.animating;
+            addConsoleMessage('orbital', state.orbital.animating ? '▶️ Animação iniciada' : '⏸️ Animação pausada');
+        }
+
+        function resetOrbital() {
+            state.orbital.animating = false;
+            addConsoleMessage('orbital', '🔄 Orbital resetado');
+        }
+
+        // ==================== WAVE FUNCTIONS ====================
+        function startWave() {
+            state.wave.running = true;
+            addConsoleMessage('wave', '▶️ Função de onda propagando');
+            updateWaveChart();
+        }
+
+        function collapseWave() {
+            state.wave.running = false;
+            addConsoleMessage('wave', '📉 Função de onda colapsada!');
+        }
+
+        // ==================== DOUBLE SLIT ====================
+        function startExperiment() {
+            state.doubleslit.running = true;
+            addConsoleMessage('slit', '▶️ Experimento iniciado');
+            
+            const pattern = state.doubleslit.observerActive ? 'Duas bandas' : 'Interferência';
+            document.getElementById('pattern-type').textContent = pattern;
+        }
+
+        function stopExperiment() {
+            state.doubleslit.running = false;
+            addConsoleMessage('slit', '⏹️ Experimento parado');
+        }
+
+        function clearScreen() {
+            state.doubleslit.particleCount = 0;
+            document.getElementById('particle-count').textContent = '0';
+            addConsoleMessage('slit', '🧹 Tela limpa');
+        }
+
+        function toggleObserver() {
+            state.doubleslit.observerActive = document.getElementById('observer-toggle').checked;
+            const status = state.doubleslit.observerActive ? 'Ativo' : 'Desligado';
+            document.getElementById('observer-status').textContent = status;
+            addConsoleMessage('slit', `👁️ Observador ${status.toLowerCase()}`);
+        }
+
+        // ==================== TUNNELING ====================
+        function updateTunnelingProbability() {
+            const deltaE = state.tunneling.barrierHeight - state.tunneling.particleEnergy;
+            const prob = Math.max(0, Math.min(100, 50 * Math.exp(-state.tunneling.barrierWidth * deltaE / 2)));
+            document.getElementById('tunnel-prob').textContent = `${prob.toFixed(1)}%`;
+        }
+
+        function startTunneling() {
+            state.tunneling.running = true;
+            addConsoleMessage('tunnel', '▶️ Tunelamento iniciado');
+        }
+
+        function stopTunneling() {
+            state.tunneling.running = false;
+            addConsoleMessage('tunnel', '⏸️ Tunelamento pausado');
+        }
+
+        function resetTunneling() {
+            state.tunneling.tunneled = 0;
+            state.tunneling.total = 0;
+            document.getElementById('tunneled').textContent = '0';
+            document.getElementById('success-rate').textContent = '0%';
+            addConsoleMessage('tunnel', '🔄 Tunelamento resetado');
+        }
+
+        // ==================== ENTANGLEMENT ====================
+        function createEntanglement() {
+            state.entanglement.particleA = null;
+            state.entanglement.particleB = null;
+            state.entanglement.measured = false;
+            
+            document.getElementById('particle-a').textContent = '❓ Superposição';
+            document.getElementById('particle-b').textContent = '❓ Superposição';
+            
+            addConsoleMessage('entangle', '🔗 Emaranhamento criado');
+            addConsoleMessage('entangle', 'Partículas em superposição quântica');
+        }
+
+        function measureParticleA() {
+            if (state.entanglement.measured) {
+                addConsoleMessage('entangle', '⚠️ Já medido');
+                return;
+            }
+            
+            const spin = Math.random() < 0.5 ? 'up' : 'down';
+            state.entanglement.particleA = spin;
+            state.entanglement.particleB = spin === 'up' ? 'down' : 'up';
+            state.entanglement.measured = true;
+            
+            document.getElementById('particle-a').textContent = spin === 'up' ? '⬆️ Spin Up' : '⬇️ Spin Down';
+            document.getElementById('particle-b').textContent = spin === 'down' ? '⬆️ Spin Up' : '⬇️ Spin Down';
+            
+            addConsoleMessage('entangle', `📏 A medida: ${spin}`);
+            addConsoleMessage('entangle', `⚡ B instantaneamente colapsou!`);
+        }
+
+        function measureParticleB() {
+            if (state.entanglement.measured) {
+                addConsoleMessage('entangle', `📏 B confirmado: ${state.entanglement.particleB}`);
+            } else {
+                measureParticleA();
+            }
+        }
+
+        function resetEntanglement() {
+            createEntanglement();
+            addConsoleMessage('entangle', '🔄 Sistema resetado');
+        }
+
+        // ==================== QUANTUM COMPUTING ====================
+        function applyGate() {
+            const gate = document.getElementById('gate-select').value;
+            state.qcomputing.gates.push(gate);
+            
+            const count = state.qcomputing.gates.length;
+            document.getElementById('gate-count').textContent = count;
+            
+            addConsoleMessage('qubit', `⚡ Porta ${gate} aplicada`);
+            addConsoleMessage('qubit', `Total de portas: ${count}`);
+        }
+
+        function measureQubits() {
+            const result = Math.floor(Math.random() * Math.pow(2, state.qcomputing.numQubits));
+            const binary = result.toString(2).padStart(state.qcomputing.numQubits, '0');
+            
+            addConsoleMessage('qubit', `📏 Medida: |${binary}⟩`);
+            addConsoleMessage('qubit', `Estado colapsado: ${result}`);
+        }
+
+        function resetCircuit() {
+            state.qcomputing.gates = [];
+            document.getElementById('gate-count').textContent = '0';
+            addConsoleMessage('qubit', '🔄 Circuito resetado');
+            addConsoleMessage('qubit', `${state.qcomputing.numQubits} qubits no estado |${'0'.repeat(state.qcomputing.numQubits)}⟩`);
+        }
+
+        // ==================== CONSOLE ====================
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

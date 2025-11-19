@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Markdown Avançado</title>
+    
+    <!-- Marked.js para renderização de Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- Highlight.js para syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #8B5CF6;
+            --color-secondary: #3B82F6;
+            --color-accent: #10B981;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            margin-bottom: 1rem;
+        }
+
+        .toolbar-btn {
+            padding: 0.5rem 0.75rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid var(--color-border);
+            border-radius: 0.375rem;
+            color: var(--color-text-primary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: var(--color-primary);
+            transform: translateY(-1px);
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            background: var(--color-border);
+            margin: 0 0.25rem;
+        }
+
+        /* Editor */
+        .editor-container {
+            position: relative;
+            height: 600px;
+        }
+
+        #markdown-editor {
+            width: 100%;
+            height: 100%;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: none;
+        }
+
+        #markdown-editor:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        /* Preview */
+        .preview-container {
+            height: 600px;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+        }
+
+        #markdown-preview {
+            color: var(--color-text-primary);
+        }
+
+        /* Markdown Styles */
+        #markdown-preview h1, 
+        #markdown-preview h2, 
+        #markdown-preview h3,
+        #markdown-preview h4,
+        #markdown-preview h5,
+        #markdown-preview h6 {
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--color-primary);
+            line-height: 1.3;
+        }
+
+        #markdown-preview h1 { font-size: 2rem; }
+        #markdown-preview h2 { font-size: 1.75rem; }
+        #markdown-preview h3 { font-size: 1.5rem; }
+        #markdown-preview h4 { font-size: 1.25rem; }
+
+        #markdown-preview p {
+            margin-bottom: 1rem;
+        }
+
+        #markdown-preview a {
+            color: var(--color-secondary);
+            text-decoration: none;
+        }
+
+        #markdown-preview a:hover {
+            text-decoration: underline;
+        }
+
+        #markdown-preview code {
+            background: rgba(139, 92, 246, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+
+        #markdown-preview pre {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        #markdown-preview pre code {
+            background: none;
+            padding: 0;
+        }
+
+        #markdown-preview blockquote {
+            border-left: 4px solid var(--color-primary);
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: var(--color-text-secondary);
+            font-style: italic;
+        }
+
+        #markdown-preview ul, 
+        #markdown-preview ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        #markdown-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        #markdown-preview table th,
+        #markdown-preview table td {
+            border: 1px solid var(--color-border);
+            padding: 0.5rem;
+        }
+
+        #markdown-preview table th {
+            background: rgba(139, 92, 246, 0.2);
+            font-weight: 600;
+        }
+
+        #markdown-preview img {
+            max-width: 100%;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        #markdown-preview hr {
+            border: none;
+            border-top: 2px solid var(--color-border);
+            margin: 2rem 0;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 120px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-accent);
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '📝 ';
+            color: var(--color-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .editor-container,
+            .preview-container {
+                height: 400px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 EDITOR MARKDOWN AVANÇADO</h1>
+            <p class="subtitle">Editor completo com preview ao vivo, syntax highlighting e exportação</p>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="card">
+            <div class="toolbar">
+                <button class="toolbar-btn" onclick="insertText('**', '**')" title="Negrito">
+                    <strong>B</strong>
+                </button>
+                <button class="toolbar-btn" onclick="insertText('*', '*')" title="Itálico">
+                    <em>I</em>
+                </button>
+                <button class="toolbar-btn" onclick="insertText('~~', '~~')" title="Tachado">
+                    <s>S</s>
+                </button>
+                
+                <div class="toolbar-separator"></div>
+                
+                <button class="toolbar-btn" onclick="insertText('# ', '')" title="Título 1">H1</button>
+                <button class="toolbar-btn" onclick="insertText('## ', '')" title="Título 2">H2</button>
+                <button class="toolbar-btn" onclick="insertText('### ', '')" title="Título 3">H3</button>
+                
+                <div class="toolbar-separator"></div>
+                
+                <button class="toolbar-btn" onclick="insertText('- ', '')" title="Lista">• Lista</button>
+                <button class="toolbar-btn" onclick="insertText('1. ', '')" title="Lista Numerada">1. Lista</button>
+                <button class="toolbar-btn" onclick="insertText('- [ ] ', '')" title="Checkbox">☑ Task</button>
+                
+                <div class="toolbar-separator"></div>
+                
+                <button class="toolbar-btn" onclick="insertText('[', '](url)')" title="Link">🔗 Link</button>
+                <button class="toolbar-btn" onclick="insertText('![alt](', ')')" title="Imagem">🖼️ Imagem</button>
+                <button class="toolbar-btn" onclick="insertText('`', '`')" title="Código Inline">Code</button>
+                <button class="toolbar-btn" onclick="insertText('``````')" title="Bloco de Código">{ } Block</button>
+                
+                <div class="toolbar-separator"></div>
+                
+                <button class="toolbar-btn" onclick="insertText('> ', '')" title="Citação">❝ Quote</button>
+                <button class="toolbar-btn" onclick="insertText('---\n', '')" title="Linha Horizontal">― HR</button>
+                <button class="toolbar-btn" onclick="insertTable()" title="Tabela">⊞ Tabela</button>
+            </div>
+        </div>
+
+        <!-- Editor and Preview -->
+        <div class="grid-2">
+            <!-- Editor -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>✍️</span>
+                        <span>Editor Markdown</span>
+                    </div>
+                </div>
+
+                <div class="editor-container">
+                    <textarea id="markdown-editor" placeholder="# Digite seu Markdown aqui...
+
+## Exemplos de formatação:
+
+**Negrito** e *itálico*
+
+- Lista item 1
+- Lista item 2
+
+1. Item numerado
+2. Outro item
+
+[Link](https://example.com)
+
+> Citação em bloco
+
+\`código inline\`
+
+// Bloco de código
+function hello() {
+console.log('Hello World!');
+}
+
+
+| Coluna 1 | Coluna 2 |
+|----------|----------|
+| Valor 1  | Valor 2  |
+"></textarea>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Caracteres</div>
+                        <div class="stat-value" id="char-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Palavras</div>
+                        <div class="stat-value" id="word-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Linhas</div>
+                        <div class="stat-value" id="line-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Parágrafos</div>
+                        <div class="stat-value" id="para-count">0</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="saveMarkdown()">💾 Salvar</button>
+                    <button class="btn btn-primary" onclick="exportHTML()">📄 Exportar HTML</button>
+                    <button class="btn btn-secondary" onclick="loadMarkdownFile()">📂 Abrir Arquivo</button>
+                    <button class="btn btn-secondary" onclick="clearEditor()">🗑️ Limpar</button>
+                    <button class="btn btn-secondary" onclick="copyToClipboard()">📋 Copiar</button>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <span>👁️</span>
+                        <span>Preview</span>
+                    </div>
+                </div>
+
+                <div class="preview-container">
+                    <div id="markdown-preview"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span>📊</span>
+                    <span>Console de Status</span>
+                </div>
+            </div>
+            <div class="console" id="console">
+                <div class="console-line">Editor Markdown inicializado</div>
+                <div class="console-line">Pronto para edição</div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="file-input" accept=".md,.markdown,.txt" style="display: none;">
+
+    <script>
+        // ==================== INITIALIZATION ====================
+        const editor = document.getElementById('markdown-editor');
+        const preview = document.getElementById('markdown-preview');
+        const fileInput = document.getElementById('file-input');
+
+        // Configure marked.js
+        marked.setOptions({
+            highlight: function(code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                        return hljs.highlight(code, { language: lang }).value;
+                    } catch (err) {}
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true,
+            gfm: true
+        });
+
+        // Update preview on input
+        editor.addEventListener('input', () => {
+            updatePreview();
+            updateStats();
+        });
+
+        // Handle Tab key
+        editor.addEventListener('keydown', handleTabKey);
+
+        // Initialize
+        updatePreview();
+        updateStats();
+
+        // ==================== CORE FUNCTIONS ====================
+        function updatePreview() {
+            const markdown = editor.value;
+            preview.innerHTML = marked.parse(markdown);
+            
+            // Re-highlight code blocks
+            document.querySelectorAll('#markdown-preview pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        }
+
+        function updateStats() {
+            const text = editor.value;
+            
+            // Character count
+            const charCount = text.length;
+            document.getElementById('char-count').textContent = charCount.toLocaleString();
+            
+            // Word count
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+            document.getElementById('word-count').textContent = words.length.toLocaleString();
+            
+            // Line count
+            const lines = text.split('\n').length;
+            document.getElementById('line-count').textContent = lines.toLocaleString();
+            
+            // Paragraph count
+            const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
+            document.getElementById('para-count').textContent = paragraphs.toLocaleString();
+        }
+
+        function handleTabKey(e) {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                const value = editor.value;
+                
+                editor.value = value.substring(0, start) + '    ' + value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 4;
+            }
+        }
+
+        // ==================== TOOLBAR FUNCTIONS ====================
+        function insertText(before, after) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const selectedText = editor.value.substring(start, end);
+            const newText = before + selectedText + after;
+            
+            editor.value = editor.value.substring(0, start) + newText + editor.value.substring(end);
+            
+            // Set cursor position
+            if (selectedText.length === 0) {
+                editor.selectionStart = editor.selectionEnd = start + before.length;
+            } else {
+                editor.selectionStart = start;
+                editor.selectionEnd = start + newText.length;
+            }
+            
+            editor.focus();
+            updatePreview();
+            updateStats();
+            addConsoleMessage(`Formatação aplicada: ${before}...${after}`);
+        }
+
+        function insertTable() {
+            const table = `
+| Coluna 1 | Coluna 2 | Coluna 3 |
+|----------|----------|----------|
+| Valor 1  | Valor 2  | Valor 3  |
+| Valor 4  | Valor 5  | Valor 6  |
+`;
+            const start = editor.selectionStart;
+            editor.value = editor.value.substring(0, start) + table + editor.value.substring(start);
+            editor.focus();
+            updatePreview();
+            updateStats();
+            addConsoleMessage('Tabela inserida');
+        }
+
+        // ==================== FILE OPERATIONS ====================
+        function saveMarkdown() {
+            const content = editor.value;
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `documento-${Date.now()}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+            addConsoleMessage('✅ Arquivo Markdown salvo');
+        }
+
+        function exportHTML() {
+            const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documento Markdown</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0a0a0a;
+            color: #e4e4e7;
+            line-height: 1.6;
+        }
+        h1, h2, h3 { color: #8B5CF6; margin-top: 1.5rem; }
+        code { background: rgba(139, 92, 246, 0.2); padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+        pre { background: rgba(0, 0, 0, 0.5); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        a { color: #3B82F6; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #3f3f46; padding: 0.5rem; }
+        th { background: rgba(139, 92, 246, 0.2); }
+    </style>
+</head>
+<body>
+${preview.innerHTML}
+</body>
+</html>`;
+            
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `documento-${Date.now()}.html`;
+            a.click();
+            URL.revokeObjectURL(url);
+            addConsoleMessage('✅ Arquivo HTML exportado');
+        }
+
+        function loadMarkdownFile() {
+            fileInput.click();
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    editor.value = event.target.result;
+                    updatePreview();
+                    updateStats();
+                    addConsoleMessage(`✅ Arquivo carregado: ${file.name}`);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function clearEditor() {
+            if (confirm('Deseja realmente limpar todo o conteúdo?')) {
+                editor.value = '';
+                updatePreview();
+                updateStats();
+                addConsoleMessage('🗑️ Editor limpo');
+            }
+        }
+
+        function copyToClipboard() {
+            editor.select();
+            document.execCommand('copy');
+            addConsoleMessage('📋 Conteúdo copiado para área de transferência');
+        }
+
+        // ==================== CONSOLE ====================
+        function addConsoleMessage(message) {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+
+            // Keep only last 10 messages
+            while (console.children.length > 10) {
+                console.removeChild(console.firstChild);
+            }
+        }
+
+        // ==================== KEYBOARD SHORTCUTS ====================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + S = Save
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveMarkdown();
+            }
+            
+            // Ctrl/Cmd + B = Bold
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                insertText('**', '**');
+            }
+            
+            // Ctrl/Cmd + I = Italic
+            if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                e.preventDefault();
+                insertText('*', '*');
+            }
+            
+            // Ctrl/Cmd + K = Link
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                insertText('[', '](url)');
+            }
+        });
+    </script>
+</body>
+</html>

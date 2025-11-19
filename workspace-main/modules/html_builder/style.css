@@ -1,0 +1,397 @@
+/* ===== PAGE BUILDER SPECIFIC STYLES ===== */
+
+/* Canvas da página */
+.page-canvas {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    background: var(--workspace-bg);
+    border: 2px dashed var(--border-color);
+    margin: 30px;
+    transform-origin: top left;
+    transition: transform 0.3s ease;
+}
+
+.page-ruler {
+    position: absolute;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-tertiary);
+    font-size: var(--font-xs);
+    font-weight: var(--font-medium);
+}
+
+.top-ruler {
+    top: -30px;
+    left: 30px;
+    right: 0;
+    height: 30px;
+    background-image: 
+        repeating-linear-gradient(
+            to right,
+            var(--border-color) 0px,
+            var(--border-color) 1px,
+            transparent 1px,
+            transparent 100px
+        );
+    display: flex;
+    align-items: center;
+    padding-left: 5px;
+}
+
+.left-ruler {
+    top: 0;
+    left: -30px;
+    width: 30px;
+    bottom: 0;
+    background-image: 
+        repeating-linear-gradient(
+            to bottom,
+            var(--border-color) 0px,
+            var(--border-color) 1px,
+            transparent 1px,
+            transparent 100px
+        );
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 5px;
+    text-align: center;
+}
+
+.page-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    padding: 20px;
+}
+
+/* Elementos arrastáveis */
+.draggable-component {
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.draggable-component:active {
+    cursor: grabbing;
+}
+
+.draggable-component.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+/* Elementos no canvas */
+.canvas-element {
+    position: absolute;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    cursor: move;
+    transition: all 0.2s ease;
+    min-width: 50px;
+    min-height: 30px;
+    background: var(--surface-bg);
+    padding: var(--space-md);
+}
+
+.canvas-element:hover {
+    border-color: var(--accent-soft);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.canvas-element.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.canvas-element .element-handle {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--workspace-bg);
+}
+
+.canvas-element.selected .element-handle {
+    display: flex;
+}
+
+/* Tipos de elementos */
+.element-button {
+    background: var(--accent);
+    color: var(--workspace-bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: var(--space-md) var(--space-lg);
+    font-weight: var(--font-medium);
+    cursor: pointer;
+}
+
+.element-text {
+    color: var(--text-primary);
+    font-size: var(--font-md);
+    line-height: 1.4;
+}
+
+.element-heading {
+    color: var(--accent);
+    font-size: var(--font-xl);
+    font-weight: var(--font-bold);
+    margin: 0;
+}
+
+.element-image {
+    width: 200px;
+    height: 150px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+}
+
+.element-container {
+    background: var(--surface-alt);
+    border: 2px dashed var(--border-color);
+    min-width: 200px;
+    min-height: 150px;
+}
+
+.element-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+    background: var(--surface-alt);
+    border: 2px dashed var(--border-color);
+    padding: var(--space-md);
+    min-width: 300px;
+    min-height: 200px;
+}
+
+.element-grid .grid-cell {
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: var(--font-xs);
+}
+
+/* Controles de zoom */
+.canvas-controls {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    z-index: 10;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: var(--space-xs);
+}
+
+.zoom-control {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.zoom-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.zoom-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.zoom-level {
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Painel de propriedades */
+.property-group {
+    margin-bottom: var(--space-md);
+}
+
+.property-label {
+    font-size: var(--font-xs);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-xs);
+    font-weight: var(--font-medium);
+    display: block;
+}
+
+.property-input,
+.property-select {
+    width: 100%;
+    background: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-sm);
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.property-input:focus,
+.property-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.property-color {
+    width: 100%;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--surface-bg);
+}
+
+.property-textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+/* Grid de propriedades */
+.property-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+}
+
+/* Botões de ação */
+.action-buttons {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.action-btn {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-color);
+    background: var(--surface-bg);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-sm);
+    font-weight: var(--font-medium);
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.action-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.action-btn.danger:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.action-btn.primary {
+    background: var(--accent);
+    color: var(--workspace-bg);
+    border-color: var(--accent);
+}
+
+.action-btn.primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+/* Preview mode */
+.preview-mode .canvas-element {
+    cursor: default;
+}
+
+.preview-mode .canvas-element:hover {
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.preview-mode .canvas-element.selected {
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.preview-mode .element-handle {
+    display: none !important;
+}
+
+/* Scrollbar para o canvas */
+.page-canvas::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.page-canvas::-webkit-scrollbar-track {
+    background: var(--surface-alt);
+}
+
+.page-canvas::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.page-canvas::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+/* Empty state */
+.empty-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-tertiary);
+    pointer-events: none;
+}
+
+.empty-canvas i {
+    font-size: 48px;
+    margin-bottom: var(--space-md);
+    display: block;
+    opacity: 0.3;
+}
+
+.empty-canvas p {
+    font-size: var(--font-md);
+    margin-bottom: var(--space-xs);
+}
+
+.empty-canvas small {
+    font-size: var(--font-xs);
+}

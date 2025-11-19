@@ -1,0 +1,873 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Lab - Módulo Nuclear Expandido</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2b5b84;
+            --secondary: #6cbe45;
+            --dark: #1e1e2f;
+            --darker: #151523;
+            --light: #2a2a3e;
+            --text: #ffffff;
+            --accent: #ff6b00;
+            --nuclear: #ff4757;
+            --alpha: #ff4757;
+            --beta: #6cbe45;
+            --gamma: #2b5b84;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--light) 100%);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--nuclear), #ff7b8a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .nuclear-icon {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 4em;
+            opacity: 0.3;
+        }
+
+        .simulation-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 968px) {
+            .simulation-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-panel {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group h3 {
+            color: var(--nuclear);
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--nuclear);
+            padding-bottom: 5px;
+        }
+
+        .element-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .element-btn {
+            background: var(--darker);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 15px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .element-btn:hover {
+            border-color: var(--nuclear);
+            transform: translateY(-2px);
+        }
+
+        .element-btn.active {
+            border-color: var(--nuclear);
+            background: linear-gradient(135deg, var(--nuclear), #ff7b8a);
+            color: white;
+        }
+
+        .decay-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .decay-alpha { background: var(--alpha); }
+        .decay-beta { background: var(--beta); }
+        .decay-gamma { background: var(--gamma); }
+
+        .element-symbol {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .element-name {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        .element-half-life {
+            font-size: 0.7em;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--darker);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--nuclear);
+            cursor: pointer;
+        }
+
+        .display-panel {
+            background: var(--light);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 25px;
+        }
+
+        .nuclear-equation {
+            background: var(--darker);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            border-left: 4px solid var(--nuclear);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--darker);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-top: 3px solid var(--nuclear);
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--nuclear);
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a7bbf;
+        }
+
+        .btn-nuclear {
+            background: var(--nuclear);
+            color: white;
+        }
+
+        .btn-nuclear:hover {
+            background: #ff6b7a;
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #7dce5a;
+        }
+
+        .particle-animation {
+            height: 120px;
+            background: var(--darker);
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--primary);
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--nuclear);
+            opacity: 0;
+        }
+
+        .alpha { background: var(--alpha); }
+        .beta { background: var(--beta); }
+        .gamma { background: var(--gamma); }
+
+        .decay-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+            padding: 10px;
+            background: var(--darker);
+            border-radius: 8px;
+        }
+
+        .decay-type {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .decay-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="nuclear-icon">☢️</div>
+            <h1>MÓDULO NUCLEAR EXPANDIDO</h1>
+            <p>Simulação de Decaimento Radioativo - 12 Elementos</p>
+        </div>
+
+        <div class="simulation-container">
+            <!-- Painel de Controle -->
+            <div class="control-panel">
+                <div class="control-group">
+                    <h3>📊 Elementos Radioativos</h3>
+                    <div class="element-selector" id="elementGrid">
+                        <!-- Elementos serão inseridos via JavaScript -->
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <h3>⚙️ Parâmetros do Experimento</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Quantidade Inicial (N₀):</span>
+                            <span id="initialAmountValue">1000 átomos</span>
+                        </div>
+                        <input type="range" id="initialAmount" min="100" max="100000" value="1000" step="100">
+                    </div>
+
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Tempo de Observação:</span>
+                            <span id="timeValue">1000 anos</span>
+                        </div>
+                        <input type="range" id="timeRange" min="100" max="100000" value="1000" step="100">
+                    </div>
+                </div>
+
+                <div class="decay-info">
+                    <div class="decay-type">
+                        <div class="decay-color" style="background: var(--alpha);"></div>
+                        <span>Decaimento Alfa (α)</span>
+                    </div>
+                    <div class="decay-type">
+                        <div class="decay-color" style="background: var(--beta);"></div>
+                        <span>Decaimento Beta (β)</span>
+                    </div>
+                    <div class="decay-type">
+                        <div class="decay-color" style="background: var(--gamma);"></div>
+                        <span>Radiação Gama (γ)</span>
+                    </div>
+                </div>
+
+                <div class="particle-animation" id="particleCanvas">
+                    <!-- Partículas serão geradas aqui via JavaScript -->
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-nuclear" onclick="startSimulation()">▶️ Iniciar Simulação</button>
+                    <button class="btn btn-primary" onclick="resetSimulation()">🔄 Reiniciar</button>
+                    <button class="btn btn-success" onclick="exportData()">📊 Exportar Dados</button>
+                </div>
+            </div>
+
+            <!-- Painel de Visualização -->
+            <div class="display-panel">
+                <div class="chart-container">
+                    <canvas id="decayChart"></canvas>
+                </div>
+
+                <div class="nuclear-equation">
+                    <h4>Lei do Decaimento Radioativo</h4>
+                    <p>$$N(t) = N_0 \cdot e^{-\lambda t}$$</p>
+                    <p>Onde:<br>
+                    \(N(t)\) = Quantidade no tempo t<br>
+                    \(N_0\) = Quantidade inicial<br>
+                    \(\lambda\) = Constante de decaimento<br>
+                    \(t\) = Tempo decorrido</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Meia-vida</div>
+                        <div class="stat-value" id="halfLifeValue">4.5B anos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Constante λ</div>
+                        <div class="stat-value" id="lambdaValue">1.55e-10</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Atividade</div>
+                        <div class="stat-value" id="activityValue">0 Bq</div>
+                    </div>
+                </div>
+
+                <div class="nuclear-equation">
+                    <h4>Equação do Decaimento Atual</h4>
+                    <p id="currentEquation">$$N(t) = 1000 \cdot e^{-1.55 \times 10^{-10} t}$$</p>
+                    <div id="decayChain"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados expandidos dos elementos radioativos
+        const elements = {
+            uranium238: {
+                name: "Urânio-238",
+                symbol: "U-238",
+                halfLife: 4.468e9, // anos
+                lambda: 1.551e-10,
+                decayType: "alpha",
+                color: '#ff4757',
+                decayProduct: "Th-234",
+                uses: "Combustível nuclear, datação geológica"
+            },
+            uranium235: {
+                name: "Urânio-235",
+                symbol: "U-235",
+                halfLife: 7.038e8,
+                lambda: 9.849e-10,
+                decayType: "alpha",
+                color: '#ff6b7a',
+                decayProduct: "Th-231",
+                uses: "Armas nucleares, reatores"
+            },
+            plutonium239: {
+                name: "Plutônio-239",
+                symbol: "Pu-239",
+                halfLife: 2.411e4,
+                lambda: 2.874e-5,
+                decayType: "alpha",
+                color: '#ff8e9d',
+                decayProduct: "U-235",
+                uses: "Armas nucleares, reatores"
+            },
+            plutonium238: {
+                name: "Plutônio-238",
+                symbol: "Pu-238",
+                halfLife: 87.7,
+                lambda: 2.507e-3,
+                decayType: "alpha",
+                color: '#ffa5b2',
+                decayProduct: "U-234",
+                uses: "Geradores termoelétricos"
+            },
+            carbon14: {
+                name: "Carbono-14",
+                symbol: "C-14",
+                halfLife: 5730,
+                lambda: 1.209e-4,
+                decayType: "beta",
+                color: '#6cbe45',
+                decayProduct: "N-14",
+                uses: "Datação por carbono"
+            },
+            radium226: {
+                name: "Rádio-226",
+                symbol: "Ra-226",
+                halfLife: 1600,
+                lambda: 1.373e-3,
+                decayType: "alpha",
+                color: '#ff7b50',
+                decayProduct: "Rn-222",
+                uses: "Medicina, relógios luminosos"
+            },
+            thorium232: {
+                name: "Tório-232",
+                symbol: "Th-232",
+                halfLife: 1.405e10,
+                lambda: 1.563e-11,
+                decayType: "alpha",
+                color: '#ff9d7a',
+                decayProduct: "Ra-228",
+                uses: "Combustível nuclear"
+            },
+            potassium40: {
+                name: "Potássio-40",
+                symbol: "K-40",
+                halfLife: 1.251e9,
+                lambda: 1.554e-10,
+                decayType: "beta",
+                color: '#8dee6a',
+                decayProduct: "Ca-40",
+                uses: "Datação geológica"
+            },
+            strontium90: {
+                name: "Estrôncio-90",
+                symbol: "Sr-90",
+                halfLife: 28.8,
+                lambda: 7.639e-2,
+                decayType: "beta",
+                color: '#a5ee90',
+                decayProduct: "Y-90",
+                uses: "Geradores de calor"
+            },
+            iodine131: {
+                name: "Iodo-131",
+                symbol: "I-131",
+                halfLife: 8.02/365.25, // anos
+                lambda: 3.075e1,
+                decayType: "beta",
+                color: '#c2f7a5',
+                decayProduct: "Xe-131",
+                uses: "Medicina nuclear"
+            },
+            cobalt60: {
+                name: "Cobalto-60",
+                symbol: "Co-60",
+                halfLife: 5.27,
+                lambda: 4.168e-1,
+                decayType: "beta",
+                color: '#7de0ee',
+                decayProduct: "Ni-60",
+                uses: "Radioterapia, esterilização"
+            },
+            americium241: {
+                name: "Amerício-241",
+                symbol: "Am-241",
+                halfLife: 432.2,
+                lambda: 6.392e-4,
+                decayType: "alpha",
+                color: '#ffb5c2',
+                decayProduct: "Np-237",
+                uses: "Detetores de fumaça"
+            },
+            tritium: {
+                name: "Trítio (H-3)",
+                symbol: "H-3",
+                halfLife: 12.32,
+                lambda: 1.782e-1,
+                decayType: "beta",
+                color: '#6ce0ff',
+                decayProduct: "He-3",
+                uses: "Marcadores biológicos"
+            },
+            technetium99m: {
+                name: "Tecnécio-99m",
+                symbol: "Tc-99m",
+                halfLife: 6.01/365.25, // anos
+                lambda: 4.194e2,
+                decayType: "gamma",
+                color: '#2b5b84',
+                decayProduct: "Tc-99",
+                uses: "Medicina nuclear"
+            }
+        };
+
+        let currentElement = 'uranium238';
+        let simulationChart = null;
+        let animationId = null;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeElementGrid();
+            initializeChart();
+            setupEventListeners();
+            updateDisplay();
+        });
+
+        function initializeElementGrid() {
+            const grid = document.getElementById('elementGrid');
+            grid.innerHTML = '';
+
+            Object.keys(elements).forEach(key => {
+                const element = elements[key];
+                const btn = document.createElement('div');
+                btn.className = `element-btn ${key === currentElement ? 'active' : ''}`;
+                btn.dataset.element = key;
+                
+                btn.innerHTML = `
+                    <div class="decay-badge decay-${element.decayType}"></div>
+                    <div class="element-symbol">${element.symbol}</div>
+                    <div class="element-name">${element.name.split('-')[0]}</div>
+                    <div class="element-half-life">${formatHalfLife(element.halfLife)}</div>
+                `;
+
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.element-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentElement = this.dataset.element;
+                    updateDisplay();
+                });
+
+                grid.appendChild(btn);
+            });
+        }
+
+        function setupEventListeners() {
+            // Sliders
+            document.getElementById('initialAmount').addEventListener('input', updateDisplay);
+            document.getElementById('timeRange').addEventListener('input', updateDisplay);
+        }
+
+        function updateDisplay() {
+            const element = elements[currentElement];
+            
+            // Atualizar valores dos sliders
+            document.getElementById('initialAmountValue').textContent = 
+                document.getElementById('initialAmount').value + ' átomos';
+            
+            const timeValue = document.getElementById('timeRange').value;
+            const elementTimeUnit = element.halfLife < 1 ? 'dias' : 'anos';
+            document.getElementById('timeValue').textContent = 
+                timeValue + ' ' + elementTimeUnit;
+
+            // Atualizar estatísticas
+            document.getElementById('halfLifeValue').textContent = formatHalfLife(element.halfLife);
+            document.getElementById('lambdaValue').textContent = element.lambda.toExponential(2);
+            document.getElementById('activityValue').textContent = calculateActivity() + ' Bq';
+
+            // Atualizar equação
+            document.getElementById('currentEquation').innerHTML = 
+                `$$N(t) = ${document.getElementById('initialAmount').value} \\cdot e^{-${element.lambda.toExponential(2)} t}$$`;
+
+            // Atualizar cadeia de decaimento
+            document.getElementById('decayChain').innerHTML = `
+                <p><strong>Produto de Decaimento:</strong> ${element.decayProduct}</p>
+                <p><strong>Aplicações:</strong> ${element.uses}</p>
+            `;
+            
+            // Processar MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function formatHalfLife(timeInYears) {
+            if (timeInYears >= 1e9) return (timeInYears / 1e9).toFixed(2) + 'B anos';
+            if (timeInYears >= 1e6) return (timeInYears / 1e6).toFixed(2) + 'M anos';
+            if (timeInYears >= 1e3) return (timeInYears / 1e3).toFixed(1) + 'k anos';
+            if (timeInYears >= 1) return timeInYears.toFixed(1) + ' anos';
+            
+            // Converter para dias se menos de 1 ano
+            const days = timeInYears * 365.25;
+            if (days >= 1) return days.toFixed(0) + ' dias';
+            
+            // Converter para horas se menos de 1 dia
+            const hours = days * 24;
+            return hours.toFixed(0) + ' horas';
+        }
+
+        function calculateActivity() {
+            const N0 = parseInt(document.getElementById('initialAmount').value);
+            const element = elements[currentElement];
+            const activity = N0 * element.lambda * 3.154e7; // Converter para becquerels
+            return activity.toExponential(2);
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('decayChart').getContext('2d');
+            simulationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Átomos Restantes',
+                        data: [],
+                        borderColor: '#ff4757',
+                        backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Decaimento Radioativo ao Longo do Tempo',
+                            color: '#ffffff',
+                            font: { size: 16 }
+                        },
+                        legend: {
+                            labels: { color: '#ffffff' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tempo',
+                                color: '#ffffff'
+                            },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#ffffff' }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Átomos Restantes',
+                                color: '#ffffff'
+                            },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: '#ffffff' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function startSimulation() {
+            const N0 = parseInt(document.getElementById('initialAmount').value);
+            const totalTime = parseInt(document.getElementById('timeRange').value);
+            const element = elements[currentElement];
+            const lambda = element.lambda;
+
+            // Limpar dados anteriores
+            simulationChart.data.labels = [];
+            simulationChart.data.datasets[0].data = [];
+            simulationChart.data.datasets[0].borderColor = element.color;
+            simulationChart.data.datasets[0].backgroundColor = element.color + '20';
+
+            // Gerar dados de decaimento
+            const timeSteps = 100;
+            for (let i = 0; i <= timeSteps; i++) {
+                const t = (i / timeSteps) * totalTime;
+                const N = N0 * Math.exp(-lambda * t);
+                
+                simulationChart.data.labels.push(t.toFixed(0));
+                simulationChart.data.datasets[0].data.push(N);
+            }
+
+            simulationChart.update();
+            startParticleAnimation();
+        }
+
+        function startParticleAnimation() {
+            const canvas = document.getElementById('particleCanvas');
+            canvas.innerHTML = '';
+            
+            const element = elements[currentElement];
+            const particleCount = Math.min(50, parseInt(document.getElementById('initialAmount').value) / 20);
+
+            for (let i = 0; i < particleCount; i++) {
+                createParticle(canvas, element.decayType, element.color);
+            }
+        }
+
+        function createParticle(container, type, color) {
+            const particle = document.createElement('div');
+            particle.className = `particle ${type}`;
+            particle.style.background = color;
+            
+            // Posição inicial aleatória
+            const startX = Math.random() * container.offsetWidth;
+            const startY = Math.random() * container.offsetHeight;
+            
+            particle.style.left = startX + 'px';
+            particle.style.top = startY + 'px';
+            
+            container.appendChild(particle);
+
+            // Animação baseada no tipo de decaimento
+            const duration = type === 'alpha' ? 2000 : type === 'beta' ? 1500 : 1000;
+            const distance = type === 'alpha' ? 50 : type === 'beta' ? 80 : 30;
+
+            const animation = particle.animate([
+                { 
+                    opacity: 1,
+                    transform: 'scale(1)',
+                    offset: 0 
+                },
+                { 
+                    opacity: 0.8,
+                    transform: `scale(1.5) translate(${Math.random() * distance - distance/2}px, ${Math.random() * distance - distance/2}px)`,
+                    offset: 0.5 
+                },
+                { 
+                    opacity: 0,
+                    transform: 'scale(0)',
+                    offset: 1 
+                }
+            ], {
+                duration: duration + Math.random() * 2000,
+                iterations: Infinity
+            });
+
+            // Reiniciar animação periodicamente
+            setInterval(() => {
+                particle.style.left = Math.random() * container.offsetWidth + 'px';
+                particle.style.top = Math.random() * container.offsetHeight + 'px';
+            }, 3000);
+        }
+
+        function resetSimulation() {
+            if (simulationChart) {
+                simulationChart.data.labels = [];
+                simulationChart.data.datasets[0].data = [];
+                simulationChart.update();
+            }
+            
+            const canvas = document.getElementById('particleCanvas');
+            canvas.innerHTML = '';
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        }
+
+        function exportData() {
+            const element = elements[currentElement];
+            const data = {
+                elemento: element.name,
+                simbolo: element.symbol,
+                meiaVida: element.halfLife + ' anos',
+                constanteDecaimento: element.lambda,
+                tipoDecaimento: element.decayType,
+                produtoDecaimento: element.decayProduct,
+                aplicacoes: element.uses,
+                dados: simulationChart.data.datasets[0].data
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `decaimento_${currentElement}_${new Date().getTime()}.json`;
+            link.click();
+            
+            alert('Dados exportados com sucesso!');
+        }
+
+        // Configurar MathJax
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+</body>
+</html>

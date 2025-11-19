@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Cósmico Unificado</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #8B5CF6;
+            --color-secondary: #3B82F6;
+            --color-accent: #F59E0B;
+            --color-bg-page: #000000;
+            --color-bg-surface: #0A0A0A;
+            --color-border: #1F1F1F;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(ellipse at center, #0a0a1a 0%, #000000 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Starfield Background */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #8B5CF6, #3B82F6, #F59E0B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.2rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--color-border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Planet/Object List */
+        .object-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .object-item {
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .object-item:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: var(--color-primary);
+            transform: scale(1.05);
+        }
+
+        .object-item.selected {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+            border-color: var(--color-primary);
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #8B5CF6;
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '🌌 ';
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .tab-button {
+                min-width: 100px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+
+        /* Glow Effects */
+        .glow-text {
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <!-- Starfield Background -->
+    <div class="starfield" id="starfield"></div>
+
+    <div class="container">
+        <header>
+            <h1 class="glow-text">🌌 SIMULADOR CÓSMICO UNIFICADO</h1>
+            <p class="subtitle">Sistema Solar • Estrelas • Galáxias • Buracos Negros • Eventos Cósmicos • Construtor Universal</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="solar">☀️ Sistema Solar</button>
+            <button class="tab-button" data-tab="stars">⭐ Estrelas</button>
+            <button class="tab-button" data-tab="galaxies">🌌 Galáxias</button>
+            <button class="tab-button" data-tab="blackholes">🕳️ Buracos Negros</button>
+            <button class="tab-button" data-tab="fusion">☢️ Fusão Nuclear</button>
+            <button class="tab-button" data-tab="events">🌠 Eventos Cósmicos</button>
+            <button class="tab-button" data-tab="builder">🏗️ Construtor</button>
+            <button class="tab-button" data-tab="exoplanets">🪐 Exoplanetas</button>
+        </div>
+
+        <!-- TAB 1: Sistema Solar -->
+        <div id="solar" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>☀️</span>
+                        <h3 class="card-title">Sistema Solar 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="solar-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Planeta Selecionado</div>
+                            <div class="stat-value" id="planet-name">Terra</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Distância do Sol</div>
+                            <div class="stat-value" id="planet-distance">1.0 UA</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Período Orbital</div>
+                            <div class="stat-value" id="orbital-period">365 dias</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade</div>
+                            <div class="stat-value" id="orbital-speed">30 km/s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade da Simulação:</label>
+                        <input type="range" id="sim-speed" min="1" max="100" value="10" step="1">
+                        <span id="speed-value">10x</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Escala de Distâncias:</label>
+                        <input type="range" id="distance-scale" min="1" max="10" value="5" step="1">
+                        <span id="scale-value">5x</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Planetas:</label>
+                        <div class="object-list">
+                            <div class="object-item" onclick="selectPlanet('mercury')">☿ Mercúrio</div>
+                            <div class="object-item" onclick="selectPlanet('venus')">♀ Vênus</div>
+                            <div class="object-item selected" onclick="selectPlanet('earth')">🌍 Terra</div>
+                            <div class="object-item" onclick="selectPlanet('mars')">♂ Marte</div>
+                            <div class="object-item" onclick="selectPlanet('jupiter')">♃ Júpiter</div>
+                            <div class="object-item" onclick="selectPlanet('saturn')">♄ Saturno</div>
+                            <div class="object-item" onclick="selectPlanet('uranus')">♅ Urano</div>
+                            <div class="object-item" onclick="selectPlanet('neptune')">♆ Netuno</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startSimulation()">▶️ Iniciar</button>
+                        <button class="btn btn-secondary" onclick="pauseSimulation()">⏸️ Pausar</button>
+                        <button class="btn btn-secondary" onclick="resetSimulation()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="solar-console">
+                        <div class="console-line">Sistema solar inicializado com 8 planetas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Estrelas -->
+        <div id="stars" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⭐</span>
+                        <h3 class="card-title">Ciclo de Vida Estelar</h3>
+                    </div>
+                    <div class="viewer-3d" id="star-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Tipo Espectral</div>
+                            <div class="stat-value" id="star-type">G2V</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Temperatura</div>
+                            <div class="stat-value" id="star-temp">5778 K</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Massa</div>
+                            <div class="stat-value" id="star-mass">1.0 M☉</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Idade</div>
+                            <div class="stat-value" id="star-age">4.6 Gyr</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Parâmetros Estelares</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Estrela:</label>
+                        <select class="control-input" id="star-select" onchange="changeStarType()">
+                            <option value="o">O - Azul Quente (30,000+ K)</option>
+                            <option value="b">B - Azul (10,000-30,000 K)</option>
+                            <option value="a">A - Branca (7,500-10,000 K)</option>
+                            <option value="f">F - Branca-Amarela (6,000-7,500 K)</option>
+                            <option value="g" selected>G - Amarela (5,200-6,000 K) - Sol</option>
+                            <option value="k">K - Laranja (3,700-5,200 K)</option>
+                            <option value="m">M - Vermelha (2,400-3,700 K)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Massa Estelar:</label>
+                        <input type="range" id="star-mass-slider" min="0.1" max="50" value="1" step="0.1">
+                        <span id="mass-value">1.0 M☉</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Estágio de Vida:</label>
+                        <select class="control-input" id="life-stage">
+                            <option value="protostar">Protoestrela</option>
+                            <option value="main" selected>Sequência Principal</option>
+                            <option value="giant">Gigante Vermelha</option>
+                            <option value="supergiant">Supergigante</option>
+                            <option value="whitedwarf">Anã Branca</option>
+                            <option value="neutron">Estrela de Nêutrons</option>
+                            <option value="blackhole">Buraco Negro</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="evolveStar()">⏩ Evoluir Estrela</button>
+                        <button class="btn btn-primary" onclick="supernova()">💥 Supernova</button>
+                        <button class="btn btn-secondary" onclick="resetStar()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="star-console">
+                        <div class="console-line">Estrela tipo Sol (G2V) na sequência principal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Galáxias -->
+        <div id="galaxies" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌌</span>
+                        <h3 class="card-title">Simulador de Galáxias</h3>
+                    </div>
+                    <div class="viewer-3d" id="galaxy-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Tipo</div>
+                            <div class="stat-value" id="galaxy-type">Espiral</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Estrelas</div>
+                            <div class="stat-value" id="star-count">100B</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Diâmetro</div>
+                            <div class="stat-value" id="galaxy-size">100k ly</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Massa</div>
+                            <div class="stat-value" id="galaxy-mass">1.5T M☉</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles da Galáxia</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Galáxia:</label>
+                        <select class="control-input" id="galaxy-select" onchange="changeGalaxy()">
+                            <option value="spiral" selected>Espiral (Via Láctea)</option>
+                            <option value="barred">Espiral Barrada</option>
+                            <option value="elliptical">Elíptica</option>
+                            <option value="irregular">Irregular</option>
+                            <option value="lenticular">Lenticular</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Número de Estrelas:</label>
+                        <input type="range" id="star-density" min="1000" max="10000" value="5000" step="500">
+                        <span id="density-value">5000</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade de Rotação:</label>
+                        <input type="range" id="rotation-speed" min="1" max="20" value="5" step="1">
+                        <span id="rotation-value">5x</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="createGalaxy()">✨ Criar Galáxia</button>
+                        <button class="btn btn-primary" onclick="collideGalaxies()">💫 Colisão</button>
+                        <button class="btn btn-secondary" onclick="resetGalaxy()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="galaxy-console">
+                        <div class="console-line">Galáxia espiral tipo Via Láctea gerada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Buracos Negros -->
+        <div id="blackholes" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🕳️</span>
+                        <h3 class="card-title">Buraco Negro com Disco de Acreção</h3>
+                    </div>
+                    <div class="viewer-3d" id="blackhole-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Massa</div>
+                            <div class="stat-value" id="bh-mass">10 M☉</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Raio de Schwarzschild</div>
+                            <div class="stat-value" id="schwarzschild">30 km</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Horizonte de Eventos</div>
+                            <div class="stat-value" id="event-horizon">60 km</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Radiação Hawking</div>
+                            <div class="stat-value" id="hawking-rad">6.2×10⁻⁸ K</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Parâmetros do Buraco Negro</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo:</label>
+                        <select class="control-input" id="bh-type" onchange="changeBlackHoleType()">
+                            <option value="stellar">Estelar (5-100 M☉)</option>
+                            <option value="intermediate">Intermediário (100-100k M☉)</option>
+                            <option value="supermassive">Supermassivo (>100k M☉)</option>
+                            <option value="primordial">Primordial (<1 M☉)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Massa do Buraco Negro:</label>
+                        <input type="range" id="bh-mass-slider" min="1" max="1000" value="10" step="1">
+                        <span id="bh-mass-value">10 M☉</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa de Acreção:</label>
+                        <input type="range" id="accretion-rate" min="0" max="100" value="50" step="5">
+                        <span id="accretion-value">50%</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="feedBlackHole()">🍔 Alimentar BH</button>
+                        <button class="btn btn-primary" onclick="activateJets()">⚡ Jatos Relativísticos</button>
+                        <button class="btn btn-secondary" onclick="resetBlackHole()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="bh-console">
+                        <div class="console-line">Buraco negro estelar com disco de acreção ativo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Fusão Nuclear -->
+        <div id="fusion" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>☢️</span>
+                        <h3 class="card-title">Fusão Nuclear Estelar</h3>
+                    </div>
+                    <div class="viewer-3d" id="fusion-viewer"></div>
+                    <div class="chart-container">
+                        <canvas id="fusion-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Parâmetros de Fusão</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Processo de Fusão:</label>
+                        <select class="control-input" id="fusion-process">
+                            <option value="pp-chain" selected>Cadeia Próton-Próton (PP)</option>
+                            <option value="cno">Ciclo CNO</option>
+                            <option value="triple-alpha">Processo Triplo-Alfa (He)</option>
+                            <option value="carbon">Queima de Carbono</option>
+                            <option value="silicon">Queima de Silício</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura do Núcleo:</label>
+                        <input type="range" id="core-temp" min="1" max="100" value="15" step="1">
+                        <span id="temp-display">15 MK</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Densidade:</label>
+                        <input type="range" id="core-density" min="1" max="100" value="150" step="1">
+                        <span id="density-display">150 g/cm³</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Energia Liberada</div>
+                            <div class="stat-value" id="energy-output">3.8×10²⁶ W</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Taxa de Fusão</div>
+                            <div class="stat-value" id="fusion-rate">600M ton/s</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Elemento Produzido</div>
+                            <div class="stat-value" id="product-element">He-4</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eficiência</div>
+                            <div class="stat-value" id="fusion-efficiency">0.7%</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startFusion()">⚛️ Iniciar Fusão</button>
+                        <button class="btn btn-secondary" onclick="stopFusion()">⏸️ Parar</button>
+                    </div>
+
+                    <div class="console" id="fusion-console">
+                        <div class="console-line">Cadeia PP ativa - Hidrogênio fundindo em Hélio</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Eventos Cósmicos -->
+        <div id="events" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌠</span>
+                        <h3 class="card-title">Eventos Cósmicos</h3>
+                    </div>
+                    <div class="viewer-3d" id="events-viewer"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Selecionar Evento</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Evento:</label>
+                        <select class="control-input" id="event-select">
+                            <option value="supernova">💥 Supernova</option>
+                            <option value="hypernova">🌟 Hipernova</option>
+                            <option value="gamma-burst">⚡ Explosão de Raios Gama</option>
+                            <option value="neutron-merger">🔄 Fusão de Estrelas de Nêutrons</option>
+                            <option value="galaxy-collision">🌌 Colisão de Galáxias</option>
+                            <option value="quasar">✨ Quasar</option>
+                            <option value="nebula-birth">🌈 Nascimento de Nebulosa</option>
+                        </select>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Energia Liberada</div>
+                            <div class="stat-value" id="event-energy">10⁴⁴ J</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Duração</div>
+                            <div class="stat-value" id="event-duration">100 dias</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Distância</div>
+                            <div class="stat-value" id="event-distance">10 Mpc</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Magnitude</div>
+                            <div class="stat-value" id="event-magnitude">-19.3</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="triggerEvent()">🚀 Disparar Evento</button>
+                        <button class="btn btn-secondary" onclick="stopEvent()">⏹️ Parar</button>
+                    </div>
+
+                    <div class="console" id="events-console">
+                        <div class="console-line">Aguardando seleção de evento cósmico...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: Construtor -->
+        <div id="builder" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🏗️</span>
+                        <h3 class="card-title">Construtor de Sistemas Planetários</h3>
+                    </div>
+                    <div class="viewer-3d" id="builder-viewer"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Ferramentas de Construção</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Adicionar Objeto:</label>
+                        <select class="control-input" id="object-type">
+                            <option value="star">⭐ Estrela</option>
+                            <option value="planet">🪐 Planeta Rochoso</option>
+                            <option value="gas-giant">♃ Gigante Gasoso</option>
+                            <option value="moon">🌙 Lua</option>
+                            <option value="asteroid">☄️ Asteroide</option>
+                            <option value="comet">☄️ Cometa</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Massa do Objeto:</label>
+                        <input type="range" id="object-mass" min="0.001" max="100" value="1" step="0.01">
+                        <span id="object-mass-value">1.0 M🜨</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Distância Orbital:</label>
+                        <input type="range" id="orbit-distance" min="0.1" max="50" value="1" step="0.1">
+                        <span id="orbit-value">1.0 UA</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Objetos</div>
+                            <div class="stat-value" id="object-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Estabilidade</div>
+                            <div class="stat-value" id="stability">100%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Massa Total</div>
+                            <div class="stat-value" id="total-mass">0 M☉</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Zona Habitável</div>
+                            <div class="stat-value" id="habitable">0.95-1.4 UA</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="addObject()">➕ Adicionar</button>
+                        <button class="btn btn-primary" onclick="analyzeSystem()">🔍 Analisar</button>
+                        <button class="btn btn-secondary" onclick="clearBuilder()">🗑️ Limpar</button>
+                    </div>
+
+                    <div class="console" id="builder-console">
+                        <div class="console-line">Construtor inicializado - Adicione objetos ao sistema</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: Exoplanetas -->
+        <div id="exoplanets" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🪐</span>
+                        <h3 class="card-title">Exoplanetas Descobertos</h3>
+                    </div>
+                    <div class="viewer-3d" id="exoplanet-viewer"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Banco de Exoplanetas</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Selecionar Exoplaneta:</label>
+                        <select class="control-input" id="exoplanet-select" onchange="loadExoplanet()">
+                            <option value="proxima-b">Proxima Centauri b</option>
+                            <option value="kepler-442b">Kepler-442b</option>
+                            <option value="trappist-1e">TRAPPIST-1e</option>
+                            <option value="gliese-667cc">Gliese 667 Cc</option>
+                            <option value="kepler-452b">Kepler-452b (Terra 2.0)</option>
+                            <option value="hd-189733b">HD 189733 b</option>
+                        </select>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Distância</div>
+                            <div class="stat-value" id="exo-distance">4.24 ly</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Massa</div>
+                            <div class="stat-value" id="exo-mass">1.27 M🜨</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Raio</div>
+                            <div class="stat-value" id="exo-radius">1.1 R🜨</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Habitabilidade</div>
+                            <div class="stat-value" id="exo-habit">85%</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="scanExoplanet()">🔭 Escanear</button>
+                        <button class="btn btn-primary" onclick="detectBiosignatures()">🧬 Bioassinaturas</button>
+                        <button class="btn btn-secondary" onclick="compareWithEarth()">🌍 Comparar</button>
+                    </div>
+
+                    <div class="console" id="exoplanet-console">
+                        <div class="console-line">5,000+ exoplanetas no banco de dados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'solar',
+            simSpeed: 10,
+            running: false,
+            time: 0
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+
+        // Charts
+        let fusionChart;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            createStarfield();
+            initializeTabs();
+            initializeControls();
+            initialize3DScenes();
+            initializeCharts();
+            animate();
+        });
+
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starfield.appendChild(star);
+            }
+        }
+
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function initializeControls() {
+            // Solar system controls
+            document.getElementById('sim-speed')?.addEventListener('input', (e) => {
+                state.simSpeed = parseInt(e.target.value);
+                document.getElementById('speed-value').textContent = `${e.target.value}x`;
+            });
+
+            document.getElementById('distance-scale')?.addEventListener('input', (e) => {
+                document.getElementById('scale-value').textContent = `${e.target.value}x`;
+            });
+
+            // Star controls
+            document.getElementById('star-mass-slider')?.addEventListener('input', (e) => {
+                document.getElementById('mass-value').textContent = `${parseFloat(e.target.value).toFixed(1)} M☉`;
+            });
+
+            // Galaxy controls
+            document.getElementById('star-density')?.addEventListener('input', (e) => {
+                document.getElementById('density-value').textContent = e.target.value;
+            });
+
+            document.getElementById('rotation-speed')?.addEventListener('input', (e) => {
+                document.getElementById('rotation-value').textContent = `${e.target.value}x`;
+            });
+
+            // Black hole controls
+            document.getElementById('bh-mass-slider')?.addEventListener('input', (e) => {
+                const mass = parseInt(e.target.value);
+                document.getElementById('bh-mass-value').textContent = `${mass} M☉`;
+                updateBlackHoleStats(mass);
+            });
+
+            document.getElementById('accretion-rate')?.addEventListener('input', (e) => {
+                document.getElementById('accretion-value').textContent = `${e.target.value}%`;
+            });
+
+            // Fusion controls
+            document.getElementById('core-temp')?.addEventListener('input', (e) => {
+                document.getElementById('temp-display').textContent = `${e.target.value} MK`;
+            });
+
+            document.getElementById('core-density')?.addEventListener('input', (e) => {
+                document.getElementById('density-display').textContent = `${e.target.value} g/cm³`;
+            });
+
+            // Builder controls
+            document.getElementById('object-mass')?.addEventListener('input', (e) => {
+                document.getElementById('object-mass-value').textContent = `${parseFloat(e.target.value).toFixed(2)} M🜨`;
+            });
+
+            document.getElementById('orbit-distance')?.addEventListener('input', (e) => {
+                document.getElementById('orbit-value').textContent = `${parseFloat(e.target.value).toFixed(1)} UA`;
+            });
+        }
+
+        // ==================== 3D SCENES ====================
+        function initialize3DScenes() {
+            initializeSolarSystem();
+            initializeStarScene();
+            initializeGalaxyScene();
+            initializeBlackHoleScene();
+            initializeFusionScene();
+            initializeEventsScene();
+            initializeBuilderScene();
+            initializeExoplanetScene();
+        }
+
+        function initializeSolarSystem() {
+            const container = document.getElementById('solar-viewer');
+            if (!container) return;
+
+            scenes.solar = new THREE.Scene();
+            scenes.solar.background = new THREE.Color(0x000000);
+
+            cameras.solar = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 10000);
+            cameras.solar.position.set(0, 50, 100);
+
+            renderers.solar = new THREE.WebGLRenderer({ antialias: true });
+            renderers.solar.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.solar.domElement);
+
+            // Lights
+            const sun = new THREE.PointLight(0xFFFF00, 2, 1000);
+            scenes.solar.add(sun);
+
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scenes.solar.add(ambientLight);
+
+            // Sun
+            const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const sunMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFDB813,
+                emissive: 0xFDB813
+            });
+            const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+            scenes.solar.add(sunMesh);
+
+            // Planets
+            const planets = [
+                { name: 'Mercury', size: 0.4, distance: 10, color: 0x8C7853 },
+                { name: 'Venus', size: 0.9, distance: 15, color: 0xFFC649 },
+                { name: 'Earth', size: 1, distance: 20, color: 0x2F6A9F },
+                { name: 'Mars', size: 0.5, distance: 25, color: 0xCD5C5C },
+                { name: 'Jupiter', size: 3, distance: 35, color: 0xC88B3A },
+                { name: 'Saturn', size: 2.5, distance: 45, color: 0xFAD5A5 },
+                { name: 'Uranus', size: 1.5, distance: 55, color: 0x4FD0E7 },
+                { name: 'Neptune', size: 1.5, distance: 65, color: 0x4166F5 }
+            ];
+
+            planets.forEach(planet => {
+                const geometry = new THREE.SphereGeometry(planet.size, 32, 32);
+                const material = new THREE.MeshPhongMaterial({ color: planet.color });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.x = planet.distance;
+                mesh.userData = { orbit: planet.distance, speed: 0.01 / planet.distance };
+                scenes.solar.add(mesh);
+
+                // Orbit line
+                const orbitGeometry = new THREE.BufferGeometry();
+                const orbitPoints = [];
+                for (let i = 0; i <= 64; i++) {
+                    const angle = (i / 64) * Math.PI * 2;
+                    orbitPoints.push(
+                        planet.distance * Math.cos(angle),
+                        0,
+                        planet.distance * Math.sin(angle)
+                    );
+                }
+                orbitGeometry.setAttribute('position', new THREE.Float32BufferAttribute(orbitPoints, 3));
+                const orbitMaterial = new THREE.LineBasicMaterial({ color: 0x444444 });
+                const orbitLine = new THREE.Line(orbitGeometry, orbitMaterial);
+                scenes.solar.add(orbitLine);
+            });
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.solar = new THREE.OrbitControls(cameras.solar, renderers.solar.domElement);
+            }
+        }
+
+        function initializeStarScene() {
+            const container = document.getElementById('star-viewer');
+            if (!container) return;
+
+            scenes.star = new THREE.Scene();
+            scenes.star.background = new THREE.Color(0x000000);
+
+            cameras.star = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.star.position.set(0, 0, 30);
+
+            renderers.star = new THREE.WebGLRenderer({ antialias: true });
+            renderers.star.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.star.domElement);
+
+            // Star
+            const starGeometry = new THREE.SphereGeometry(5, 64, 64);
+            const starMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFF00,
+                emissive: 0xFFAA00
+            });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+            scenes.star.add(star);
+
+            // Glow
+            const glowGeometry = new THREE.SphereGeometry(6, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFF00,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            scenes.star.add(glow);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.star = new THREE.OrbitControls(cameras.star, renderers.star.domElement);
+            }
+        }
+
+        function initializeGalaxyScene() {
+            const container = document.getElementById('galaxy-viewer');
+            if (!container) return;
+
+            scenes.galaxy = new THREE.Scene();
+            scenes.galaxy.background = new THREE.Color(0x000000);
+
+            cameras.galaxy = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.galaxy.position.set(0, 50, 100);
+
+            renderers.galaxy = new THREE.WebGLRenderer({ antialias: true });
+            renderers.galaxy.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.galaxy.domElement);
+
+            // Create spiral galaxy
+            createSpiralGalaxy();
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.galaxy = new THREE.OrbitControls(cameras.galaxy, renderers.galaxy.domElement);
+            }
+        }
+
+        function createSpiralGalaxy() {
+            const starCount = 5000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = [];
+            const colors = [];
+
+            for (let i = 0; i < starCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 50;
+                const armOffset = (Math.random() - 0.5) * 5;
+                
+                const x = (radius + armOffset) * Math.cos(angle + radius * 0.1);
+                const y = (Math.random() - 0.5) * 5;
+                const z = (radius + armOffset) * Math.sin(angle + radius * 0.1);
+
+                positions.push(x, y, z);
+
+                const color = new THREE.Color();
+                color.setHSL(0.6 - radius / 100, 1.0, 0.5 + Math.random() * 0.5);
+                colors.push(color.r, color.g, color.b);
+            }
+
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({ 
+                size: 0.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const galaxy = new THREE.Points(geometry, material);
+            scenes.galaxy.add(galaxy);
+        }
+
+        function initializeBlackHoleScene() {
+            const container = document.getElementById('blackhole-viewer');
+            if (!container) return;
+
+            scenes.blackhole = new THREE.Scene();
+            scenes.blackhole.background = new THREE.Color(0x000000);
+
+            cameras.blackhole = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.blackhole.position.set(0, 10, 30);
+
+            renderers.blackhole = new THREE.WebGLRenderer({ antialias: true });
+            renderers.blackhole.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.blackhole.domElement);
+
+            // Black hole
+            const bhGeometry = new THREE.SphereGeometry(2, 32, 32);
+            const bhMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const blackhole = new THREE.Mesh(bhGeometry, bhMaterial);
+            scenes.blackhole.add(blackhole);
+
+            // Accretion disk
+            const diskGeometry = new THREE.TorusGeometry(8, 2, 16, 100);
+            const diskMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFF6600,
+                transparent: true,
+                opacity: 0.7
+            });
+            const disk = new THREE.Mesh(diskGeometry, diskMaterial);
+            disk.rotation.x = Math.PI / 2;
+            scenes.blackhole.add(disk);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.blackhole = new THREE.OrbitControls(cameras.blackhole, renderers.blackhole.domElement);
+            }
+        }
+
+        function initializeFusionScene() {
+            const container = document.getElementById('fusion-viewer');
+            if (!container) return;
+
+            scenes.fusion = new THREE.Scene();
+            scenes.fusion.background = new THREE.Color(0x000000);
+
+            cameras.fusion = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.fusion.position.set(0, 0, 20);
+
+            renderers.fusion = new THREE.WebGLRenderer({ antialias: true });
+            renderers.fusion.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.fusion.domElement);
+
+            // Core
+            const coreGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const coreMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xFFFFFF,
+                emissive: 0xFFFF00
+            });
+            const core = new THREE.Mesh(coreGeometry, coreMaterial);
+            scenes.fusion.add(core);
+
+            // Particles
+            for (let i = 0; i < 50; i++) {
+                const particleGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+                const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                particle.position.set(
+                    (Math.random() - 0.5) * 15,
+                    (Math.random() - 0.5) * 15,
+                    (Math.random() - 0.5) * 15
+                );
+                scenes.fusion.add(particle);
+            }
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.fusion = new THREE.OrbitControls(cameras.fusion, renderers.fusion.domElement);
+            }
+        }
+
+        function initializeEventsScene() {
+            const container = document.getElementById('events-viewer');
+            if (!container) return;
+
+            scenes.events = new THREE.Scene();
+            scenes.events.background = new THREE.Color(0x000000);
+
+            cameras.events = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.events.position.set(0, 0, 30);
+
+            renderers.events = new THREE.WebGLRenderer({ antialias: true });
+            renderers.events.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.events.domElement);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.events = new THREE.OrbitControls(cameras.events, renderers.events.domElement);
+            }
+        }
+
+        function initializeBuilderScene() {
+            const container = document.getElementById('builder-viewer');
+            if (!container) return;
+
+            scenes.builder = new THREE.Scene();
+            scenes.builder.background = new THREE.Color(0x000000);
+
+            cameras.builder = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.builder.position.set(0, 30, 60);
+
+            renderers.builder = new THREE.WebGLRenderer({ antialias: true });
+            renderers.builder.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.builder.domElement);
+
+            // Central star
+            const starGeometry = new THREE.SphereGeometry(3, 32, 32);
+            const starMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+            const star = new THREE.Mesh(starGeometry, starMaterial);
+            scenes.builder.add(star);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.builder = new THREE.OrbitControls(cameras.builder, renderers.builder.domElement);
+            }
+        }
+
+        function initializeExoplanetScene() {
+            const container = document.getElementById('exoplanet-viewer');
+            if (!container) return;
+
+            scenes.exoplanet = new THREE.Scene();
+            scenes.exoplanet.background = new THREE.Color(0x000000);
+
+            cameras.exoplanet = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.exoplanet.position.set(0, 0, 20);
+
+            renderers.exoplanet = new THREE.WebGLRenderer({ antialias: true });
+            renderers.exoplanet.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.exoplanet.domElement);
+
+            // Exoplanet
+            const planetGeometry = new THREE.SphereGeometry(3, 32, 32);
+            const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x2F6A9F });
+            const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+            scenes.exoplanet.add(planet);
+
+            const light = new THREE.PointLight(0xFFFFFF, 1, 100);
+            light.position.set(10, 10, 10);
+            scenes.exoplanet.add(light);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.exoplanet = new THREE.OrbitControls(cameras.exoplanet, renderers.exoplanet.domElement);
+            }
+        }
+
+        // ==================== CHARTS ====================
+        function initializeCharts() {
+            const ctx = document.getElementById('fusion-chart');
+            if (!ctx) return;
+
+            fusionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Energia (W)',
+                        data: [],
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E4E4E7' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1F1F1F' },
+                            ticks: { color: '#A1A1AA' }
+                        },
+                        y: {
+                            grid: { color: '#1F1F1F' },
+                            ticks: { color: '#A1A1AA' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (state.running) {
+                state.time += 0.01 * state.simSpeed;
+
+                // Animate planets in solar system
+                if (scenes.solar) {
+                    scenes.solar.children.forEach(child => {
+                        if (child.userData.orbit) {
+                            const angle = state.time * child.userData.speed;
+                            child.position.x = child.userData.orbit * Math.cos(angle);
+                            child.position.z = child.userData.orbit * Math.sin(angle);
+                        }
+                    });
+                }
+            }
+
+            // Render all scenes
+            Object.keys(scenes).forEach(key => {
+                if (scenes[key] && cameras[key] && renderers[key]) {
+                    if (controls[key]) controls[key].update();
+                    renderers[key].render(scenes[key], cameras[key]);
+                }
+            });
+        }
+
+        // ==================== FUNCTIONS ====================
+        function startSimulation() {
+            state.running = true;
+            addConsoleMessage('solar', '▶️ Simulação iniciada');
+        }
+
+        function pauseSimulation() {
+            state.running = false;
+            addConsoleMessage('solar', '⏸️ Simulação pausada');
+        }
+
+        function resetSimulation() {
+            state.running = false;
+            state.time = 0;
+            addConsoleMessage('solar', '🔄 Sistema resetado');
+        }
+
+        function selectPlanet(planet) {
+            document.querySelectorAll('.object-item').forEach(item => item.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            const planetData = {
+                mercury: { name: 'Mercúrio', distance: '0.39 UA', period: '88 dias', speed: '47 km/s' },
+                venus: { name: 'Vênus', distance: '0.72 UA', period: '225 dias', speed: '35 km/s' },
+                earth: { name: 'Terra', distance: '1.0 UA', period: '365 dias', speed: '30 km/s' },
+                mars: { name: 'Marte', distance: '1.52 UA', period: '687 dias', speed: '24 km/s' },
+                jupiter: { name: 'Júpiter', distance: '5.2 UA', period: '12 anos', speed: '13 km/s' },
+                saturn: { name: 'Saturno', distance: '9.5 UA', period: '29 anos', speed: '10 km/s' },
+                uranus: { name: 'Urano', distance: '19.2 UA', period: '84 anos', speed: '7 km/s' },
+                neptune: { name: 'Netuno', distance: '30.1 UA', period: '165 anos', speed: '5 km/s' }
+            };
+
+            const data = planetData[planet];
+            if (data) {
+                document.getElementById('planet-name').textContent = data.name;
+                document.getElementById('planet-distance').textContent = data.distance;
+                document.getElementById('orbital-period').textContent = data.period;
+                document.getElementById('orbital-speed').textContent = data.speed;
+            }
+        }
+
+        function changeStarType() {
+            addConsoleMessage('star', '⭐ Tipo de estrela alterado');
+        }
+
+        function evolveStar() {
+            addConsoleMessage('star', '⏩ Estrela evoluindo para próxima fase...');
+        }
+
+        function supernova() {
+            addConsoleMessage('star', '💥 SUPERNOVA! Estrela explodindo em evento catastrófico');
+        }
+
+        function resetStar() {
+            addConsoleMessage('star', '🔄 Estrela resetada');
+        }
+
+        function changeGalaxy() {
+            addConsoleMessage('galaxy', '🌌 Tipo de galáxia alterado');
+        }
+
+        function createGalaxy() {
+            addConsoleMessage('galaxy', '✨ Nova galáxia criada');
+        }
+
+        function collideGalaxies() {
+            addConsoleMessage('galaxy', '💫 Colisão de galáxias em andamento...');
+        }
+
+        function resetGalaxy() {
+            addConsoleMessage('galaxy', '🔄 Galáxia resetada');
+        }
+
+        function changeBlackHoleType() {
+            addConsoleMessage('bh', '🕳️ Tipo de buraco negro alterado');
+        }
+
+        function updateBlackHoleStats(mass) {
+            const schwarzschild = (2 * mass * 3).toFixed(0);
+            document.getElementById('schwarzschild').textContent = `${schwarzschild} km`;
+            document.getElementById('event-horizon').textContent = `${schwarzschild * 2} km`;
+        }
+
+        function feedBlackHole() {
+            addConsoleMessage('bh', '🍔 Matéria sendo acretada pelo buraco negro');
+        }
+
+        function activateJets() {
+            addConsoleMessage('bh', '⚡ Jatos relativísticos ativados!');
+        }
+
+        function resetBlackHole() {
+            addConsoleMessage('bh', '🔄 Buraco negro resetado');
+        }
+
+        function startFusion() {
+            addConsoleMessage('fusion', '⚛️ Fusão nuclear iniciada no núcleo');
+        }
+
+        function stopFusion() {
+            addConsoleMessage('fusion', '⏸️ Fusão nuclear interrompida');
+        }
+
+        function triggerEvent() {
+            const event = document.getElementById('event-select').value;
+            addConsoleMessage('events', `🚀 Evento ${event} disparado!`);
+        }
+
+        function stopEvent() {
+            addConsoleMessage('events', '⏹️ Evento interrompido');
+        }
+
+        function addObject() {
+            const count = parseInt(document.getElementById('object-count').textContent) + 1;
+            document.getElementById('object-count').textContent = count;
+            addConsoleMessage('builder', `➕ Objeto #${count} adicionado ao sistema`);
+        }
+
+        function analyzeSystem() {
+            addConsoleMessage('builder', '🔍 Analisando estabilidade do sistema...');
+            setTimeout(() => {
+                addConsoleMessage('builder', '✅ Sistema estável - Nenhuma colisão detectada');
+            }, 1000);
+        }
+
+        function clearBuilder() {
+            document.getElementById('object-count').textContent = '0';
+            addConsoleMessage('builder', '🗑️ Sistema limpo');
+        }
+
+        function loadExoplanet() {
+            addConsoleMessage('exoplanet', '🪐 Carregando dados do exoplaneta...');
+        }
+
+        function scanExoplanet() {
+            addConsoleMessage('exoplanet', '🔭 Escaneando exoplaneta com espectroscopia...');
+        }
+
+        function detectBiosignatures() {
+            addConsoleMessage('exoplanet', '🧬 Procurando por bioassinaturas na atmosfera...');
+        }
+
+        function compareWithEarth() {
+            addConsoleMessage('exoplanet', '🌍 Comparando condições com a Terra...');
+        }
+
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

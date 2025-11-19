@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Dados - Workspace</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-chart-bar"></i>
+            <h1 class="header-title">Visualizador de Dados</h1>
+        </div>
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Buscar dataset..." id="searchInput">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="back-button" id="importBtn" title="Importar CSV">
+                <i class="fas fa-upload"></i>
+            </button>
+            <button class="theme-toggle" id="chartTypeBtn" title="Tipo de Gráfico">
+                <i class="fas fa-chart-pie"></i>
+            </button>
+            <button class="user-menu" id="exportChartBtn" title="Exportar Gráfico">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Painel Esquerdo - Datasets -->
+        <div class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-database"></i>
+                    <h2 class="section-title">Datasets</h2>
+                </div>
+                <div class="class-filters">
+                    <button class="filter-btn active" data-filter="all">Todos</button>
+                    <button class="filter-btn" data-filter="sample">Exemplos</button>
+                    <button class="filter-btn" data-filter="uploaded">Uploads</button>
+                    <button class="filter-btn" data-filter="recent">Recentes</button>
+                </div>
+                <div class="elements-list" id="datasetsList">
+                    <div class="element-item dataset-item" data-dataset="sales" data-category="sample">
+                        <span class="element-number"><i class="fas fa-chart-line"></i></span>
+                        <span class="element-symbol">Vendas</span>
+                        <span class="element-name">Dados de Vendas 2024</span>
+                    </div>
+                    <div class="element-item dataset-item" data-dataset="temperature" data-category="sample">
+                        <span class="element-number"><i class="fas fa-thermometer-half"></i></span>
+                        <span class="element-symbol">Temp</span>
+                        <span class="element-name">Temperatura Global</span>
+                    </div>
+                    <div class="element-item dataset-item" data-dataset="population" data-category="sample">
+                        <span class="element-number"><i class="fas fa-users"></i></span>
+                        <span class="element-symbol">Pop</span>
+                        <span class="element-name">Crescimento Populacional</span>
+                    </div>
+                    <div class="element-item dataset-item" data-dataset="chemical" data-category="sample">
+                        <span class="element-number"><i class="fas fa-flask"></i></span>
+                        <span class="element-symbol">Chem</span>
+                        <span class="element-name">Concentração vs Tempo</span>
+                    </div>
+                    <div class="element-item dataset-item" data-dataset="physics" data-category="sample">
+                        <span class="element-number"><i class="fas fa-atom"></i></span>
+                        <span class="element-symbol">Phys</span>
+                        <span class="element-name">Movimento Harmônico</span>
+                    </div>
+                </div>
+                <div class="action-buttons" style="margin-top: var(--space-md);">
+                    <button class="action-btn primary" id="uploadDatasetBtn">
+                        <i class="fas fa-upload"></i> Upload CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Central - Visualização -->
+        <div class="center-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-chart-area"></i>
+                    <h2 class="section-title">Visualização</h2>
+                    <div style="margin-left: auto; font-size: var(--font-xs); color: var(--text-tertiary);" id="datasetInfo">
+                        Selecione um dataset
+                    </div>
+                </div>
+                <div class="center-scroll" style="height: calc(100% - 40px);">
+                    <div id="visualizationArea">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-bar"></i>
+                            <h3>Selecione um dataset</h3>
+                            <p>Escolha um dataset da lista ou faça upload de um arquivo CSV para visualizar dados interativamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Direito - Controles e Filtros -->
+        <div class="right-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2 class="section-title">Controles</h2>
+                </div>
+                <div class="center-scroll" id="controlsPanel">
+                    <div class="empty-state">
+                        <i class="fas fa-filter"></i>
+                        <p>Controles aparecerão aqui</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+    <script src="script.js"></script>
+</body>
+</html>

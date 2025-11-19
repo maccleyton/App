@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equações Diferenciais - Workspace</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-wave-square"></i>
+            <h1 class="header-title">Equações Diferenciais</h1>
+        </div>
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Buscar EDOs..." id="searchInput">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="back-button" id="solveBtn" title="Resolver">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="theme-toggle" id="clearBtn" title="Limpar">
+                <i class="fas fa-eraser"></i>
+            </button>
+            <button class="user-menu" id="exportBtn" title="Exportar Solução">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Painel Esquerdo - Tipos de EDO -->
+        <div class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-book"></i>
+                    <h2 class="section-title">Tipos de EDO</h2>
+                </div>
+                <div class="class-filters">
+                    <button class="filter-btn active" data-filter="all">Todas</button>
+                    <button class="filter-btn" data-filter="first-order">1ª Ordem</button>
+                    <button class="filter-btn" data-filter="second-order">2ª Ordem</button>
+                    <button class="filter-btn" data-filter="systems">Sistemas</button>
+                </div>
+                <div class="elements-list" id="edoList">
+                    <div class="element-item edo-item" data-edo="first-order-linear" data-category="first-order">
+                        <span class="element-number"><i class="fas fa-wave-square"></i></span>
+                        <span class="element-symbol">dy/dx</span>
+                        <span class="element-name">1ª Ordem Linear</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="separable" data-category="first-order">
+                        <span class="element-number"><i class="fas fa-divide"></i></span>
+                        <span class="element-symbol">Sep</span>
+                        <span class="element-name">Variáveis Separáveis</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="logistic" data-category="first-order">
+                        <span class="element-number"><i class="fas fa-chart-line"></i></span>
+                        <span class="element-symbol">Log</span>
+                        <span class="element-name">Equação Logística</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="harmonic-oscillator" data-category="second-order">
+                        <span class="element-number"><i class="fas fa-wave-square"></i></span>
+                        <span class="element-symbol">mẍ + kx</span>
+                        <span class="element-name">Oscilador Harmônico</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="damped-oscillator" data-category="second-order">
+                        <span class="element-number"><i class="fas fa-tint"></i></span>
+                        <span class="element-symbol">mẍ + cẋ + kx</span>
+                        <span class="element-name">Oscilador Amortecido</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="forced-oscillator" data-category="second-order">
+                        <span class="element-number"><i class="fas fa-exclamation"></i></span>
+                        <span class="element-symbol">F(t)</span>
+                        <span class="element-name">Forçado</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="lorenz" data-category="systems">
+                        <span class="element-number"><i class="fas fa-atom"></i></span>
+                        <span class="element-symbol">Lorenz</span>
+                        <span class="element-name">Sistema de Lorenz</span>
+                    </div>
+                    <div class="element-item edo-item" data-edo="predator-prey" data-category="systems">
+                        <span class="element-number"><i class="fas fa-paw"></i></span>
+                        <span class="element-symbol">Presa-Pred</span>
+                        <span class="element-name">Lotka-Volterra</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Central - Solver -->
+        <div class="center-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-calculator"></i>
+                    <h2 class="section-title">Solver</h2>
+                    <div style="margin-left: auto; font-size: var(--font-xs); color: var(--text-tertiary);" id="equationType">
+                        Selecione uma EDO
+                    </div>
+                </div>
+                <div class="center-scroll" style="height: calc(100% - 40px);">
+                    <div id="solverArea">
+                        <div class="empty-state">
+                            <i class="fas fa-wave-square"></i>
+                            <h3>Selecione uma Equação Diferencial</h3>
+                            <p>Escolha um tipo de EDO da lista para configurar parâmetros e resolver interativamente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Direito - Parâmetros e Solução -->
+        <div class="right-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-cog"></i>
+                    <h2 class="section-title">Parâmetros</h2>
+                </div>
+                <div class="center-scroll" id="parametersPanel">
+                    <div class="empty-state">
+                        <i class="fas fa-sliders-h"></i>
+                        <p>Parâmetros aparecerão aqui</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

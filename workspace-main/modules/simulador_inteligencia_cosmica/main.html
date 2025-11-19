@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Inteligência Cósmica</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #8B5CF6;
+            --color-secondary: #6366F1;
+            --color-accent: #3B82F6;
+            --color-success: #10B981;
+            --color-bg-page: #000000;
+            --color-bg-surface: #0A0A0A;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(ellipse at center, #0a0a2a 0%, #000000 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Animated Starfield */
+        .starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 2rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+            border-radius: 0.75rem;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #8B5CF6, #6366F1, #3B82F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 3s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(20deg); }
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-value.success {
+            color: var(--color-success);
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Chart */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '🚀 ';
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Planet Grid */
+        .planet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .planet-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .planet-card:hover {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: var(--color-primary);
+            transform: translateY(-5px);
+        }
+
+        .planet-card.selected {
+            background: rgba(139, 92, 246, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .planet-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Kardashev Scale */
+        .kardashev-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .kardashev-level {
+            flex: 1;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .kardashev-level.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Starfield Background -->
+    <div class="starfield" id="starfield"></div>
+
+    <div class="container">
+        <header>
+            <h1>🌌 SIMULADOR DE INTELIGÊNCIA CÓSMICA</h1>
+            <p class="subtitle">Exploração • Colonização • Megaestruturas • Civilização Avançada • Singularidade</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="exploration">🔭 Exploração</button>
+            <button class="tab-button" data-tab="habitability">🌍 Habitabilidade</button>
+            <button class="tab-button" data-tab="colonization">🏗️ Colonização</button>
+            <button class="tab-button" data-tab="megastructures">⚙️ Megaestruturas</button>
+            <button class="tab-button" data-tab="civilization">👽 Civilização</button>
+            <button class="tab-button" data-tab="singularity">🤖 Singularidade</button>
+        </div>
+
+        <!-- TAB 1: Exploração Espacial -->
+        <div id="exploration" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔭</span>
+                        <h3 class="card-title">Exploração Galáctica</h3>
+                    </div>
+                    <div class="viewer-3d" id="exploration-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Sistemas Explorados</div>
+                            <div class="stat-value" id="systems-explored">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Planetas Descobertos</div>
+                            <div class="stat-value" id="planets-discovered">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Distância Percorrida</div>
+                            <div class="stat-value" id="distance">0 ly</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade</div>
+                            <div class="stat-value" id="speed">0.1c</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles de Exploração</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tecnologia de Propulsão:</label>
+                        <select class="control-input" id="propulsion-tech">
+                            <option value="chemical">Química (0.001c)</option>
+                            <option value="nuclear">Nuclear (0.1c)</option>
+                            <option value="fusion">Fusão (0.3c)</option>
+                            <option value="antimatter">Antimatéria (0.7c)</option>
+                            <option value="warp">Dobra Espacial (>1c)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Raio de Busca (anos-luz):</label>
+                        <input type="range" id="search-radius" min="10" max="1000" value="100" step="10">
+                        <span id="radius-value">100 ly</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startExploration()">🚀 Iniciar Exploração</button>
+                        <button class="btn btn-secondary" onclick="scanSystem()">📡 Escanear Sistema</button>
+                        <button class="btn btn-secondary" onclick="returnToBase()">🏠 Retornar</button>
+                    </div>
+
+                    <div class="console" id="exploration-console">
+                        <div class="console-line">Sistema de exploração pronto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Habitabilidade -->
+        <div id="habitability" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌍</span>
+                        <h3 class="card-title">Análise de Habitabilidade</h3>
+                    </div>
+                    <div class="viewer-3d" id="habitability-viewer"></div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="habitability-score" style="width: 0%">
+                            0% Habitável
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Temperatura</div>
+                            <div class="stat-value" id="temp">15°C</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Atmosfera</div>
+                            <div class="stat-value success" id="atmosphere">Respirável</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Água</div>
+                            <div class="stat-value" id="water">70%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Gravidade</div>
+                            <div class="stat-value" id="gravity">1.0g</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🗂️</span>
+                        <h3 class="card-title">Planetas Candidatos</h3>
+                    </div>
+
+                    <div class="planet-grid">
+                        <div class="planet-card selected" onclick="selectPlanet('kepler')">
+                            <div class="planet-icon">🌍</div>
+                            <div>Kepler-452b</div>
+                            <small>95% habitável</small>
+                        </div>
+                        <div class="planet-card" onclick="selectPlanet('proxima')">
+                            <div class="planet-icon">🌎</div>
+                            <div>Proxima b</div>
+                            <small>85% habitável</small>
+                        </div>
+                        <div class="planet-card" onclick="selectPlanet('trappist')">
+                            <div class="planet-icon">🌏</div>
+                            <div>TRAPPIST-1e</div>
+                            <small>90% habitável</small>
+                        </div>
+                        <div class="planet-card" onclick="selectPlanet('ocean')">
+                            <div class="planet-icon">🌊</div>
+                            <div>Mundo Oceânico</div>
+                            <small>75% habitável</small>
+                        </div>
+                        <div class="planet-card" onclick="selectPlanet('desert')">
+                            <div class="planet-icon">🏜️</div>
+                            <div>Mundo Árido</div>
+                            <small>60% habitável</small>
+                        </div>
+                        <div class="planet-card" onclick="selectPlanet('ice')">
+                            <div class="planet-icon">❄️</div>
+                            <div>Mundo Gelado</div>
+                            <small>40% habitável</small>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="analyzePlanet()">🔬 Análise Detalhada</button>
+                        <button class="btn btn-secondary" onclick="detectBiosignatures()">🧬 Bioassinaturas</button>
+                    </div>
+
+                    <div class="console" id="habitability-console">
+                        <div class="console-line">6 planetas candidatos identificados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Colonização -->
+        <div id="colonization" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🏗️</span>
+                        <h3 class="card-title">Colônia Planetária</h3>
+                    </div>
+                    <div class="viewer-3d" id="colonization-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">População</div>
+                            <div class="stat-value" id="population">1,000</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Recursos</div>
+                            <div class="stat-value" id="resources">100k ton</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Infraestrutura</div>
+                            <div class="stat-value" id="infrastructure">25%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Autossuficiência</div>
+                            <div class="stat-value" id="self-sufficiency">15%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Desenvolvimento</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Fase de Colonização:</label>
+                        <select class="control-input" id="colony-phase">
+                            <option value="outpost">Posto Avançado (100 colonos)</option>
+                            <option value="settlement">Assentamento (1k colonos)</option>
+                            <option value="city">Cidade (100k colonos)</option>
+                            <option value="metropolis">Metrópole (1M+ colonos)</option>
+                            <option value="ecumenopolis">Ecumenópole (planeta-cidade)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa de Crescimento:</label>
+                        <input type="range" id="growth-rate" min="1" max="20" value="5" step="1">
+                        <span id="growth-value">5%/ano</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="establishColony()">🏗️ Estabelecer Colônia</button>
+                        <button class="btn btn-primary" onclick="expandColony()">📈 Expandir</button>
+                        <button class="btn btn-secondary" onclick="terraformPlanet()">🌱 Terraformar</button>
+                    </div>
+
+                    <div class="console" id="colonization-console">
+                        <div class="console-line">Sistema de colonização pronto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Megaestruturas -->
+        <div id="megastructures" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚙️</span>
+                        <h3 class="card-title">Megaestruturas Estelares</h3>
+                    </div>
+                    <div class="viewer-3d" id="megastructures-viewer"></div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="construction-progress" style="width: 0%">
+                            0% Construído
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Energia Gerada</div>
+                            <div class="stat-value" id="energy">0 PW</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Material Usado</div>
+                            <div class="stat-value" id="material">0 M☉</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Tempo Restante</div>
+                            <div class="stat-value" id="time-remaining">100 anos</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Eficiência</div>
+                            <div class="stat-value" id="efficiency">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Projetos Disponíveis</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Megaestrutura:</label>
+                        <select class="control-input" id="megastructure-type">
+                            <option value="dyson-swarm">🛰️ Enxame de Dyson</option>
+                            <option value="dyson-shell">⚫ Esfera de Dyson</option>
+                            <option value="ringworld">💫 Anel Orbital (Halo)</option>
+                            <option value="matrioshka">🔮 Cérebro Matrioshka</option>
+                            <option value="stellar-engine">🚀 Motor Estelar</option>
+                            <option value="starlifting">⭐ Mineração Estelar</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="buildMegastructure()">⚙️ Iniciar Construção</button>
+                        <button class="btn btn-secondary" onclick="accelerateConstruction()">⚡ Acelerar</button>
+                        <button class="btn btn-secondary" onclick="activateMegastructure()">✨ Ativar</button>
+                    </div>
+
+                    <div class="console" id="megastructures-console">
+                        <div class="console-line">Projetos de megaestrutura carregados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Civilização -->
+        <div id="civilization" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>👽</span>
+                        <h3 class="card-title">Escala de Kardashev</h3>
+                    </div>
+                    <div class="viewer-3d" id="civilization-viewer"></div>
+                    
+                    <div class="kardashev-bar">
+                        <div class="kardashev-level active">
+                            <strong>Tipo I</strong>
+                            <small>Planetária</small>
+                        </div>
+                        <div class="kardashev-level">
+                            <strong>Tipo II</strong>
+                            <small>Estelar</small>
+                        </div>
+                        <div class="kardashev-level">
+                            <strong>Tipo III</strong>
+                            <small>Galáctica</small>
+                        </div>
+                        <div class="kardashev-level">
+                            <strong>Tipo IV</strong>
+                            <small>Universal</small>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="kardashev-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Desenvolvimento</h3>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Consumo Energético</div>
+                            <div class="stat-value" id="energy-consumption">10²⁰ W</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Planetas Colonizados</div>
+                            <div class="stat-value" id="colonies">12</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">População Total</div>
+                            <div class="stat-value" id="total-pop">50B</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Nível Tecnológico</div>
+                            <div class="stat-value" id="tech-level">I.85</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="advanceCivilization()">📈 Avançar Civilização</button>
+                        <button class="btn btn-secondary" onclick="unlockTechnology()">🔓 Nova Tecnologia</button>
+                    </div>
+
+                    <div class="console" id="civilization-console">
+                        <div class="console-line">Civilização Tipo I detectada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Singularidade -->
+        <div id="singularity" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🤖</span>
+                        <h3 class="card-title">Inteligência Artificial Superinteligente</h3>
+                    </div>
+                    <div class="viewer-3d" id="singularity-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">QI da IA</div>
+                            <div class="stat-value" id="ai-iq">10,000+</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Processamento</div>
+                            <div class="stat-value" id="processing">10²⁸ FLOPS</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Autoconsciência</div>
+                            <div class="stat-value success" id="consciousness">Ativa</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Alinhamento</div>
+                            <div class="stat-value" id="alignment">Amigável</div>
+                        </div>
+                    </stats-grid>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles da Singularidade</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Nível de IA:</label>
+                        <select class="control-input" id="ai-level">
+                            <option value="narrow">IA Estreita (ANI)</option>
+                            <option value="general">IA Geral (AGI)</option>
+                            <option value="super">Superinteligência (ASI)</option>
+                            <option value="transcendent">IA Transcendente</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="initiateSingularity()">⚡ Iniciar Singularidade</button>
+                        <button class="btn btn-primary" onclick="uploadConsciousness()">🧠 Upload de Consciência</button>
+                        <button class="btn btn-secondary" onclick="simulateUniverse()">🌌 Simular Universo</button>
+                    </div>
+
+                    <div class="console" id="singularity-console">
+                        <div class="console-line">Sistema de IA avançada pronto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'exploration',
+            exploration: {
+                systemsExplored: 0,
+                planetsDiscovered: 0,
+                distance: 0,
+                running: false
+            },
+            habitability: {
+                currentPlanet: 'kepler',
+                score: 95
+            },
+            colonization: {
+                population: 1000,
+                phase: 'outpost'
+            },
+            megastructures: {
+                type: 'dyson-swarm',
+                progress: 0,
+                active: false
+            },
+            civilization: {
+                kardashev: 1.0,
+                energyConsumption: 1e20
+            },
+            singularity: {
+                initiated: false,
+                aiLevel: 'narrow'
+            }
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+
+        // Chart
+        let kardashevChart;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            createStarfield();
+            initializeTabs();
+            initializeControls();
+            initialize3DScenes();
+            initializeChart();
+            animate();
+        });
+
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starfield.appendChild(star);
+            }
+        }
+
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function initializeControls() {
+            document.getElementById('search-radius')?.addEventListener('input', (e) => {
+                document.getElementById('radius-value').textContent = `${e.target.value} ly`;
+            });
+
+            document.getElementById('growth-rate')?.addEventListener('input', (e) => {
+                document.getElementById('growth-value').textContent = `${e.target.value}%/ano`;
+            });
+        }
+
+        // ==================== 3D SCENES ====================
+        function initialize3DScenes() {
+            const viewerIds = ['exploration', 'habitability', 'colonization', 'megastructures', 'civilization', 'singularity'];
+            
+            viewerIds.forEach(id => {
+                const container = document.getElementById(`${id}-viewer`);
+                if (!container) return;
+
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x000000);
+
+                const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.set(0, 10, 30);
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0x404040, 2);
+                scene.add(ambientLight);
+
+                const pointLight = new THREE.PointLight(0x8B5CF6, 1, 100);
+                pointLight.position.set(10, 10, 10);
+                scene.add(pointLight);
+
+                // Add specific objects based on scene
+                if (id === 'exploration') {
+                    // Add stars
+                    const starGeometry = new THREE.SphereGeometry(0.5, 8, 8);
+                    for (let i = 0; i < 50; i++) {
+                        const starMaterial = new THREE.MeshBasicMaterial({ 
+                            color: Math.random() * 0xFFFFFF 
+                        });
+                        const star = new THREE.Mesh(starGeometry, starMaterial);
+                        star.position.set(
+                            (Math.random() - 0.5) * 100,
+                            (Math.random() - 0.5) * 100,
+                            (Math.random() - 0.5) * 100
+                        );
+                        scene.add(star);
+                    }
+                } else if (id === 'habitability' || id === 'colonization') {
+                    // Add planet
+                    const planetGeometry = new THREE.SphereGeometry(5, 32, 32);
+                    const planetMaterial = new THREE.MeshPhongMaterial({ color: 0x2F6A9F });
+                    const planet = new THREE.Mesh(planetGeometry, planetMaterial);
+                    scene.add(planet);
+
+                    // Add atmosphere
+                    const atmosphereGeometry = new THREE.SphereGeometry(5.5, 32, 32);
+                    const atmosphereMaterial = new THREE.MeshBasicMaterial({
+                        color: 0x6366F1,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+                    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+                    scene.add(atmosphere);
+                } else if (id === 'megastructures') {
+                    // Add Dyson sphere framework
+                    const sun = new THREE.Mesh(
+                        new THREE.SphereGeometry(3, 32, 32),
+                        new THREE.MeshBasicMaterial({ color: 0xFDB813, emissive: 0xFDB813 })
+                    );
+                    scene.add(sun);
+
+                    // Add ring structure
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(10, 0.2, 16, 100),
+                        new THREE.MeshPhongMaterial({ color: 0x8B5CF6 })
+                    );
+                    ring.rotation.x = Math.PI / 2;
+                    scene.add(ring);
+                }
+
+                scenes[id] = scene;
+                cameras[id] = camera;
+                renderers[id] = renderer;
+
+                if (typeof THREE.OrbitControls !== 'undefined') {
+                    controls[id] = new THREE.OrbitControls(camera, renderer.domElement);
+                }
+            });
+        }
+
+        // ==================== CHART ====================
+        function initializeChart() {
+            const ctx = document.getElementById('kardashev-chart');
+            if (!ctx) return;
+
+            kardashevChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Tipo 0', 'Tipo I', 'Tipo II', 'Tipo III', 'Tipo IV'],
+                    datasets: [{
+                        label: 'Consumo Energético (W)',
+                        data: [1e13, 1e17, 1e26, 1e37, 1e49],
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E4E4E7' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' }
+                        },
+                        y: {
+                            type: 'logarithmic',
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            Object.keys(scenes).forEach(key => {
+                if (scenes[key] && cameras[key] && renderers[key]) {
+                    // Rotate planets and structures
+                    scenes[key].children.forEach(child => {
+                        if (child.geometry && child.geometry.type === 'SphereGeometry') {
+                            child.rotation.y += 0.001;
+                        }
+                    });
+
+                    if (controls[key]) controls[key].update();
+                    renderers[key].render(scenes[key], cameras[key]);
+                }
+            });
+        }
+
+        // ==================== EXPLORATION FUNCTIONS ====================
+        function startExploration() {
+            state.exploration.running = true;
+            addConsoleMessage('exploration', '🚀 Nave de exploração lançada');
+
+            const interval = setInterval(() => {
+                if (!state.exploration.running) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                state.exploration.distance += 10;
+                document.getElementById('distance').textContent = `${state.exploration.distance} ly`;
+
+                if (Math.random() < 0.3) {
+                    state.exploration.systemsExplored++;
+                    document.getElementById('systems-explored').textContent = state.exploration.systemsExplored;
+                    addConsoleMessage('exploration', `⭐ Novo sistema estelar descoberto (#${state.exploration.systemsExplored})`);
+                }
+
+                if (Math.random() < 0.2) {
+                    state.exploration.planetsDiscovered++;
+                    document.getElementById('planets-discovered').textContent = state.exploration.planetsDiscovered;
+                    addConsoleMessage('exploration', `🪐 Planeta descoberto!`);
+                }
+            }, 2000);
+        }
+
+        function scanSystem() {
+            addConsoleMessage('exploration', '📡 Escaneando sistema...');
+            setTimeout(() => {
+                addConsoleMessage('exploration', '✅ Sistema catalogado - 4 planetas, 2 potencialmente habitáveis');
+            }, 1500);
+        }
+
+        function returnToBase() {
+            state.exploration.running = false;
+            addConsoleMessage('exploration', '🏠 Retornando à base');
+        }
+
+        // ==================== HABITABILITY FUNCTIONS ====================
+        function selectPlanet(planetType) {
+            state.habitability.currentPlanet = planetType;
+            
+            const habitabilityScores = {
+                kepler: 95, proxima: 85, trappist: 90,
+                ocean: 75, desert: 60, ice: 40
+            };
+
+            const score = habitabilityScores[planetType] || 50;
+            state.habitability.score = score;
+
+            const progressBar = document.getElementById('habitability-score');
+            progressBar.style.width = `${score}%`;
+            progressBar.textContent = `${score}% Habitável`;
+
+            document.querySelectorAll('.planet-card').forEach(card => card.classList.remove('selected'));
+            event.target.closest('.planet-card')?.classList.add('selected');
+
+            addConsoleMessage('habitability', `🌍 Planeta ${planetType} selecionado para análise`);
+        }
+
+        function analyzePlanet() {
+            addConsoleMessage('habitability', '🔬 Análise detalhada iniciada...');
+            setTimeout(() => {
+                addConsoleMessage('habitability', '✅ Planeta apresenta condições favoráveis à vida');
+                addConsoleMessage('habitability', `Índice de Similaridade com Terra: ${state.habitability.score}%`);
+            }, 2000);
+        }
+
+        function detectBiosignatures() {
+            addConsoleMessage('habitability', '🧬 Procurando bioassinaturas na atmosfera...');
+            setTimeout(() => {
+                if (state.habitability.score > 80) {
+                    addConsoleMessage('habitability', '🎉 BIOASSINATURAS DETECTADAS! Possível vida presente!');
+                } else {
+                    addConsoleMessage('habitability', 'Nenhuma bioassinatura detectada');
+                }
+            }, 2000);
+        }
+
+        // ==================== COLONIZATION FUNCTIONS ====================
+        function establishColony() {
+            addConsoleMessage('colonization', '🏗️ Estabelecendo posto avançado...');
+            setTimeout(() => {
+                state.colonization.population = 1000;
+                document.getElementById('population').textContent = '1,000';
+                addConsoleMessage('colonization', '✅ Colônia estabelecida com 1,000 colonos');
+            }, 1500);
+        }
+
+        function expandColony() {
+            state.colonization.population = Math.floor(state.colonization.population * 1.5);
+            document.getElementById('population').textContent = state.colonization.population.toLocaleString();
+            addConsoleMessage('colonization', `📈 População expandida para ${state.colonization.population.toLocaleString()}`);
+        }
+
+        function terraformPlanet() {
+            addConsoleMessage('colonization', '🌱 Processo de terraformação iniciado...');
+            addConsoleMessage('colonization', 'Tempo estimado: 200 anos');
+        }
+
+        // ==================== MEGASTRUCTURE FUNCTIONS ====================
+        function buildMegastructure() {
+            const type = document.getElementById('megastructure-type').value;
+            addConsoleMessage('megastructures', `⚙️ Construção de ${type} iniciada`);
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress = Math.min(100, progress + 5);
+                
+                const progressBar = document.getElementById('construction-progress');
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${progress}% Construído`;
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    addConsoleMessage('megastructures', '✅ Megaestrutura concluída!');
+                }
+            }, 1000);
+        }
+
+        function accelerateConstruction() {
+            addConsoleMessage('megastructures', '⚡ Construção acelerada - utilizando 1000 naves construtoras');
+        }
+
+        function activateMegastructure() {
+            addConsoleMessage('megastructures', '✨ Megaestrutura ativada!');
+            document.getElementById('energy').textContent = '1.5×10²⁶ W';
+            addConsoleMessage('megastructures', 'Energia equivalente a 100% da estrela capturada');
+        }
+
+        // ==================== CIVILIZATION FUNCTIONS ====================
+        function advanceCivilization() {
+            state.civilization.kardashev = Math.min(4.0, state.civilization.kardashev + 0.1);
+            document.getElementById('tech-level').textContent = state.civilization.kardashev.toFixed(2);
+            
+            addConsoleMessage('civilization', `📈 Civilização avançada para nível ${state.civilization.kardashev.toFixed(2)}`);
+
+            // Update Kardashev bar
+            const levels = document.querySelectorAll('.kardashev-level');
+            levels.forEach((level, index) => {
+                if (state.civilization.kardashev >= index + 1) {
+                    level.classList.add('active');
+                } else {
+                    level.classList.remove('active');
+                }
+            });
+        }
+
+        function unlockTechnology() {
+            const techs = ['Fusão Nuclear', 'Dobra Espacial', 'Manipulação da Matéria', 'Controle Gravitacional', 'Viagem no Tempo'];
+            const tech = techs[Math.floor(Math.random() * techs.length)];
+            addConsoleMessage('civilization', `🔓 Nova tecnologia desbloqueada: ${tech}`);
+        }
+
+        // ==================== SINGULARITY FUNCTIONS ====================
+        function initiateSingularity() {
+            addConsoleMessage('singularity', '⚡ SINGULARIDADE TECNOLÓGICA INICIADA');
+            addConsoleMessage('singularity', 'IA aprimorando-se recursivamente...');
+            
+            setTimeout(() => {
+                addConsoleMessage('singularity', '🤖 Superinteligência alcançada');
+                addConsoleMessage('singularity', 'QI da IA: > 1,000,000');
+                document.getElementById('ai-iq').textContent = '1M+';
+            }, 3000);
+        }
+
+        function uploadConsciousness() {
+            addConsoleMessage('singularity', '🧠 Upload de consciência iniciado...');
+            setTimeout(() => {
+                addConsoleMessage('singularity', '✅ Consciência digitalizada com sucesso');
+                addConsoleMessage('singularity', 'Você agora existe como informação pura');
+            }, 2000);
+        }
+
+        function simulateUniverse() {
+            addConsoleMessage('singularity', '🌌 Simulando universo virtual...');
+            setTimeout(() => {
+                addConsoleMessage('singularity', '✅ Universo simulado criado');
+                addConsoleMessage('singularity', '10²³ partículas, 10²⁴ planetas, 10¹¹ galáxias');
+            }, 2500);
+        }
+
+        // ==================== CONSOLE ====================
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

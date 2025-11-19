@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Biológico Completo</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #10B981;
+            --color-secondary: #3B82F6;
+            --color-accent: #8B5CF6;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* DNA Sequence */
+        .dna-sequence {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .base {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+
+        .base-a { background: #FF6B6B; }
+        .base-t { background: #4ECDC4; }
+        .base-g { background: #FFE66D; }
+        .base-c { background: #95E1D3; }
+
+        /* Ecosystem Canvas */
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: #10B981;
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '🔬 ';
+            color: var(--color-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 SIMULADOR BIOLÓGICO COMPLETO</h1>
+            <p class="subtitle">Células, DNA, Ecossistemas, Microbiologia, Fisiologia Humana e Evolução</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="cells">🔬 Células</button>
+            <button class="tab-button" data-tab="genetics">🧬 Genética/DNA</button>
+            <button class="tab-button" data-tab="ecosystems">🌿 Ecossistemas</button>
+            <button class="tab-button" data-tab="microbes">🦠 Microbiologia</button>
+            <button class="tab-button" data-tab="human">👤 Fisiologia</button>
+            <button class="tab-button" data-tab="evolution">🔄 Evolução</button>
+        </div>
+
+        <!-- TAB 1: Células -->
+        <div id="cells" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔬</span>
+                        <h3 class="card-title">Célula Eucariótica 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="cell-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Metabolismo</div>
+                            <div class="stat-value" id="metabolism">85%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">ATP Produzido</div>
+                            <div class="stat-value" id="atp-rate">1.2M/s</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Divisão Celular</div>
+                            <div class="stat-value" id="division-time">24h</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Homeostase</div>
+                            <div class="stat-value" id="homeostasis">92%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles Celulares</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa Metabólica:</label>
+                        <input type="range" id="metabolism-rate" min="0" max="100" value="85" step="5">
+                        <span id="metabolism-value">85%</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura:</label>
+                        <input type="range" id="cell-temp" min="20" max="45" value="37" step="1">
+                        <span id="temp-value">37°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">pH Interno:</label>
+                        <input type="range" id="cell-ph" min="60" max="80" value="72" step="1">
+                        <span id="ph-value">7.2</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startCellProcesses()">▶️ Iniciar Processos</button>
+                        <button class="btn btn-primary" onclick="divideCell()">🔬 Dividir Célula</button>
+                        <button class="btn btn-secondary" onclick="resetCell()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="cell-console">
+                        <div class="console-line">Célula eucariótica inicializada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Genética/DNA -->
+        <div id="genetics" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🧬</span>
+                        <h3 class="card-title">Estrutura do DNA 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="dna-viewer"></div>
+                    <div class="dna-sequence" id="dna-sequence">
+                        <span class="base base-a">A</span>
+                        <span class="base base-t">T</span>
+                        <span class="base base-g">G</span>
+                        <span class="base base-c">C</span>
+                        <span class="base base-g">G</span>
+                        <span class="base base-c">C</span>
+                        <span class="base base-t">T</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles Genéticos</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa de Mutação:</label>
+                        <input type="range" id="mutation-rate" min="0" max="10" value="1" step="0.1">
+                        <span id="mutation-value">0.001%</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Expressão Gênica:</label>
+                        <input type="range" id="gene-expression" min="0" max="100" value="75" step="5">
+                        <span id="expression-value">75%</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="replicateDNA()">🔄 Replicar DNA</button>
+                        <button class="btn btn-primary" onclick="transcribeDNA()">📝 Transcrição</button>
+                        <button class="btn btn-primary" onclick="translateRNA()">🔬 Tradução</button>
+                        <button class="btn btn-secondary" onclick="mutateDNA()">⚡ Mutação</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Bases</div>
+                            <div class="stat-value" id="base-count">3000</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Genes</div>
+                            <div class="stat-value" id="gene-count">25</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Mutações</div>
+                            <div class="stat-value" id="mutation-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Proteínas</div>
+                            <div class="stat-value" id="protein-count">150</div>
+                        </div>
+                    </div>
+
+                    <div class="console" id="dna-console">
+                        <div class="console-line">DNA helicoidal inicializado (3000 pares de bases)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Ecossistemas -->
+        <div id="ecosystems" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌿</span>
+                        <h3 class="card-title">Ecossistema Dinâmico</h3>
+                    </div>
+                    <div class="viewer-3d">
+                        <canvas id="ecosystem-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles do Ecossistema</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Bioma:</label>
+                        <select class="control-input" id="biome-select">
+                            <option value="forest">Floresta Tropical</option>
+                            <option value="savanna">Savana</option>
+                            <option value="ocean">Oceano</option>
+                            <option value="desert">Deserto</option>
+                            <option value="tundra">Tundra</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">População Inicial:</label>
+                        <input type="range" id="population" min="10" max="100" value="50" step="10">
+                        <span id="population-value">50</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startEcosystem()">▶️ Iniciar Simulação</button>
+                        <button class="btn btn-secondary" onclick="pauseEcosystem()">⏸️ Pausar</button>
+                        <button class="btn btn-secondary" onclick="resetEcosystem()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Produtores</div>
+                            <div class="stat-value" id="producers">40</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Herbívoros</div>
+                            <div class="stat-value" id="herbivores">8</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Carnívoros</div>
+                            <div class="stat-value" id="carnivores">2</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Biodiversidade</div>
+                            <div class="stat-value" id="biodiversity">85%</div>
+                        </div>
+                    </div>
+
+                    <div class="console" id="ecosystem-console">
+                        <div class="console-line">Ecossistema de floresta tropical inicializado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Microbiologia -->
+        <div id="microbes" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🦠</span>
+                        <h3 class="card-title">Placa de Petri - Colônias Microbianas</h3>
+                    </div>
+                    <div class="viewer-3d">
+                        <canvas id="petri-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles Microbiológicos</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Organismo:</label>
+                        <select class="control-input" id="microbe-type">
+                            <option value="bacteria">Bactérias</option>
+                            <option value="virus">Vírus</option>
+                            <option value="fungi">Fungos</option>
+                            <option value="protozoa">Protozoários</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa de Crescimento:</label>
+                        <input type="range" id="growth-rate" min="1" max="10" value="5" step="1">
+                        <span id="growth-value">5x</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Antibiótico:</label>
+                        <input type="range" id="antibiotic" min="0" max="100" value="0" step="10">
+                        <span id="antibiotic-value">0%</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="inoculatePetri()">🧫 Inocular</button>
+                        <button class="btn btn-primary" onclick="addAntibiotic()">💊 Antibiótico</button>
+                        <button class="btn btn-secondary" onclick="clearPetri()">🧹 Limpar</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Colônias</div>
+                            <div class="stat-value" id="colonies">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">População</div>
+                            <div class="stat-value" id="microbe-pop">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Geração</div>
+                            <div class="stat-value" id="generation">1</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Resistência</div>
+                            <div class="stat-value" id="resistance">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="console" id="microbe-console">
+                        <div class="console-line">Placa de Petri estéril preparada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Fisiologia Humana -->
+        <div id="human" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>👤</span>
+                        <h3 class="card-title">Sistemas Corporais 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="body-viewer"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Sinais Vitais</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Sistema:</label>
+                        <select class="control-input" id="body-system">
+                            <option value="circulatory">Circulatório</option>
+                            <option value="respiratory">Respiratório</option>
+                            <option value="nervous">Nervoso</option>
+                            <option value="digestive">Digestivo</option>
+                            <option value="immune">Imunológico</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Nível de Atividade:</label>
+                        <input type="range" id="activity-level" min="0" max="100" value="50" step="10">
+                        <span id="activity-value">Moderado</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Batimentos</div>
+                            <div class="stat-value" id="heart-rate">72 bpm</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Respiração</div>
+                            <div class="stat-value" id="breath-rate">16 rpm</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Temperatura</div>
+                            <div class="stat-value" id="body-temp">36.5°C</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Saturação O₂</div>
+                            <div class="stat-value" id="oxygen">98%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Glicose</div>
+                            <div class="stat-value" id="glucose">90 mg/dL</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Sistema Imune</div>
+                            <div class="stat-value" id="immune-status">Normal</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="simulateExercise()">🏃 Exercício</button>
+                        <button class="btn btn-primary" onclick="introducePathogen()">🦠 Patógeno</button>
+                        <button class="btn btn-secondary" onclick="resetBody()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="body-console">
+                        <div class="console-line">Fisiologia humana inicializada - Todos os sistemas normais</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Evolução -->
+        <div id="evolution" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔄</span>
+                        <h3 class="card-title">Árvore Filogenética</h3>
+                    </div>
+                    <div class="viewer-3d">
+                        <canvas id="evolution-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles Evolutivos</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Pressão Seletiva:</label>
+                        <input type="range" id="selection-pressure" min="0" max="100" value="50" step="10">
+                        <span id="selection-value">50%</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Taxa de Mutação:</label>
+                        <input type="range" id="evo-mutation" min="1" max="20" value="5" step="1">
+                        <span id="evo-mutation-value">5%</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade:</label>
+                        <input type="range" id="evo-speed" min="1" max="10" value="5" step="1">
+                        <span id="evo-speed-value">5x</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startEvolution()">▶️ Iniciar Evolução</button>
+                        <button class="btn btn-primary" onclick="addPressure()">⚡ Pressão Ambiental</button>
+                        <button class="btn btn-secondary" onclick="resetEvolution()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Gerações</div>
+                            <div class="stat-value" id="generations">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Espécies</div>
+                            <div class="stat-value" id="species">1</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Extinções</div>
+                            <div class="stat-value" id="extinctions">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Adaptação</div>
+                            <div class="stat-value" id="adaptation">100%</div>
+                        </div>
+                    </div>
+
+                    <div class="console" id="evolution-console">
+                        <div class="console-line">Simulação evolutiva inicializada - Geração 0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'cells',
+            cells: {
+                metabolism: 85,
+                temperature: 37,
+                ph: 7.2,
+                atp: 1200000,
+                dividing: false
+            },
+            genetics: {
+                dna: generateDNA(3000),
+                mutations: 0,
+                genes: 25,
+                proteins: 150
+            },
+            ecosystem: {
+                running: false,
+                producers: 40,
+                herbivores: 8,
+                carnivores: 2,
+                organisms: []
+            },
+            microbes: {
+                colonies: 0,
+                population: 0,
+                generation: 1,
+                resistance: 0,
+                organisms: []
+            },
+            human: {
+                heartRate: 72,
+                breathRate: 16,
+                temperature: 36.5,
+                oxygen: 98,
+                glucose: 90,
+                immune: 'Normal'
+            },
+            evolution: {
+                running: false,
+                generations: 0,
+                species: 1,
+                extinctions: 0,
+                organisms: []
+            }
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+
+        // Canvas contexts
+        let ctxEcosystem, ctxPetri, ctxEvolution;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initializeControls();
+            initialize3DScenes();
+            initializeCanvases();
+            animateAll();
+        });
+
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function initializeControls() {
+            // Cell controls
+            document.getElementById('metabolism-rate')?.addEventListener('input', (e) => {
+                state.cells.metabolism = parseInt(e.target.value);
+                document.getElementById('metabolism-value').textContent = `${e.target.value}%`;
+                document.getElementById('metabolism').textContent = `${e.target.value}%`;
+            });
+
+            document.getElementById('cell-temp')?.addEventListener('input', (e) => {
+                state.cells.temperature = parseInt(e.target.value);
+                document.getElementById('temp-value').textContent = `${e.target.value}°C`;
+            });
+
+            document.getElementById('cell-ph')?.addEventListener('input', (e) => {
+                state.cells.ph = (parseInt(e.target.value) / 10).toFixed(1);
+                document.getElementById('ph-value').textContent = state.cells.ph;
+            });
+
+            // Genetics controls
+            document.getElementById('mutation-rate')?.addEventListener('input', (e) => {
+                document.getElementById('mutation-value').textContent = `${(parseFloat(e.target.value) / 1000).toFixed(3)}%`;
+            });
+
+            // Microbe controls
+            document.getElementById('growth-rate')?.addEventListener('input', (e) => {
+                document.getElementById('growth-value').textContent = `${e.target.value}x`;
+            });
+
+            document.getElementById('antibiotic')?.addEventListener('input', (e) => {
+                document.getElementById('antibiotic-value').textContent = `${e.target.value}%`;
+            });
+
+            // Evolution controls
+            document.getElementById('selection-pressure')?.addEventListener('input', (e) => {
+                document.getElementById('selection-value').textContent = `${e.target.value}%`;
+            });
+
+            document.getElementById('evo-mutation')?.addEventListener('input', (e) => {
+                document.getElementById('evo-mutation-value').textContent = `${e.target.value}%`;
+            });
+
+            document.getElementById('evo-speed')?.addEventListener('input', (e) => {
+                document.getElementById('evo-speed-value').textContent = `${e.target.value}x`;
+            });
+
+            // Activity level
+            document.getElementById('activity-level')?.addEventListener('input', (e) => {
+                const level = parseInt(e.target.value);
+                const labels = ['Repouso', 'Leve', 'Moderado', 'Intenso', 'Máximo'];
+                document.getElementById('activity-value').textContent = labels[Math.floor(level / 25)];
+            });
+        }
+
+        // ==================== 3D SCENES ====================
+        function initialize3DScenes() {
+            initializeCellScene();
+            initializeDNAScene();
+            initializeBodyScene();
+        }
+
+        function initializeCellScene() {
+            const container = document.getElementById('cell-viewer');
+            if (!container) return;
+
+            scenes.cell = new THREE.Scene();
+            scenes.cell.background = new THREE.Color(0x0a0a0a);
+
+            cameras.cell = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.cell.position.set(0, 0, 15);
+
+            renderers.cell = new THREE.WebGLRenderer({ antialias: true });
+            renderers.cell.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.cell.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.cell.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x10B981, 2, 100);
+            pointLight.position.set(10, 10, 10);
+            scenes.cell.add(pointLight);
+
+            // Create cell membrane
+            const membraneGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const membraneMaterial = new THREE.MeshPhongMaterial({
+                color: 0x10B981,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const membrane = new THREE.Mesh(membraneGeometry, membraneMaterial);
+            scenes.cell.add(membrane);
+
+            // Create nucleus
+            const nucleusGeometry = new THREE.SphereGeometry(2, 32, 32);
+            const nucleusMaterial = new THREE.MeshPhongMaterial({ color: 0x3B82F6 });
+            const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+            scenes.cell.add(nucleus);
+
+            // Create mitochondria
+            for (let i = 0; i < 5; i++) {
+                const mitoGeometry = new THREE.CapsuleGeometry(0.3, 1, 8, 16);
+                const mitoMaterial = new THREE.MeshPhongMaterial({ color: 0xFF6B6B });
+                const mito = new THREE.Mesh(mitoGeometry, mitoMaterial);
+                
+                const angle = (Math.PI * 2 * i) / 5;
+                mito.position.x = 3 * Math.cos(angle);
+                mito.position.y = 3 * Math.sin(angle);
+                mito.position.z = Math.random() * 2 - 1;
+                
+                scenes.cell.add(mito);
+            }
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.cell = new THREE.OrbitControls(cameras.cell, renderers.cell.domElement);
+            }
+        }
+
+        function initializeDNAScene() {
+            const container = document.getElementById('dna-viewer');
+            if (!container) return;
+
+            scenes.dna = new THREE.Scene();
+            scenes.dna.background = new THREE.Color(0x0a0a0a);
+
+            cameras.dna = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.dna.position.set(0, 0, 20);
+
+            renderers.dna = new THREE.WebGLRenderer({ antialias: true });
+            renderers.dna.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.dna.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.dna.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x3B82F6, 2, 100);
+            pointLight.position.set(10, 10, 10);
+            scenes.dna.add(pointLight);
+
+            // Create DNA helix
+            const helixGroup = new THREE.Group();
+            const baseColors = [0xFF6B6B, 0x4ECDC4, 0xFFE66D, 0x95E1D3];
+
+            for (let i = 0; i < 30; i++) {
+                const angle = (i / 10) * Math.PI * 2;
+                const y = i * 0.5 - 7.5;
+
+                // Strand 1
+                const sphere1 = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.2, 16, 16),
+                    new THREE.MeshPhongMaterial({ color: baseColors[i % 4] })
+                );
+                sphere1.position.set(2 * Math.cos(angle), y, 2 * Math.sin(angle));
+                helixGroup.add(sphere1);
+
+                // Strand 2
+                const sphere2 = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.2, 16, 16),
+                    new THREE.MeshPhongMaterial({ color: baseColors[(i + 2) % 4] })
+                );
+                sphere2.position.set(2 * Math.cos(angle + Math.PI), y, 2 * Math.sin(angle + Math.PI));
+                helixGroup.add(sphere2);
+
+                // Base pair connection
+                const cylinderGeometry = new THREE.CylinderGeometry(0.05, 0.05, 4, 8);
+                const cylinderMaterial = new THREE.MeshPhongMaterial({ color: 0x808080 });
+                const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+                cylinder.position.y = y;
+                cylinder.rotation.z = angle + Math.PI / 2;
+                helixGroup.add(cylinder);
+            }
+
+            scenes.dna.add(helixGroup);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.dna = new THREE.OrbitControls(cameras.dna, renderers.dna.domElement);
+            }
+        }
+
+        function initializeBodyScene() {
+            const container = document.getElementById('body-viewer');
+            if (!container) return;
+
+            scenes.body = new THREE.Scene();
+            scenes.body.background = new THREE.Color(0x0a0a0a);
+
+            cameras.body = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            cameras.body.position.set(0, 0, 15);
+
+            renderers.body = new THREE.WebGLRenderer({ antialias: true });
+            renderers.body.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderers.body.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scenes.body.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xFF6B6B, 2, 100);
+            pointLight.position.set(10, 10, 10);
+            scenes.body.add(pointLight);
+
+            // Simplified human body representation
+            const bodyGroup = new THREE.Group();
+
+            // Head
+            const headGeometry = new THREE.SphereGeometry(1, 32, 32);
+            const headMaterial = new THREE.MeshPhongMaterial({ color: 0xFFDBB5 });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.position.y = 5;
+            bodyGroup.add(head);
+
+            // Torso
+            const torsoGeometry = new THREE.CylinderGeometry(1.2, 1, 3, 32);
+            const torsoMaterial = new THREE.MeshPhongMaterial({ color: 0x3B82F6 });
+            const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+            torso.position.y = 2;
+            bodyGroup.add(torso);
+
+            // Heart (visible through torso)
+            const heartGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const heartMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xFF0000,
+                emissive: 0x330000
+            });
+            const heart = new THREE.Mesh(heartGeometry, heartMaterial);
+            heart.position.set(-0.3, 2.5, 0);
+            bodyGroup.add(heart);
+
+            scenes.body.add(bodyGroup);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls.body = new THREE.OrbitControls(cameras.body, renderers.body.domElement);
+            }
+        }
+
+        // ==================== CANVAS INITIALIZATION ====================
+        function initializeCanvases() {
+            const ecosystemCanvas = document.getElementById('ecosystem-canvas');
+            const petriCanvas = document.getElementById('petri-canvas');
+            const evolutionCanvas = document.getElementById('evolution-canvas');
+
+            if (ecosystemCanvas) {
+                ecosystemCanvas.width = ecosystemCanvas.parentElement.clientWidth;
+                ecosystemCanvas.height = ecosystemCanvas.parentElement.clientHeight;
+                ctxEcosystem = ecosystemCanvas.getContext('2d');
+            }
+
+            if (petriCanvas) {
+                petriCanvas.width = petriCanvas.parentElement.clientWidth;
+                petriCanvas.height = petriCanvas.parentElement.clientHeight;
+                ctxPetri = petriCanvas.getContext('2d');
+                drawPetriDish();
+            }
+
+            if (evolutionCanvas) {
+                evolutionCanvas.width = evolutionCanvas.parentElement.clientWidth;
+                evolutionCanvas.height = evolutionCanvas.parentElement.clientHeight;
+                ctxEvolution = evolutionCanvas.getContext('2d');
+            }
+        }
+
+        // ==================== DNA FUNCTIONS ====================
+        function generateDNA(length) {
+            const bases = ['A', 'T', 'G', 'C'];
+            let dna = '';
+            for (let i = 0; i < length; i++) {
+                dna += bases[Math.floor(Math.random() * 4)];
+            }
+            return dna;
+        }
+
+        function replicateDNA() {
+            addConsoleMessage('dna', '🔄 Iniciando replicação do DNA...');
+            setTimeout(() => {
+                addConsoleMessage('dna', 'DNA replicado com sucesso - 3000 pares de bases copiados');
+            }, 1000);
+        }
+
+        function transcribeDNA() {
+            addConsoleMessage('dna', '📝 Transcrevendo DNA → RNA mensageiro...');
+            setTimeout(() => {
+                addConsoleMessage('dna', 'mRNA sintetizado - Pronto para tradução');
+            }, 800);
+        }
+
+        function translateRNA() {
+            addConsoleMessage('dna', '🔬 Traduzindo mRNA → Proteína...');
+            setTimeout(() => {
+                state.genetics.proteins += 10;
+                document.getElementById('protein-count').textContent = state.genetics.proteins;
+                addConsoleMessage('dna', `Proteína sintetizada! Total: ${state.genetics.proteins}`);
+            }, 1200);
+        }
+
+        function mutateDNA() {
+            state.genetics.mutations++;
+            document.getElementById('mutation-count').textContent = state.genetics.mutations;
+            addConsoleMessage('dna', `⚡ Mutação detectada! Total de mutações: ${state.genetics.mutations}`);
+        }
+
+        // ==================== CELL FUNCTIONS ====================
+        function startCellProcesses() {
+            addConsoleMessage('cell', '⚡ Ativando processos celulares...');
+            addConsoleMessage('cell', '🔋 Mitocôndrias produzindo ATP');
+            addConsoleMessage('cell', '🧬 Ribossomos sintetizando proteínas');
+            addConsoleMessage('cell', '📦 Complexo de Golgi processando vesículas');
+        }
+
+        function divideCell() {
+            state.cells.dividing = true;
+            addConsoleMessage('cell', '🔬 Iniciando divisão celular (mitose)...');
+            
+            let phase = 0;
+            const phases = ['Prófase', 'Metáfase', 'Anáfase', 'Telófase', 'Citocinese'];
+            
+            const interval = setInterval(() => {
+                if (phase < phases.length) {
+                    addConsoleMessage('cell', `📍 ${phases[phase]}`);
+                    phase++;
+                } else {
+                    clearInterval(interval);
+                    state.cells.dividing = false;
+                    addConsoleMessage('cell', '✅ Divisão completa - 2 células filhas formadas');
+                }
+            }, 1000);
+        }
+
+        function resetCell() {
+            addConsoleMessage('cell', '🔄 Célula resetada ao estado inicial');
+        }
+
+        // ==================== ECOSYSTEM FUNCTIONS ====================
+        function startEcosystem() {
+            state.ecosystem.running = true;
+            addConsoleMessage('ecosystem', '🌿 Iniciando simulação do ecossistema...');
+            
+            // Initialize organisms
+            state.ecosystem.organisms = [];
+            for (let i = 0; i < state.ecosystem.producers; i++) {
+                state.ecosystem.organisms.push({
+                    type: 'producer',
+                    x: Math.random() * 600,
+                    y: Math.random() * 400,
+                    energy: 100
+                });
+            }
+            
+            animateEcosystem();
+        }
+
+        function pauseEcosystem() {
+            state.ecosystem.running = false;
+            addConsoleMessage('ecosystem', '⏸️ Simulação pausada');
+        }
+
+        function resetEcosystem() {
+            state.ecosystem.running = false;
+            state.ecosystem.organisms = [];
+            if (ctxEcosystem) {
+                ctxEcosystem.clearRect(0, 0, ctxEcosystem.canvas.width, ctxEcosystem.canvas.height);
+            }
+            addConsoleMessage('ecosystem', '🔄 Ecossistema resetado');
+        }
+
+        function animateEcosystem() {
+            if (!state.ecosystem.running || !ctxEcosystem) return;
+
+            const canvas = ctxEcosystem.canvas;
+            ctxEcosystem.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background
+            ctxEcosystem.fillStyle = '#0a4d2c';
+            ctxEcosystem.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw organisms
+            state.ecosystem.organisms.forEach(org => {
+                ctxEcosystem.beginPath();
+                ctxEcosystem.arc(org.x, org.y, 5, 0, Math.PI * 2);
+                ctxEcosystem.fillStyle = org.type === 'producer' ? '#10B981' : '#3B82F6';
+                ctxEcosystem.fill();
+
+                // Move randomly
+                org.x += (Math.random() - 0.5) * 2;
+                org.y += (Math.random() - 0.5) * 2;
+
+                // Keep in bounds
+                org.x = Math.max(0, Math.min(canvas.width, org.x));
+                org.y = Math.max(0, Math.min(canvas.height, org.y));
+            });
+
+            setTimeout(() => animateEcosystem(), 50);
+        }
+
+        // ==================== PETRI DISH FUNCTIONS ====================
+        function drawPetriDish() {
+            if (!ctxPetri) return;
+
+            const canvas = ctxPetri.canvas;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) / 2 - 20;
+
+            ctxPetri.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw dish
+            ctxPetri.beginPath();
+            ctxPetri.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctxPetri.fillStyle = '#f5f5f5';
+            ctxPetri.fill();
+            ctxPetri.strokeStyle = '#808080';
+            ctxPetri.lineWidth = 3;
+            ctxPetri.stroke();
+
+            // Draw grid
+            ctxPetri.strokeStyle = '#e0e0e0';
+            ctxPetri.lineWidth = 1;
+            for (let i = 0; i < 10; i++) {
+                ctxPetri.beginPath();
+                ctxPetri.arc(centerX, centerY, radius * (i / 10), 0, Math.PI * 2);
+                ctxPetri.stroke();
+            }
+        }
+
+        function inoculatePetri() {
+            state.microbes.colonies = Math.floor(Math.random() * 10) + 5;
+            state.microbes.population = state.microbes.colonies * 100;
+            
+            document.getElementById('colonies').textContent = state.microbes.colonies;
+            document.getElementById('microbe-pop').textContent = state.microbes.population;
+
+            addConsoleMessage('microbe', `🧫 Placa inoculada com ${state.microbes.colonies} colônias`);
+            drawColonies();
+        }
+
+        function drawColonies() {
+            if (!ctxPetri) return;
+
+            const canvas = ctxPetri.canvas;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) / 2 - 40;
+
+            for (let i = 0; i < state.microbes.colonies; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * maxRadius;
+                const x = centerX + distance * Math.cos(angle);
+                const y = centerY + distance * Math.sin(angle);
+
+                ctxPetri.beginPath();
+                ctxPetri.arc(x, y, Math.random() * 15 + 10, 0, Math.PI * 2);
+                ctxPetri.fillStyle = `rgba(16, 185, 129, ${Math.random() * 0.5 + 0.3})`;
+                ctxPetri.fill();
+                ctxPetri.strokeStyle = '#10B981';
+                ctxPetri.lineWidth = 2;
+                ctxPetri.stroke();
+            }
+        }
+
+        function addAntibiotic() {
+            const level = parseInt(document.getElementById('antibiotic').value);
+            const killed = Math.floor(state.microbes.population * (level / 100));
+            state.microbes.population = Math.max(0, state.microbes.population - killed);
+            
+            document.getElementById('microbe-pop').textContent = state.microbes.population;
+            addConsoleMessage('microbe', `💊 Antibiótico aplicado - ${killed} organismos eliminados`);
+        }
+
+        function clearPetri() {
+            state.microbes.colonies = 0;
+            state.microbes.population = 0;
+            state.microbes.generation = 1;
+            
+            document.getElementById('colonies').textContent = 0;
+            document.getElementById('microbe-pop').textContent = 0;
+            document.getElementById('generation').textContent = 1;
+            
+            drawPetriDish();
+            addConsoleMessage('microbe', '🧹 Placa de Petri esterilizada');
+        }
+
+        // ==================== HUMAN PHYSIOLOGY ====================
+        function simulateExercise() {
+            addConsoleMessage('body', '🏃 Iniciando exercício físico...');
+            
+            state.human.heartRate = 120;
+            state.human.breathRate = 28;
+            state.human.temperature = 37.5;
+            state.human.oxygen = 95;
+
+            document.getElementById('heart-rate').textContent = `${state.human.heartRate} bpm`;
+            document.getElementById('breath-rate').textContent = `${state.human.breathRate} rpm`;
+            document.getElementById('body-temp').textContent = `${state.human.temperature}°C`;
+            document.getElementById('oxygen').textContent = `${state.human.oxygen}%`;
+
+            addConsoleMessage('body', '⚡ Sistema cardiovascular acelerado');
+            addConsoleMessage('body', '💨 Taxa respiratória aumentada');
+
+            setTimeout(() => {
+                state.human.heartRate = 72;
+                state.human.breathRate = 16;
+                state.human.temperature = 36.5;
+                state.human.oxygen = 98;
+                
+                document.getElementById('heart-rate').textContent = `${state.human.heartRate} bpm`;
+                document.getElementById('breath-rate').textContent = `${state.human.breathRate} rpm`;
+                document.getElementById('body-temp').textContent = `${state.human.temperature}°C`;
+                document.getElementById('oxygen').textContent = `${state.human.oxygen}%`;
+
+                addConsoleMessage('body', '✅ Recuperação completa - Sinais vitais normais');
+            }, 5000);
+        }
+
+        function introducePathogen() {
+            state.human.immune = 'Ativado';
+            document.getElementById('immune-status').textContent = state.human.immune;
+            document.getElementById('immune-status').style.color = '#F59E0B';
+
+            addConsoleMessage('body', '🦠 Patógeno detectado!');
+            addConsoleMessage('body', '🛡️ Sistema imunológico ativado');
+            addConsoleMessage('body', '⚔️ Linfócitos T iniciando resposta');
+            addConsoleMessage('body', '🔬 Anticorpos sendo produzidos');
+
+            setTimeout(() => {
+                state.human.immune = 'Normal';
+                document.getElementById('immune-status').textContent = state.human.immune;
+                document.getElementById('immune-status').style.color = '#10B981';
+                addConsoleMessage('body', '✅ Patógeno eliminado - Imunidade adquirida');
+            }, 6000);
+        }
+
+        function resetBody() {
+            state.human = {
+                heartRate: 72,
+                breathRate: 16,
+                temperature: 36.5,
+                oxygen: 98,
+                glucose: 90,
+                immune: 'Normal'
+            };
+            
+            document.getElementById('heart-rate').textContent = `${state.human.heartRate} bpm`;
+            document.getElementById('breath-rate').textContent = `${state.human.breathRate} rpm`;
+            document.getElementById('body-temp').textContent = `${state.human.temperature}°C`;
+            document.getElementById('oxygen').textContent = `${state.human.oxygen}%`;
+            document.getElementById('glucose').textContent = `${state.human.glucose} mg/dL`;
+            document.getElementById('immune-status').textContent = state.human.immune;
+
+            addConsoleMessage('body', '🔄 Fisiologia resetada');
+        }
+
+        // ==================== EVOLUTION ====================
+        function startEvolution() {
+            state.evolution.running = true;
+            addConsoleMessage('evolution', '🔄 Iniciando simulação evolutiva...');
+            
+            state.evolution.organisms = [];
+            for (let i = 0; i < 50; i++) {
+                state.evolution.organisms.push({
+                    x: Math.random() * 600,
+                    y: Math.random() * 400,
+                    fitness: Math.random(),
+                    generation: 0
+                });
+            }
+            
+            animateEvolution();
+        }
+
+        function animateEvolution() {
+            if (!state.evolution.running || !ctxEvolution) return;
+
+            const canvas = ctxEvolution.canvas;
+            ctxEvolution.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background
+            ctxEvolution.fillStyle = '#1a1a1a';
+            ctxEvolution.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw organisms
+            state.evolution.organisms.forEach(org => {
+                ctxEvolution.beginPath();
+                ctxEvolution.arc(org.x, org.y, 5, 0, Math.PI * 2);
+                const hue = org.fitness * 120;
+                ctxEvolution.fillStyle = `hsl(${hue}, 70%, 50%)`;
+                ctxEvolution.fill();
+            });
+
+            // Simulate generation
+            state.evolution.generations++;
+            document.getElementById('generations').textContent = state.evolution.generations;
+
+            setTimeout(() => animateEvolution(), 100);
+        }
+
+        function addPressure() {
+            addConsoleMessage('evolution', '⚡ Pressão ambiental aplicada!');
+            
+            // Remove organisms with low fitness
+            const threshold = 0.5;
+            const before = state.evolution.organisms.length;
+            state.evolution.organisms = state.evolution.organisms.filter(org => org.fitness > threshold);
+            const after = state.evolution.organisms.length;
+            
+            state.evolution.extinctions += (before - after);
+            document.getElementById('extinctions').textContent = state.evolution.extinctions;
+            
+            addConsoleMessage('evolution', `💀 ${before - after} organismos eliminados`);
+        }
+
+        function resetEvolution() {
+            state.evolution.running = false;
+            state.evolution.generations = 0;
+            state.evolution.species = 1;
+            state.evolution.extinctions = 0;
+            state.evolution.organisms = [];
+
+            document.getElementById('generations').textContent = 0;
+            document.getElementById('species').textContent = 1;
+            document.getElementById('extinctions').textContent = 0;
+            document.getElementById('adaptation').textContent = '100%';
+
+            if (ctxEvolution) {
+                ctxEvolution.clearRect(0, 0, ctxEvolution.canvas.width, ctxEvolution.canvas.height);
+            }
+
+            addConsoleMessage('evolution', '🔄 Evolução resetada - Geração 0');
+        }
+
+        // ==================== ANIMATION LOOP ====================
+        function animateAll() {
+            requestAnimationFrame(animateAll);
+
+            // Animate 3D scenes
+            Object.keys(scenes).forEach(key => {
+                if (scenes[key] && cameras[key] && renderers[key]) {
+                    if (controls[key]) controls[key].update();
+                    renderers[key].render(scenes[key], cameras[key]);
+                }
+            });
+        }
+
+        // ==================== UTILITY ====================
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

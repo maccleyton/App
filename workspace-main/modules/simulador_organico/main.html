@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Química Orgânica</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- MathJax -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        /* === CSS VARIABLES === */
+        :root {
+            --color-primary: #00BF93;
+            --color-secondary: #06B6D4;
+            --color-accent: #10B981;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+            
+            /* Atom colors */
+            --color-carbon: #404040;
+            --color-hydrogen: #E8E8E8;
+            --color-oxygen: #FF0000;
+            --color-nitrogen: #0000FF;
+            --color-sulfur: #FFFF00;
+            --color-chlorine: #00FF00;
+            
+            --spacing-sm: 0.75rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+
+        header {
+            text-align: center;
+            padding: var(--spacing-lg) 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: var(--spacing-lg);
+            background: linear-gradient(135deg, rgba(0, 191, 147, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+            border-radius: var(--radius-lg);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            background: var(--color-bg-surface);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(22, 22, 22, 0.5);
+            border-color: var(--color-primary);
+            color: var(--color-text-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(0, 191, 147, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            margin: var(--spacing-md) 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .control-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(0, 191, 147, 0.1);
+        }
+
+        select.control-input {
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 191, 147, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 3px solid var(--color-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin: var(--spacing-md) 0;
+        }
+
+        .info-box h4 {
+            margin-bottom: var(--spacing-sm);
+            color: var(--color-primary);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Example Cards */
+        .example-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-card:hover {
+            border-color: var(--color-primary);
+            background: rgba(0, 191, 147, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: var(--color-primary);
+            margin: var(--spacing-sm) 0;
+        }
+
+        /* Reaction Display */
+        .reaction-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            text-align: center;
+            font-size: 1.2rem;
+            margin: var(--spacing-md) 0;
+        }
+
+        .reaction-arrow {
+            color: var(--color-secondary);
+            font-size: 2rem;
+            margin: 0 var(--spacing-md);
+        }
+
+        /* Nomenclature */
+        .nomenclature-check {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            margin-top: var(--spacing-sm);
+        }
+
+        .nomenclature-check.correct {
+            border: 2px solid #10B981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .nomenclature-check.incorrect {
+            border: 2px solid #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-accent);
+            margin-top: var(--spacing-md);
+        }
+
+        .console-line {
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .console-line::before {
+            content: '> ';
+            color: var(--color-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 QUÍMICA ORGÂNICA</h1>
+            <p class="subtitle">Hidrocarbonetos, Grupos Funcionais, Reações e Nomenclatura</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="hydrocarbons">🔗 Hidrocarbonetos</button>
+            <button class="tab-button" data-tab="functional">⚗️ Grupos Funcionais</button>
+            <button class="tab-button" data-tab="reactions">⚡ Reações Orgânicas</button>
+            <button class="tab-button" data-tab="nomenclature">📝 Nomenclatura</button>
+            <button class="tab-button" data-tab="builder">🏗️ Construtor Molecular</button>
+        </div>
+
+        <!-- TAB 1: Hidrocarbonetos -->
+        <div id="hydrocarbons" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <span>🔗</span>
+                    <h3 class="card-title">Visualizador de Hidrocarbonetos</h3>
+                </div>
+                
+                <div class="viewer-3d" id="hydrocarbon-viewer"></div>
+
+                <div class="control-group">
+                    <label class="control-label">Tipo de Hidrocarboneto</label>
+                    <select class="control-input" id="hydrocarbon-type" onchange="loadHydrocarbon()">
+                        <optgroup label="Alcanos (ligação simples)">
+                            <option value="methane">Metano (CH₄)</option>
+                            <option value="ethane">Etano (C₂H₆)</option>
+                            <option value="propane">Propano (C₃H₈)</option>
+                            <option value="butane">Butano (C₄H₁₀)</option>
+                            <option value="pentane">Pentano (C₅H₁₂)</option>
+                        </optgroup>
+                        <optgroup label="Alcenos (ligação dupla)">
+                            <option value="ethene">Eteno (C₂H₄)</option>
+                            <option value="propene">Propeno (C₃H₆)</option>
+                            <option value="butene">Buteno (C₄H₈)</option>
+                        </optgroup>
+                        <optgroup label="Alcinos (ligação tripla)">
+                            <option value="ethyne">Etino (C₂H₂)</option>
+                            <option value="propyne">Propino (C₃H₄)</option>
+                        </optgroup>
+                        <optgroup label="Aromáticos">
+                            <option value="benzene">Benzeno (C₆H₆)</option>
+                            <option value="toluene">Tolueno (C₇H₈)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="info-box" id="hydrocarbon-info">
+                    <h4>Metano (CH₄)</h4>
+                    <p><strong>Fórmula Molecular:</strong> CH₄</p>
+                    <p><strong>Tipo:</strong> Alcano (saturado)</p>
+                    <p><strong>Hibridização:</strong> sp³</p>
+                    <p><strong>Geometria:</strong> Tetraédrica</p>
+                    <p><strong>Ângulo de Ligação:</strong> 109.5°</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Massa Molar</div>
+                        <div class="stat-value" id="molar-mass">16.04 g/mol</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Ponto de Ebulição</div>
+                        <div class="stat-value" id="boiling-point">-161°C</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Ligações C-H</div>
+                        <div class="stat-value" id="ch-bonds">4</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Ligações C-C</div>
+                        <div class="stat-value" id="cc-bonds">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Grupos Funcionais -->
+        <div id="functional" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚗️</span>
+                        <h3 class="card-title">Visualizador 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="functional-viewer"></div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>📊</span>
+                        <h3 class="card-title">Selecionar Grupo Funcional</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Grupo Funcional</label>
+                        <select class="control-input" id="functional-group" onchange="loadFunctionalGroup()">
+                            <option value="alcohol">Álcool (-OH)</option>
+                            <option value="aldehyde">Aldeído (-CHO)</option>
+                            <option value="ketone">Cetona (C=O)</option>
+                            <option value="carboxylic">Ácido Carboxílico (-COOH)</option>
+                            <option value="ester">Éster (-COO-)</option>
+                            <option value="ether">Éter (-O-)</option>
+                            <option value="amine">Amina (-NH₂)</option>
+                            <option value="amide">Amida (-CONH₂)</option>
+                            <option value="halide">Haleto (-X)</option>
+                            <option value="nitrile">Nitrila (-CN)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Cadeia Carbônica</label>
+                        <select class="control-input" id="carbon-chain">
+                            <option value="1">1 Carbono (Met-)</option>
+                            <option value="2" selected>2 Carbonos (Et-)</option>
+                            <option value="3">3 Carbonos (Prop-)</option>
+                            <option value="4">4 Carbonos (But-)</option>
+                            <option value="5">5 Carbonos (Pent-)</option>
+                        </select>
+                    </div>
+
+                    <div class="info-box" id="functional-info">
+                        <h4>Álcool</h4>
+                        <p><strong>Fórmula Geral:</strong> R-OH</p>
+                        <p><strong>Nomenclatura:</strong> Prefixo + anol</p>
+                        <p><strong>Exemplo:</strong> CH₃CH₂OH (Etanol)</p>
+                        <p><strong>Propriedades:</strong> Polar, forma ligações de hidrogênio</p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="generateFunctionalMolecule()">Gerar Molécula</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Reações Orgânicas -->
+        <div id="reactions" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span>⚡</span>
+                    <h3 class="card-title">Simulador de Reações</h3>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Tipo de Reação</label>
+                    <select class="control-input" id="reaction-type" onchange="loadReaction()">
+                        <optgroup label="Reações de Substituição">
+                            <option value="halogenation">Halogenação</option>
+                            <option value="nitration">Nitração</option>
+                            <option value="sulfonation">Sulfonação</option>
+                        </optgroup>
+                        <optgroup label="Reações de Adição">
+                            <option value="hydrogenation">Hidrogenação</option>
+                            <option value="halogen-addition">Adição de Halogênio</option>
+                            <option value="hydration">Hidratação</option>
+                        </optgroup>
+                        <optgroup label="Reações de Eliminação">
+                            <option value="dehydration">Desidratação</option>
+                            <option value="dehydrohalogenation">Desiidroalogenação</option>
+                        </optgroup>
+                        <optgroup label="Reações de Oxidação">
+                            <option value="alcohol-oxidation">Oxidação de Álcool</option>
+                            <option value="aldehyde-oxidation">Oxidação de Aldeído</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="reaction-display" id="reaction-display">
+                    <span class="formula">CH₄</span>
+                    <span class="reaction-arrow">+</span>
+                    <span class="formula">Cl₂</span>
+                    <span class="reaction-arrow">→</span>
+                    <span class="formula">CH₃Cl</span>
+                    <span class="reaction-arrow">+</span>
+                    <span class="formula">HCl</span>
+                </div>
+
+                <div class="info-box" id="reaction-info">
+                    <h4>Halogenação de Alcanos</h4>
+                    <p><strong>Mecanismo:</strong> Substituição radicalar</p>
+                    <p><strong>Condições:</strong> Luz UV ou calor</p>
+                    <p><strong>Etapas:</strong></p>
+                    <ul>
+                        <li>1. Iniciação: Cl₂ → 2Cl•</li>
+                        <li>2. Propagação: CH₄ + Cl• → CH₃• + HCl</li>
+                        <li>3. Propagação: CH₃• + Cl₂ → CH₃Cl + Cl•</li>
+                        <li>4. Terminação: 2Cl• → Cl₂</li>
+                    </ul>
+                </div>
+
+                <div class="grid-2">
+                    <div class="viewer-3d" id="reactant-viewer"></div>
+                    <div class="viewer-3d" id="product-viewer"></div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="animateReaction()">Animar Reação</button>
+                    <button class="btn btn-secondary" onclick="resetReaction()">Reiniciar</button>
+                </div>
+
+                <div class="console" id="reaction-console">
+                    <div class="console-line">Sistema de reação inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Nomenclatura -->
+        <div id="nomenclature" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span>📝</span>
+                    <h3 class="card-title">Prática de Nomenclatura IUPAC</h3>
+                </div>
+
+                <div class="viewer-3d" id="nomenclature-viewer"></div>
+
+                <div class="control-group">
+                    <label class="control-label">Nomeie o composto abaixo:</label>
+                    <input type="text" class="control-input" id="nomenclature-input" placeholder="Digite o nome IUPAC...">
+                    <button class="btn btn-primary" onclick="checkNomenclature()" style="margin-top: 0.5rem;">Verificar</button>
+                </div>
+
+                <div class="nomenclature-check" id="nomenclature-result" style="display: none;">
+                    <span id="result-icon"></span>
+                    <span id="result-text"></span>
+                </div>
+
+                <div class="info-box">
+                    <h4>Regras de Nomenclatura IUPAC</h4>
+                    <p><strong>1. Identificar a cadeia principal:</strong> Maior cadeia contínua de carbonos</p>
+                    <p><strong>2. Numerar a cadeia:</strong> Da extremidade mais próxima aos substituintes</p>
+                    <p><strong>3. Nomear substituintes:</strong> Em ordem alfabética com suas posições</p>
+                    <p><strong>4. Nome do composto:</strong> Posição-substituinte-prefixo-sufixo</p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="example-card" onclick="loadNomenclatureExample('propane')">
+                        <h4>Alcanos</h4>
+                        <p class="formula">Prefixo + ano</p>
+                        <p><strong>Exemplos:</strong></p>
+                        <ul>
+                            <li>CH₄: Metano</li>
+                            <li>C₂H₆: Etano</li>
+                            <li>C₃H₈: Propano</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-card" onclick="loadNomenclatureExample('propene')">
+                        <h4>Alcenos</h4>
+                        <p class="formula">Prefixo + eno</p>
+                        <p><strong>Exemplos:</strong></p>
+                        <ul>
+                            <li>C₂H₄: Eteno</li>
+                            <li>C₃H₆: Propeno</li>
+                            <li>C₄H₈: But-1-eno</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-card" onclick="loadNomenclatureExample('propyne')">
+                        <h4>Alcinos</h4>
+                        <p class="formula">Prefixo + ino</p>
+                        <p><strong>Exemplos:</strong></p>
+                        <ul>
+                            <li>C₂H₂: Etino</li>
+                            <li>C₃H₄: Propino</li>
+                            <li>C₄H₆: But-1-ino</li>
+                        </ul>
+                    </div>
+
+                    <div class="example-card" onclick="loadNomenclatureExample('ethanol')">
+                        <h4>Álcoois</h4>
+                        <p class="formula">Prefixo + anol</p>
+                        <p><strong>Exemplos:</strong></p>
+                        <ul>
+                            <li>CH₃OH: Metanol</li>
+                            <li>C₂H₅OH: Etanol</li>
+                            <li>C₃H₇OH: Propan-1-ol</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Construtor Molecular -->
+        <div id="builder" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🏗️</span>
+                        <h3 class="card-title">Área de Construção</h3>
+                    </div>
+                    <div class="viewer-3d" id="builder-viewer"></div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="addAtom('C')">+ Carbono</button>
+                        <button class="btn btn-primary" onclick="addAtom('H')">+ Hidrogênio</button>
+                        <button class="btn btn-primary" onclick="addAtom('O')">+ Oxigênio</button>
+                        <button class="btn btn-primary" onclick="addAtom('N')">+ Nitrogênio</button>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn btn-secondary" onclick="changeBondType()">Alterar Ligação</button>
+                        <button class="btn btn-secondary" onclick="removeAtom()">Remover Átomo</button>
+                        <button class="btn btn-secondary" onclick="clearBuilder()">Limpar Tudo</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>📊</span>
+                        <h3 class="card-title">Propriedades da Molécula</h3>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Átomos de Carbono</div>
+                            <div class="stat-value" id="builder-carbons">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Átomos de Hidrogênio</div>
+                            <div class="stat-value" id="builder-hydrogens">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Heteroátomos</div>
+                            <div class="stat-value" id="builder-hetero">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ligações</div>
+                            <div class="stat-value" id="builder-bonds">0</div>
+                        </div>
+                    </div>
+
+                    <div class="info-box" id="builder-formula">
+                        <h4>Fórmula Molecular</h4>
+                        <p class="formula" id="molecular-formula">-</p>
+                    </div>
+
+                    <div class="info-box" id="builder-name">
+                        <h4>Nome IUPAC Sugerido</h4>
+                        <p id="iupac-name">Construa uma molécula</p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="analyzeMolecule()">Analisar Molécula</button>
+                </div>
+            </div>
+
+            <div class="console" id="builder-console">
+                <div class="console-line">Construtor molecular inicializado</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'hydrocarbons',
+            currentMolecule: null,
+            currentReaction: null,
+            builderMolecule: {
+                atoms: [],
+                bonds: [],
+                selectedAtom: null
+            },
+            nomenclatureExercise: null
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+        const moleculeGroups = {};
+
+        // Molecular data
+        const molecules = {
+            methane: {
+                name: 'Metano',
+                formula: 'CH₄',
+                type: 'Alcano',
+                hybridization: 'sp³',
+                geometry: 'Tetraédrica',
+                bondAngle: '109.5°',
+                molarMass: 16.04,
+                boilingPoint: -161,
+                chBonds: 4,
+                ccBonds: 0,
+                atoms: [
+                    { element: 'C', position: [0, 0, 0] },
+                    { element: 'H', position: [0.63, 0.63, 0.63] },
+                    { element: 'H', position: [-0.63, -0.63, 0.63] },
+                    { element: 'H', position: [-0.63, 0.63, -0.63] },
+                    { element: 'H', position: [0.63, -0.63, -0.63] }
+                ],
+                bonds: [[0,1], [0,2], [0,3], [0,4]]
+            },
+            ethane: {
+                name: 'Etano',
+                formula: 'C₂H₆',
+                type: 'Alcano',
+                hybridization: 'sp³',
+                geometry: 'Tetraédrica',
+                bondAngle: '109.5°',
+                molarMass: 30.07,
+                boilingPoint: -89,
+                chBonds: 6,
+                ccBonds: 1,
+                atoms: [
+                    { element: 'C', position: [-0.77, 0, 0] },
+                    { element: 'C', position: [0.77, 0, 0] },
+                    { element: 'H', position: [-1.2, 0.63, 0.63] },
+                    { element: 'H', position: [-1.2, -0.63, -0.63] },
+                    { element: 'H', position: [-1.2, 0, -0.9] },
+                    { element: 'H', position: [1.2, 0.63, 0.63] },
+                    { element: 'H', position: [1.2, -0.63, -0.63] },
+                    { element: 'H', position: [1.2, 0, -0.9] }
+                ],
+                bonds: [[0,1], [0,2], [0,3], [0,4], [1,5], [1,6], [1,7]]
+            },
+            propane: {
+                name: 'Propano',
+                formula: 'C₃H₈',
+                type: 'Alcano',
+                hybridization: 'sp³',
+                geometry: 'Tetraédrica',
+                bondAngle: '109.5°',
+                molarMass: 44.10,
+                boilingPoint: -42,
+                chBonds: 8,
+                ccBonds: 2,
+                atoms: [
+                    { element: 'C', position: [-1.54, 0, 0] },
+                    { element: 'C', position: [0, 0, 0] },
+                    { element: 'C', position: [1.54, 0, 0] },
+                    { element: 'H', position: [-1.9, 0.6, 0.6] },
+                    { element: 'H', position: [-1.9, -0.6, -0.6] },
+                    { element: 'H', position: [-1.9, 0, -0.9] },
+                    { element: 'H', position: [0, 0.9, 0] },
+                    { element: 'H', position: [0, -0.9, 0] },
+                    { element: 'H', position: [1.9, 0.6, 0.6] },
+                    { element: 'H', position: [1.9, -0.6, -0.6] },
+                    { element: 'H', position: [1.9, 0, -0.9] }
+                ],
+                bonds: [[0,1], [1,2], [0,3], [0,4], [0,5], [1,6], [1,7], [2,8], [2,9], [2,10]]
+            },
+            ethene: {
+                name: 'Eteno',
+                formula: 'C₂H₄',
+                type: 'Alceno',
+                hybridization: 'sp²',
+                geometry: 'Trigonal Planar',
+                bondAngle: '120°',
+                molarMass: 28.05,
+                boilingPoint: -104,
+                chBonds: 4,
+                ccBonds: 1,
+                atoms: [
+                    { element: 'C', position: [-0.67, 0, 0] },
+                    { element: 'C', position: [0.67, 0, 0] },
+                    { element: 'H', position: [-1.2, 0.5, 0] },
+                    { element: 'H', position: [-1.2, -0.5, 0] },
+                    { element: 'H', position: [1.2, 0.5, 0] },
+                    { element: 'H', position: [1.2, -0.5, 0] }
+                ],
+                bonds: [[0,1,'double'], [0,2], [0,3], [1,4], [1,5]]
+            },
+            ethyne: {
+                name: 'Etino',
+                formula: 'C₂H₂',
+                type: 'Alcino',
+                hybridization: 'sp',
+                geometry: 'Linear',
+                bondAngle: '180°',
+                molarMass: 26.04,
+                boilingPoint: -84,
+                chBonds: 2,
+                ccBonds: 1,
+                atoms: [
+                    { element: 'C', position: [-0.6, 0, 0] },
+                    { element: 'C', position: [0.6, 0, 0] },
+                    { element: 'H', position: [-1.2, 0, 0] },
+                    { element: 'H', position: [1.2, 0, 0] }
+                ],
+                bonds: [[0,1,'triple'], [0,2], [1,3]]
+            },
+            benzene: {
+                name: 'Benzeno',
+                formula: 'C₆H₆',
+                type: 'Aromático',
+                hybridization: 'sp²',
+                geometry: 'Hexagonal Planar',
+                bondAngle: '120°',
+                molarMass: 78.11,
+                boilingPoint: 80,
+                chBonds: 6,
+                ccBonds: 6,
+                atoms: [
+                    { element: 'C', position: [0.866, 0.5, 0] },
+                    { element: 'C', position: [0, 1, 0] },
+                    { element: 'C', position: [-0.866, 0.5, 0] },
+                    { element: 'C', position: [-0.866, -0.5, 0] },
+                    { element: 'C', position: [0, -1, 0] },
+                    { element: 'C', position: [0.866, -0.5, 0] },
+                    { element: 'H', position: [1.5, 0.87, 0] },
+                    { element: 'H', position: [0, 1.74, 0] },
+                    { element: 'H', position: [-1.5, 0.87, 0] },
+                    { element: 'H', position: [-1.5, -0.87, 0] },
+                    { element: 'H', position: [0, -1.74, 0] },
+                    { element: 'H', position: [1.5, -0.87, 0] }
+                ],
+                bonds: [[0,1,'aromatic'], [1,2,'aromatic'], [2,3,'aromatic'], [3,4,'aromatic'], [4,5,'aromatic'], [5,0,'aromatic'],
+                        [0,6], [1,7], [2,8], [3,9], [4,10], [5,11]]
+            }
+        };
+
+        // Functional groups
+        const functionalGroups = {
+            alcohol: {
+                name: 'Álcool',
+                formula: 'R-OH',
+                nomenclature: 'Prefixo + anol',
+                example: 'CH₃CH₂OH (Etanol)',
+                properties: 'Polar, forma ligações de hidrogênio'
+            },
+            aldehyde: {
+                name: 'Aldeído',
+                formula: 'R-CHO',
+                nomenclature: 'Prefixo + al',
+                example: 'CH₃CHO (Etanal)',
+                properties: 'Grupo carbonila terminal'
+            },
+            ketone: {
+                name: 'Cetona',
+                formula: 'R-CO-R',
+                nomenclature: 'Prefixo + ona',
+                example: 'CH₃COCH₃ (Propanona)',
+                properties: 'Grupo carbonila interno'
+            },
+            carboxylic: {
+                name: 'Ácido Carboxílico',
+                formula: 'R-COOH',
+                nomenclature: 'Ácido prefixo + óico',
+                example: 'CH₃COOH (Ácido etanóico)',
+                properties: 'Ácido fraco, ionizável'
+            },
+            ester: {
+                name: 'Éster',
+                formula: 'R-COO-R',
+                nomenclature: 'Prefixo + oato de prefixo + ila',
+                example: 'CH₃COOCH₃ (Etanoato de metila)',
+                properties: 'Aroma característico'
+            },
+            ether: {
+                name: 'Éter',
+                formula: 'R-O-R',
+                nomenclature: 'Prefixo + óxi + prefixo',
+                example: 'CH₃OCH₃ (Metoximetano)',
+                properties: 'Fracamente polar'
+            },
+            amine: {
+                name: 'Amina',
+                formula: 'R-NH₂',
+                nomenclature: 'Prefixo + amina',
+                example: 'CH₃NH₂ (Metilamina)',
+                properties: 'Base fraca'
+            },
+            amide: {
+                name: 'Amida',
+                formula: 'R-CONH₂',
+                nomenclature: 'Prefixo + amida',
+                example: 'CH₃CONH₂ (Etanamida)',
+                properties: 'Ligações peptídicas'
+            },
+            halide: {
+                name: 'Haleto',
+                formula: 'R-X',
+                nomenclature: 'Halo + prefixo',
+                example: 'CH₃Cl (Clorometano)',
+                properties: 'Reativo, bom grupo de saída'
+            },
+            nitrile: {
+                name: 'Nitrila',
+                formula: 'R-CN',
+                nomenclature: 'Prefixo + nitrila',
+                example: 'CH₃CN (Etanonitrila)',
+                properties: 'Grupo ciano'
+            }
+        };
+
+        // Reactions
+        const reactions = {
+            halogenation: {
+                name: 'Halogenação de Alcanos',
+                reactants: ['CH₄', 'Cl₂'],
+                products: ['CH₃Cl', 'HCl'],
+                mechanism: 'Substituição radicalar',
+                conditions: 'Luz UV ou calor'
+            },
+            hydrogenation: {
+                name: 'Hidrogenação de Alcenos',
+                reactants: ['CH₂=CH₂', 'H₂'],
+                products: ['CH₃-CH₃'],
+                mechanism: 'Adição catalítica',
+                conditions: 'Ni, Pt ou Pd como catalisador'
+            },
+            dehydration: {
+                name: 'Desidratação de Álcool',
+                reactants: ['CH₃CH₂OH'],
+                products: ['CH₂=CH₂', 'H₂O'],
+                mechanism: 'Eliminação E1 ou E2',
+                conditions: 'H₂SO₄ concentrado, calor'
+            },
+            'alcohol-oxidation': {
+                name: 'Oxidação de Álcool',
+                reactants: ['CH₃CH₂OH', '[O]'],
+                products: ['CH₃CHO', 'H₂O'],
+                mechanism: 'Oxidação',
+                conditions: 'K₂Cr₂O₇ / H₂SO₄'
+            }
+        };
+
+        // Atom colors
+        const atomColors = {
+            'C': 0x404040,
+            'H': 0xE8E8E8,
+            'O': 0xFF0000,
+            'N': 0x0000FF,
+            'S': 0xFFFF00,
+            'Cl': 0x00FF00,
+            'Br': 0xA52A2A,
+            'F': 0x90EE90
+        };
+
+        // Atom sizes
+        const atomSizes = {
+            'C': 0.15,
+            'H': 0.10,
+            'O': 0.14,
+            'N': 0.14,
+            'S': 0.18,
+            'Cl': 0.17,
+            'Br': 0.19,
+            'F': 0.13
+        };
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initialize3DViewers();
+            loadHydrocarbon();
+        });
+
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                    
+                    state.currentTab = targetTab;
+                });
+            });
+        }
+
+        function initialize3DViewers() {
+            const viewerIds = ['hydrocarbon-viewer', 'functional-viewer', 'reactant-viewer', 
+                              'product-viewer', 'nomenclature-viewer', 'builder-viewer'];
+
+            viewerIds.forEach(id => {
+                const container = document.getElementById(id);
+                if (!container) return;
+
+                // Create scene
+                scenes[id] = new THREE.Scene();
+                scenes[id].background = new THREE.Color(0x0a0a0a);
+
+                // Create camera
+                cameras[id] = new THREE.PerspectiveCamera(
+                    50,
+                    container.clientWidth / container.clientHeight,
+                    0.1,
+                    1000
+                );
+                cameras[id].position.set(0, 0, 5);
+
+                // Create renderer
+                renderers[id] = new THREE.WebGLRenderer({ antialias: true });
+                renderers[id].setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderers[id].domElement);
+
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040, 2);
+                scenes[id].add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+                directionalLight.position.set(5, 5, 5);
+                scenes[id].add(directionalLight);
+
+                // Create molecule group
+                moleculeGroups[id] = new THREE.Group();
+                scenes[id].add(moleculeGroups[id]);
+
+                // Add orbit controls if available
+                if (typeof THREE.OrbitControls !== 'undefined') {
+                    controls[id] = new THREE.OrbitControls(cameras[id], renderers[id].domElement);
+                    controls[id].enableDamping = true;
+                    controls[id].dampingFactor = 0.05;
+                }
+
+                // Render
+                animate(id);
+            });
+        }
+
+        function animate(viewerId) {
+            requestAnimationFrame(() => animate(viewerId));
+            
+            if (controls[viewerId]) {
+                controls[viewerId].update();
+            }
+            
+            if (moleculeGroups[viewerId]) {
+                moleculeGroups[viewerId].rotation.y += 0.005;
+            }
+            
+            if (renderers[viewerId] && scenes[viewerId] && cameras[viewerId]) {
+                renderers[viewerId].render(scenes[viewerId], cameras[viewerId]);
+            }
+        }
+
+        // ==================== MOLECULE RENDERING ====================
+        function drawMolecule(viewerId, moleculeData) {
+            // Clear previous molecule
+            if (moleculeGroups[viewerId]) {
+                while (moleculeGroups[viewerId].children.length > 0) {
+                    moleculeGroups[viewerId].remove(moleculeGroups[viewerId].children[0]);
+                }
+            }
+
+            if (!moleculeData || !moleculeData.atoms) return;
+
+            // Create atoms
+            moleculeData.atoms.forEach((atom, index) => {
+                const geometry = new THREE.SphereGeometry(atomSizes[atom.element] || 0.15, 32, 32);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: atomColors[atom.element] || 0x808080,
+                    shininess: 30
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(...atom.position);
+                sphere.userData.index = index;
+                sphere.userData.element = atom.element;
+                moleculeGroups[viewerId].add(sphere);
+            });
+
+            // Create bonds
+            if (moleculeData.bonds) {
+                moleculeData.bonds.forEach(bond => {
+                    const [atom1Idx, atom2Idx, bondType = 'single'] = bond;
+                    const atom1 = moleculeData.atoms[atom1Idx];
+                    const atom2 = moleculeData.atoms[atom2Idx];
+
+                    const pos1 = new THREE.Vector3(...atom1.position);
+                    const pos2 = new THREE.Vector3(...atom2.position);
+                    
+                    createBond(moleculeGroups[viewerId], pos1, pos2, bondType);
+                });
+            }
+        }
+
+        function createBond(group, pos1, pos2, bondType = 'single') {
+            const direction = new THREE.Vector3().subVectors(pos2, pos1);
+            const length = direction.length();
+            const midpoint = new THREE.Vector3().addVectors(pos1, pos2).multiplyScalar(0.5);
+
+            const numBonds = bondType === 'triple' ? 3 : bondType === 'double' ? 2 : 1;
+            const offset = 0.1;
+
+            for (let i = 0; i < numBonds; i++) {
+                const geometry = new THREE.CylinderGeometry(0.05, 0.05, length, 8);
+                const material = new THREE.MeshPhongMaterial({ color: 0x888888 });
+                const cylinder = new THREE.Mesh(geometry, material);
+
+                cylinder.position.copy(midpoint);
+                
+                // Rotate to align with bond direction
+                const axis = new THREE.Vector3(0, 1, 0);
+                cylinder.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
+
+                // Offset for multiple bonds
+                if (numBonds > 1) {
+                    const offsetVec = new THREE.Vector3(
+                        (i - (numBonds - 1) / 2) * offset,
+                        0,
+                        0
+                    );
+                    offsetVec.applyQuaternion(cylinder.quaternion);
+                    cylinder.position.add(offsetVec);
+                }
+
+                group.add(cylinder);
+            }
+        }
+
+        // ==================== HYDROCARBONS ====================
+        function loadHydrocarbon() {
+            const select = document.getElementById('hydrocarbon-type');
+            const moleculeName = select.value;
+            const molecule = molecules[moleculeName];
+
+            if (!molecule) return;
+
+            state.currentMolecule = molecule;
+
+            // Update info
+            document.getElementById('hydrocarbon-info').innerHTML = `
+                <h4>${molecule.name} (${molecule.formula})</h4>
+                <p><strong>Fórmula Molecular:</strong> ${molecule.formula}</p>
+                <p><strong>Tipo:</strong> ${molecule.type}</p>
+                <p><strong>Hibridização:</strong> ${molecule.hybridization}</p>
+                <p><strong>Geometria:</strong> ${molecule.geometry}</p>
+                <p><strong>Ângulo de Ligação:</strong> ${molecule.bondAngle}</p>
+            `;
+
+            document.getElementById('molar-mass').textContent = `${molecule.molarMass} g/mol`;
+            document.getElementById('boiling-point').textContent = `${molecule.boilingPoint}°C`;
+            document.getElementById('ch-bonds').textContent = molecule.chBonds;
+            document.getElementById('cc-bonds').textContent = molecule.ccBonds;
+
+            // Draw molecule
+            drawMolecule('hydrocarbon-viewer', molecule);
+        }
+
+        // ==================== FUNCTIONAL GROUPS ====================
+        function loadFunctionalGroup() {
+            const select = document.getElementById('functional-group');
+            const groupName = select.value;
+            const group = functionalGroups[groupName];
+
+            if (!group) return;
+
+            document.getElementById('functional-info').innerHTML = `
+                <h4>${group.name}</h4>
+                <p><strong>Fórmula Geral:</strong> ${group.formula}</p>
+                <p><strong>Nomenclatura:</strong> ${group.nomenclature}</p>
+                <p><strong>Exemplo:</strong> ${group.example}</p>
+                <p><strong>Propriedades:</strong> ${group.properties}</p>
+            `;
+        }
+
+        function generateFunctionalMolecule() {
+            const groupSelect = document.getElementById('functional-group');
+            const chainSelect = document.getElementById('carbon-chain');
+            const group = groupSelect.value;
+            const numCarbons = parseInt(chainSelect.value);
+
+            addConsoleMessage('functional', `Gerando molécula com ${numCarbons} carbonos e grupo ${functionalGroups[group].name}`);
+
+            // Generate molecule based on functional group and chain length
+            const molecule = generateMoleculeData(group, numCarbons);
+            drawMolecule('functional-viewer', molecule);
+
+            addConsoleMessage('functional', `Molécula gerada: ${molecule.name}`);
+        }
+
+        function generateMoleculeData(functionalGroup, numCarbons) {
+            const atoms = [];
+            const bonds = [];
+            const spacing = 1.54; // C-C bond length
+
+            // Create carbon chain
+            for (let i = 0; i < numCarbons; i++) {
+                atoms.push({
+                    element: 'C',
+                    position: [i * spacing - (numCarbons - 1) * spacing / 2, 0, 0]
+                });
+            }
+
+            // Add C-C bonds
+            for (let i = 0; i < numCarbons - 1; i++) {
+                bonds.push([i, i + 1]);
+            }
+
+            // Add functional group
+            let lastAtomIdx = atoms.length - 1;
+
+            switch(functionalGroup) {
+                case 'alcohol':
+                    // Add OH to last carbon
+                    atoms.push({ element: 'O', position: [lastAtomIdx * spacing - (numCarbons - 1) * spacing / 2, 0.7, 0] });
+                    atoms.push({ element: 'H', position: [lastAtomIdx * spacing - (numCarbons - 1) * spacing / 2, 1.3, 0] });
+                    bonds.push([lastAtomIdx, atoms.length - 2]);
+                    bonds.push([atoms.length - 2, atoms.length - 1]);
+                    break;
+                
+                case 'aldehyde':
+                    // Add CHO to last carbon
+                    atoms.push({ element: 'O', position: [lastAtomIdx * spacing - (numCarbons - 1) * spacing / 2 + 0.5, 0.7, 0] });
+                    bonds.push([lastAtomIdx, atoms.length - 1, 'double']);
+                    break;
+
+                case 'ketone':
+                    // Add C=O to middle carbon (if more than 2 carbons)
+                    if (numCarbons > 2) {
+                        const middleIdx = Math.floor(numCarbons / 2);
+                        atoms.push({ element: 'O', position: [middleIdx * spacing - (numCarbons - 1) * spacing / 2, 0.7, 0] });
+                        bonds.push([middleIdx, atoms.length - 1, 'double']);
+                    }
+                    break;
+
+                case 'amine':
+                    // Add NH2 to last carbon
+                    atoms.push({ element: 'N', position: [lastAtomIdx * spacing - (numCarbons - 1) * spacing / 2, 0.7, 0] });
+                    atoms.push({ element: 'H', position: [lastAtomIdx * spacing - (numCarbons - 1) * spacing / 2 + 0.3, 1.1, 0] });
+                    atoms.push({ element: 'H', position: [lastAtomIdx * spacing - (numCarbons - 1) * spacing / 2 - 0.3, 1.1, 0] });
+                    bonds.push([lastAtomIdx, atoms.length - 3]);
+                    bonds.push([atoms.length - 3, atoms.length - 2]);
+                    bonds.push([atoms.length - 3, atoms.length - 1]);
+                    break;
+            }
+
+            const prefixes = ['met', 'et', 'prop', 'but', 'pent', 'hex', 'hept', 'oct'];
+            const suffixes = {
+                'alcohol': 'anol',
+                'aldehyde': 'anal',
+                'ketone': 'anona',
+                'amine': 'anamina',
+                'carboxylic': 'anóico'
+            };
+
+            const name = prefixes[numCarbons - 1] + (suffixes[functionalGroup] || 'ano');
+
+            return {
+                name: name.charAt(0).toUpperCase() + name.slice(1),
+                atoms: atoms,
+                bonds: bonds
+            };
+        }
+
+        // ==================== REACTIONS ====================
+        function loadReaction() {
+            const select = document.getElementById('reaction-type');
+            const reactionName = select.value;
+            const reaction = reactions[reactionName];
+
+            if (!reaction) return;
+
+            state.currentReaction = reaction;
+
+            // Update reaction display
+            let displayHTML = '';
+            reaction.reactants.forEach((reactant, i) => {
+                if (i > 0) displayHTML += '<span class="reaction-arrow">+</span>';
+                displayHTML += `<span class="formula">${reactant}</span>`;
+            });
+            displayHTML += '<span class="reaction-arrow">→</span>';
+            reaction.products.forEach((product, i) => {
+                if (i > 0) displayHTML += '<span class="reaction-arrow">+</span>';
+                displayHTML += `<span class="formula">${product}</span>`;
+            });
+
+            document.getElementById('reaction-display').innerHTML = displayHTML;
+
+            // Update info
+            document.getElementById('reaction-info').innerHTML = `
+                <h4>${reaction.name}</h4>
+                <p><strong>Mecanismo:</strong> ${reaction.mechanism}</p>
+                <p><strong>Condições:</strong> ${reaction.conditions}</p>
+            `;
+
+            addConsoleMessage('reaction', `Reação carregada: ${reaction.name}`);
+        }
+
+        function animateReaction() {
+            if (!state.currentReaction) {
+                loadReaction();
+            }
+
+            addConsoleMessage('reaction', 'Iniciando animação da reação...');
+            addConsoleMessage('reaction', `Mecanismo: ${state.currentReaction.mechanism}`);
+            addConsoleMessage('reaction', `Condições: ${state.currentReaction.conditions}`);
+            
+            // Draw reactant and product
+            setTimeout(() => {
+                drawMolecule('reactant-viewer', molecules.methane);
+                addConsoleMessage('reaction', 'Reagentes preparados');
+            }, 500);
+
+            setTimeout(() => {
+                drawMolecule('product-viewer', molecules.ethane);
+                addConsoleMessage('reaction', 'Produtos formados');
+                addConsoleMessage('reaction', 'Reação completa!');
+            }, 1500);
+        }
+
+        function resetReaction() {
+            // Clear viewers
+            if (moleculeGroups['reactant-viewer']) {
+                while (moleculeGroups['reactant-viewer'].children.length > 0) {
+                    moleculeGroups['reactant-viewer'].remove(moleculeGroups['reactant-viewer'].children[0]);
+                }
+            }
+            if (moleculeGroups['product-viewer']) {
+                while (moleculeGroups['product-viewer'].children.length > 0) {
+                    moleculeGroups['product-viewer'].remove(moleculeGroups['product-viewer'].children[0]);
+                }
+            }
+            
+            addConsoleMessage('reaction', 'Sistema reiniciado');
+        }
+
+        // ==================== NOMENCLATURE ====================
+        function loadNomenclatureExample(moleculeName) {
+            const molecule = molecules[moleculeName];
+            if (!molecule) return;
+
+            state.nomenclatureExercise = {
+                molecule: molecule,
+                correctName: molecule.name.toLowerCase()
+            };
+
+            drawMolecule('nomenclature-viewer', molecule);
+            document.getElementById('nomenclature-input').value = '';
+            document.getElementById('nomenclature-result').style.display = 'none';
+        }
+
+        function checkNomenclature() {
+            const input = document.getElementById('nomenclature-input').value.trim().toLowerCase();
+            const resultDiv = document.getElementById('nomenclature-result');
+            const resultIcon = document.getElementById('result-icon');
+            const resultText = document.getElementById('result-text');
+
+            if (!state.nomenclatureExercise) {
+                alert('Primeiro selecione um exemplo para praticar!');
+                return;
+            }
+
+            const correctName = state.nomenclatureExercise.correctName;
+            const isCorrect = input === correctName;
+
+            resultDiv.style.display = 'flex';
+            
+            if (isCorrect) {
+                resultDiv.className = 'nomenclature-check correct';
+                resultIcon.textContent = '✓';
+                resultText.textContent = 'Correto! Parabéns!';
+            } else {
+                resultDiv.className = 'nomenclature-check incorrect';
+                resultIcon.textContent = '✗';
+                resultText.textContent = `Incorreto. O nome correto é: ${state.nomenclatureExercise.molecule.name}`;
+            }
+        }
+
+        // ==================== MOLECULAR BUILDER ====================
+        function addAtom(element) {
+            const newAtom = {
+                element: element,
+                position: [
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                ]
+            };
+
+            state.builderMolecule.atoms.push(newAtom);
+            updateBuilderDisplay();
+            addConsoleMessage('builder', `Átomo de ${element} adicionado`);
+        }
+
+        function removeAtom() {
+            if (state.builderMolecule.atoms.length === 0) return;
+            
+            state.builderMolecule.atoms.pop();
+            updateBuilderDisplay();
+            addConsoleMessage('builder', 'Átomo removido');
+        }
+
+        function changeBondType() {
+            addConsoleMessage('builder', 'Alteração de tipo de ligação - selecione dois átomos');
+        }
+
+        function clearBuilder() {
+            state.builderMolecule.atoms = [];
+            state.builderMolecule.bonds = [];
+            updateBuilderDisplay();
+            addConsoleMessage('builder', 'Construtor limpo');
+        }
+
+        function updateBuilderDisplay() {
+            const molecule = state.builderMolecule;
+            
+            // Count atoms
+            const carbonCount = molecule.atoms.filter(a => a.element === 'C').length;
+            const hydrogenCount = molecule.atoms.filter(a => a.element === 'H').length;
+            const heteroCount = molecule.atoms.filter(a => !['C', 'H'].includes(a.element)).length;
+
+            document.getElementById('builder-carbons').textContent = carbonCount;
+            document.getElementById('builder-hydrogens').textContent = hydrogenCount;
+            document.getElementById('builder-hetero').textContent = heteroCount;
+            document.getElementById('builder-bonds').textContent = molecule.bonds.length;
+
+            // Generate formula
+            let formula = '';
+            if (carbonCount > 0) formula += `C${carbonCount > 1 ? carbonCount : ''}`;
+            if (hydrogenCount > 0) formula += `H${hydrogenCount > 1 ? hydrogenCount : ''}`;
+            
+            const otherElements = {};
+            molecule.atoms.forEach(atom => {
+                if (!['C', 'H'].includes(atom.element)) {
+                    otherElements[atom.element] = (otherElements[atom.element] || 0) + 1;
+                }
+            });
+            
+            Object.keys(otherElements).sort().forEach(element => {
+                const count = otherElements[element];
+                formula += `${element}${count > 1 ? count : ''}`;
+            });
+
+            document.getElementById('molecular-formula').textContent = formula || '-';
+
+            // Draw molecule
+            drawMolecule('builder-viewer', molecule);
+        }
+
+        function analyzeMolecule() {
+            const molecule = state.builderMolecule;
+            
+            if (molecule.atoms.length === 0) {
+                alert('Adicione átomos primeiro!');
+                return;
+            }
+
+            addConsoleMessage('builder', 'Analisando molécula...');
+            addConsoleMessage('builder', `Total de átomos: ${molecule.atoms.length}`);
+            addConsoleMessage('builder', `Carbonos: ${molecule.atoms.filter(a => a.element === 'C').length}`);
+            addConsoleMessage('builder', `Hidrogênios: ${molecule.atoms.filter(a => a.element === 'H').length}`);
+            
+            // Simple IUPAC naming attempt
+            const carbons = molecule.atoms.filter(a => a.element === 'C').length;
+            const prefixes = ['', 'met', 'et', 'prop', 'but', 'pent', 'hex', 'hept', 'oct'];
+            
+            let name = 'Composto orgânico';
+            if (carbons > 0 && carbons < prefixes.length) {
+                name = prefixes[carbons] + 'ano';
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+            }
+            
+            document.getElementById('iupac-name').textContent = name;
+            addConsoleMessage('builder', `Nome sugerido: ${name}`);
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function addConsoleMessage(moduleId, message) {
+            const consoleId = `${moduleId}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            // Keep only last 10 messages
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+
+        // MathJax config
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+</body>
+</html>

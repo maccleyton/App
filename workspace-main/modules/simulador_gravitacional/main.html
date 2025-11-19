@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Gravitacional N-Body</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #F59E0B;
+            --color-secondary: #3B82F6;
+            --color-accent: #10B981;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            width: 100%;
+            height: 250px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Scenario Buttons */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .scenario-btn {
+            padding: 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .scenario-btn:hover {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--color-primary);
+            transform: translateY(-2px);
+        }
+
+        .scenario-btn strong {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: var(--color-primary);
+        }
+
+        .scenario-btn small {
+            color: var(--color-text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '🪐 ';
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🪐 SIMULADOR GRAVITACIONAL N-BODY</h1>
+            <p class="subtitle">Simulação 3D de Sistemas Planetários e Interações Gravitacionais</p>
+        </header>
+
+        <div class="grid-2">
+            <!-- Visualização 3D -->
+            <div class="card">
+                <div class="card-header">
+                    <span>🌌</span>
+                    <h3 class="card-title">Simulação Gravitacional</h3>
+                </div>
+                <div class="viewer-3d" id="gravity-viewer"></div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Corpos</div>
+                        <div class="stat-value" id="body-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Energia Total</div>
+                        <div class="stat-value" id="total-energy">0 J</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Momentum</div>
+                        <div class="stat-value" id="momentum">0 kg·m/s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Tempo</div>
+                        <div class="stat-value" id="sim-time">0 dias</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="energy-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Controles -->
+            <div class="card">
+                <div class="card-header">
+                    <span>🎛️</span>
+                    <h3 class="card-title">Controles</h3>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Velocidade da Simulação:</label>
+                    <input type="range" id="sim-speed" min="1" max="50" value="10" step="1">
+                    <span id="speed-value">10x</span>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Constante Gravitacional (G):</label>
+                    <input type="range" id="gravity-constant" min="1" max="20" value="10" step="1">
+                    <span id="g-value">6.674×10⁻¹¹</span>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Mostrar Trails:</label>
+                    <input type="checkbox" id="show-trails" checked>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="startSimulation()">▶️ Iniciar</button>
+                    <button class="btn btn-secondary" onclick="pauseSimulation()">⏸️ Pausar</button>
+                    <button class="btn btn-secondary" onclick="resetSimulation()">🔄 Resetar</button>
+                </div>
+
+                <div class="console" id="console">
+                    <div class="console-line">Simulador gravitacional inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cenários Pré-definidos -->
+        <div class="card">
+            <div class="card-header">
+                <span>🧪</span>
+                <h3 class="card-title">Cenários Pré-definidos</h3>
+            </div>
+
+            <div class="scenario-grid">
+                <button class="scenario-btn" onclick="loadScenario('solar')">
+                    <strong>☀️ Sistema Solar</strong>
+                    <small>Sol com 8 planetas em órbitas estáveis</small>
+                </button>
+
+                <button class="scenario-btn" onclick="loadScenario('binary')">
+                    <strong>⭐ Estrelas Binárias</strong>
+                    <small>Duas estrelas massivas orbitando</small>
+                </button>
+
+                <button class="scenario-btn" onclick="loadScenario('blackhole')">
+                    <strong>🕳️ Buraco Negro</strong>
+                    <small>Efeitos extremos em corpos próximos</small>
+                </button>
+
+                <button class="scenario-btn" onclick="loadScenario('collision')">
+                    <strong>💥 Colisão Planetária</strong>
+                    <small>Dois planetas em rota de colisão</small>
+                </button>
+
+                <button class="scenario-btn" onclick="loadScenario('dance')">
+                    <strong>💫 Dança Gravitacional</strong>
+                    <small>Três corpos em órbitas caóticas</small>
+                </button>
+
+                <button class="scenario-btn" onclick="loadScenario('galaxy')">
+                    <strong>🌌 Mini Galáxia</strong>
+                    <small>Sistema com múltiplos corpos</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- Adicionar Corpo -->
+        <div class="card">
+            <div class="card-header">
+                <span>➕</span>
+                <h3 class="card-title">Adicionar Corpo Celeste</h3>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div class="control-group">
+                        <label class="control-label">Massa (massas solares):</label>
+                        <input type="number" id="body-mass" class="control-input" value="1" step="0.1" min="0.001">
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Posição X (UA):</label>
+                        <input type="number" id="body-x" class="control-input" value="10" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Posição Y (UA):</label>
+                        <input type="number" id="body-y" class="control-input" value="0" step="1">
+                    </div>
+                </div>
+
+                <div>
+                    <div class="control-group">
+                        <label class="control-label">Velocidade X (km/s):</label>
+                        <input type="number" id="body-vx" class="control-input" value="0" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade Y (km/s):</label>
+                        <input type="number" id="body-vy" class="control-input" value="30" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Cor:</label>
+                        <input type="color" id="body-color" class="control-input" value="#3B82F6">
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="addBody()">➕ Adicionar Corpo</button>
+                <button class="btn btn-secondary" onclick="clearAllBodies()">🗑️ Limpar Todos</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONSTANTS ====================
+        const G = 6.674e-11; // Gravitational constant
+        const AU = 1.496e11; // Astronomical Unit in meters
+        const SOLAR_MASS = 1.989e30; // Solar mass in kg
+        const DAY = 86400; // Seconds in a day
+
+        // ==================== STATE ====================
+        const state = {
+            running: false,
+            time: 0,
+            speed: 10,
+            gConstant: 10,
+            showTrails: true,
+            bodies: []
+        };
+
+        // Three.js objects
+        let scene, camera, renderer, controls;
+        let energyChart;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initialize3D();
+            initializeChart();
+            initializeControls();
+            animate();
+        });
+
+        function initialize3D() {
+            const container = document.getElementById('gravity-viewer');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                10000
+            );
+            camera.position.set(0, 50, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+            }
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('energy-chart');
+            energyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Energia Cinética',
+                        data: [],
+                        borderColor: '#F59E0B',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }, {
+                        label: 'Energia Potencial',
+                        data: [],
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E4E4E7' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' }
+                        },
+                        y: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeControls() {
+            document.getElementById('sim-speed').addEventListener('input', (e) => {
+                state.speed = parseInt(e.target.value);
+                document.getElementById('speed-value').textContent = `${state.speed}x`;
+            });
+
+            document.getElementById('gravity-constant').addEventListener('input', (e) => {
+                state.gConstant = parseInt(e.target.value);
+                document.getElementById('g-value').textContent = `${(state.gConstant / 10 * 6.674e-11).toExponential(3)}`;
+            });
+
+            document.getElementById('show-trails').addEventListener('change', (e) => {
+                state.showTrails = e.target.checked;
+            });
+        }
+
+        // ==================== BODY CLASS ====================
+        class CelestialBody {
+            constructor(mass, x, y, vx, vy, color = 0x3B82F6) {
+                this.mass = mass * SOLAR_MASS;
+                this.position = { x: x * AU, y: y * AU, z: 0 };
+                this.velocity = { x: vx * 1000, y: vy * 1000, z: 0 };
+                this.acceleration = { x: 0, y: 0, z: 0 };
+                this.color = color;
+                this.trail = [];
+                
+                this.createMesh();
+            }
+
+            createMesh() {
+                const radius = Math.max(0.5, Math.log(this.mass / SOLAR_MASS + 1) * 2);
+                const geometry = new THREE.SphereGeometry(radius, 32, 32);
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: this.color,
+                    emissive: this.color,
+                    emissiveIntensity: 0.3
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.position.set(
+                    this.position.x / AU,
+                    this.position.y / AU,
+                    this.position.z / AU
+                );
+                scene.add(this.mesh);
+
+                // Glow
+                const glowGeometry = new THREE.SphereGeometry(radius * 1.5, 16, 16);
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: this.color,
+                    transparent: true,
+                    opacity: 0.2
+                });
+                this.glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                this.mesh.add(this.glow);
+            }
+
+            updatePosition(dt) {
+                this.velocity.x += this.acceleration.x * dt;
+                this.velocity.y += this.acceleration.y * dt;
+                this.velocity.z += this.acceleration.z * dt;
+
+                this.position.x += this.velocity.x * dt;
+                this.position.y += this.velocity.y * dt;
+                this.position.z += this.velocity.z * dt;
+
+                this.mesh.position.set(
+                    this.position.x / AU,
+                    this.position.y / AU,
+                    this.position.z / AU
+                );
+
+                // Trail
+                if (state.showTrails && state.time % 5 === 0) {
+                    this.trail.push({ ...this.position });
+                    if (this.trail.length > 100) this.trail.shift();
+                }
+
+                this.acceleration = { x: 0, y: 0, z: 0 };
+            }
+
+            applyForce(fx, fy, fz) {
+                this.acceleration.x += fx / this.mass;
+                this.acceleration.y += fy / this.mass;
+                this.acceleration.z += fz / this.mass;
+            }
+        }
+
+        // ==================== PHYSICS ====================
+        function calculateGravitationalForce(body1, body2) {
+            const dx = body2.position.x - body1.position.x;
+            const dy = body2.position.y - body1.position.y;
+            const dz = body2.position.z - body1.position.z;
+
+            const distSq = dx * dx + dy * dy + dz * dz;
+            const dist = Math.sqrt(distSq);
+
+            if (dist < 1e9) return null; // Too close, ignore
+
+            const force = (G * state.gConstant / 10) * (body1.mass * body2.mass) / distSq;
+
+            const fx = force * dx / dist;
+            const fy = force * dy / dist;
+            const fz = force * dz / dist;
+
+            return { fx, fy, fz };
+        }
+
+        function updatePhysics(dt) {
+            // Calculate forces
+            for (let i = 0; i < state.bodies.length; i++) {
+                for (let j = i + 1; j < state.bodies.length; j++) {
+                    const body1 = state.bodies[i];
+                    const body2 = state.bodies[j];
+
+                    const force = calculateGravitationalForce(body1, body2);
+                    if (!force) continue;
+
+                    body1.applyForce(force.fx, force.fy, force.fz);
+                    body2.applyForce(-force.fx, -force.fy, -force.fz);
+                }
+            }
+
+            // Update positions
+            state.bodies.forEach(body => body.updatePosition(dt));
+
+            // Check collisions
+            checkCollisions();
+        }
+
+        function checkCollisions() {
+            for (let i = 0; i < state.bodies.length; i++) {
+                for (let j = i + 1; j < state.bodies.length; j++) {
+                    const body1 = state.bodies[i];
+                    const body2 = state.bodies[j];
+
+                    const dx = body2.position.x - body1.position.x;
+                    const dy = body2.position.y - body1.position.y;
+                    const dz = body2.position.z - body1.position.z;
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    if (dist < 1e10) { // Collision threshold
+                        mergeBodie(body1, body2, j);
+                        addConsoleMessage('💥 Colisão detectada! Corpos se fundiram');
+                        break;
+                    }
+                }
+            }
+        }
+
+        function mergeBodies(body1, body2, index) {
+            // Conserve momentum
+            const totalMass = body1.mass + body2.mass;
+            body1.velocity.x = (body1.mass * body1.velocity.x + body2.mass * body2.velocity.x) / totalMass;
+            body1.velocity.y = (body1.mass * body1.velocity.y + body2.mass * body2.velocity.y) / totalMass;
+            body1.velocity.z = (body1.mass * body1.velocity.z + body2.mass * body2.velocity.z) / totalMass;
+
+            body1.mass = totalMass;
+
+            // Remove body2
+            scene.remove(body2.mesh);
+            state.bodies.splice(index, 1);
+        }
+
+        function calculateEnergy() {
+            let kineticEnergy = 0;
+            let potentialEnergy = 0;
+
+            state.bodies.forEach(body => {
+                const v = Math.sqrt(
+                    body.velocity.x ** 2 + 
+                    body.velocity.y ** 2 + 
+                    body.velocity.z ** 2
+                );
+                kineticEnergy += 0.5 * body.mass * v * v;
+            });
+
+            for (let i = 0; i < state.bodies.length; i++) {
+                for (let j = i + 1; j < state.bodies.length; j++) {
+                    const body1 = state.bodies[i];
+                    const body2 = state.bodies[j];
+
+                    const dx = body2.position.x - body1.position.x;
+                    const dy = body2.position.y - body1.position.y;
+                    const dz = body2.position.z - body1.position.z;
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    potentialEnergy -= (G * state.gConstant / 10) * body1.mass * body2.mass / dist;
+                }
+            }
+
+            return { kinetic: kineticEnergy, potential: potentialEnergy };
+        }
+
+        // ==================== SCENARIOS ====================
+        function loadScenario(type) {
+            clearAllBodies();
+
+            switch(type) {
+                case 'solar':
+                    // Sun
+                    state.bodies.push(new CelestialBody(1, 0, 0, 0, 0, 0xFDB813));
+                    // Planets
+                    state.bodies.push(new CelestialBody(0.000003, 0.39, 0, 0, 47, 0x8C7853)); // Mercury
+                    state.bodies.push(new CelestialBody(0.000003, 0.72, 0, 0, 35, 0xFFC649)); // Venus
+                    state.bodies.push(new CelestialBody(0.000003, 1, 0, 0, 30, 0x2F6A9F)); // Earth
+                    state.bodies.push(new CelestialBody(0.000003, 1.52, 0, 0, 24, 0xCD5C5C)); // Mars
+                    addConsoleMessage('☀️ Sistema Solar carregado');
+                    break;
+
+                case 'binary':
+                    state.bodies.push(new CelestialBody(1, -5, 0, 0, 15, 0xFF6B6B));
+                    state.bodies.push(new CelestialBody(1, 5, 0, 0, -15, 0x3B82F6));
+                    addConsoleMessage('⭐ Estrelas binárias carregadas');
+                    break;
+
+                case 'blackhole':
+                    state.bodies.push(new CelestialBody(100, 0, 0, 0, 0, 0x000000));
+                    state.bodies.push(new CelestialBody(0.01, 15, 0, 0, 40, 0xF59E0B));
+                    state.bodies.push(new CelestialBody(0.01, -15, 0, 0, -40, 0x10B981));
+                    addConsoleMessage('🕳️ Buraco negro carregado');
+                    break;
+
+                case 'collision':
+                    state.bodies.push(new CelestialBody(0.5, -20, 0, 20, 0, 0xFF6B6B));
+                    state.bodies.push(new CelestialBody(0.5, 20, 0, -20, 0, 0x3B82F6));
+                    addConsoleMessage('💥 Cenário de colisão carregado');
+                    break;
+
+                case 'dance':
+                    state.bodies.push(new CelestialBody(1, 0, 10, 10, 0, 0xFF6B6B));
+                    state.bodies.push(new CelestialBody(1, -8, -5, -5, 8, 0x3B82F6));
+                    state.bodies.push(new CelestialBody(1, 8, -5, -5, -8, 0x10B981));
+                    addConsoleMessage('💫 Dança gravitacional carregada');
+                    break;
+
+                case 'galaxy':
+                    state.bodies.push(new CelestialBody(10, 0, 0, 0, 0, 0xFDB813));
+                    for (let i = 0; i < 20; i++) {
+                        const angle = (Math.PI * 2 * i) / 20;
+                        const radius = 10 + Math.random() * 10;
+                        const x = radius * Math.cos(angle);
+                        const y = radius * Math.sin(angle);
+                        const speed = Math.sqrt((G * 10 * SOLAR_MASS) / (radius * AU)) / 1000;
+                        const vx = -speed * Math.sin(angle);
+                        const vy = speed * Math.cos(angle);
+                        state.bodies.push(new CelestialBody(0.001, x, y, vx, vy, 0x3B82F6));
+                    }
+                    addConsoleMessage('🌌 Mini galáxia carregada');
+                    break;
+            }
+
+            updateStats();
+        }
+
+        // ==================== CONTROLS ====================
+        function startSimulation() {
+            state.running = true;
+            addConsoleMessage('▶️ Simulação iniciada');
+        }
+
+        function pauseSimulation() {
+            state.running = false;
+            addConsoleMessage('⏸️ Simulação pausada');
+        }
+
+        function resetSimulation() {
+            state.running = false;
+            state.time = 0;
+            addConsoleMessage('🔄 Simulação resetada');
+        }
+
+        function addBody() {
+            const mass = parseFloat(document.getElementById('body-mass').value);
+            const x = parseFloat(document.getElementById('body-x').value);
+            const y = parseFloat(document.getElementById('body-y').value);
+            const vx = parseFloat(document.getElementById('body-vx').value);
+            const vy = parseFloat(document.getElementById('body-vy').value);
+            const color = document.getElementById('body-color').value;
+
+            state.bodies.push(new CelestialBody(mass, x, y, vx, vy, parseInt(color.replace('#', '0x'))));
+            updateStats();
+            addConsoleMessage(`➕ Corpo adicionado (${mass} M☉)`);
+        }
+
+        function clearAllBodies() {
+            state.bodies.forEach(body => scene.remove(body.mesh));
+            state.bodies = [];
+            updateStats();
+            addConsoleMessage('🗑️ Todos os corpos removidos');
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (state.running && state.bodies.length > 0) {
+                const dt = DAY * state.speed;
+                updatePhysics(dt);
+                state.time += dt;
+                updateStats();
+                updateChart();
+            }
+
+            if (controls) controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function updateStats() {
+            document.getElementById('body-count').textContent = state.bodies.length;
+            document.getElementById('sim-time').textContent = `${(state.time / DAY).toFixed(0)} dias`;
+
+            if (state.bodies.length > 0) {
+                const energy = calculateEnergy();
+                const totalEnergy = energy.kinetic + energy.potential;
+                document.getElementById('total-energy').textContent = `${(totalEnergy / 1e33).toExponential(2)} J`;
+
+                let totalMomentum = 0;
+                state.bodies.forEach(body => {
+                    const p = body.mass * Math.sqrt(
+                        body.velocity.x ** 2 + 
+                        body.velocity.y ** 2 + 
+                        body.velocity.z ** 2
+                    );
+                    totalMomentum += p;
+                });
+                document.getElementById('momentum').textContent = `${(totalMomentum / 1e36).toExponential(2)} kg·m/s`;
+            }
+        }
+
+        function updateChart() {
+            if (!state.running || state.time % (DAY * 10) !== 0) return;
+
+            const energy = calculateEnergy();
+
+            if (energyChart.data.labels.length > 50) {
+                energyChart.data.labels.shift();
+                energyChart.data.datasets[0].data.shift();
+                energyChart.data.datasets[1].data.shift();
+            }
+
+            energyChart.data.labels.push((state.time / DAY).toFixed(0));
+            energyChart.data.datasets[0].data.push(energy.kinetic / 1e33);
+            energyChart.data.datasets[1].data.push(Math.abs(energy.potential) / 1e33);
+            energyChart.update('none');
+        }
+
+        // ==================== CONSOLE ====================
+        function addConsoleMessage(message) {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+
+            while (console.children.length > 10) {
+                console.removeChild(console.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

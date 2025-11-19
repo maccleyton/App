@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Químico - Tabela Periódica Interativa</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+	<!-- MathJax -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+	
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.min.js"></script>
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+	
+	<link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fa-solid fa-flask"></i>
+            <h1 class="header-title">Simulador Químico</h1>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fa-solid fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Buscar elementos..."
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button class="back-button" id="toGoBackBtn">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                <i class="fa-solid fa-sun" id="themeIcon"></i>
+            </button>
+            <button class="user-menu">
+                <i class="fa-solid fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <!-- COLUNA ESQUERDA - TABELA PERIÓDICA -->
+        <section class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fa-solid fa-table-cells"></i>
+                    <div class="section-title">Tabela Periódica</div>
+                </div>
+            </div>
+            
+            <div class="left-scroll">
+                <div class="elements-list" id="periodicTable"></div>
+            </div>
+        </section>
+
+        <!-- COLUNA CENTRAL - INFORMAÇÕES DO ELEMENTO -->
+        <section class="center-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <div class="section-title">Informações</div>
+                </div>
+            </div>
+
+            <div class="center-scroll">
+                <!-- Informações Básicas -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-atom"></i>
+                        <div class="section-title">Propriedades Básicas</div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-slot">
+                            <div class="info-slot-label">Nome</div>
+                            <div class="info-slot-value" id="infoName">Hidrogênio</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Símbolo</div>
+                            <div class="info-slot-value" id="infoSymbol">H</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Número Atômico</div>
+                            <div class="info-slot-value" id="infoNumber">1</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Massa Atômica</div>
+                            <div class="info-slot-value" id="infoMass">1.008 u</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Propriedades Físicas -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-temperature-half"></i>
+                        <div class="section-title">Propriedades Físicas</div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-slot">
+                            <div class="info-slot-label">Estado</div>
+                            <div class="info-slot-value" id="infoState">Gasoso</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Densidade</div>
+                            <div class="info-slot-value" id="infoDensity">0.0000899 g/cm³</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Ponto de Fusão</div>
+                            <div class="info-slot-value" id="infoMelting">-259.16 °C</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Ponto de Ebulição</div>
+                            <div class="info-slot-value" id="infoBoiling">-252.87 °C</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Propriedades Químicas -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-flask-vial"></i>
+                        <div class="section-title">Propriedades Químicas</div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-slot">
+                            <div class="info-slot-label">Eletronegatividade</div>
+                            <div class="info-slot-value" id="infoElectronegativity">2.20</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Configuração Eletrônica</div>
+                            <div class="info-slot-value" id="infoConfiguration">1s¹</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Raio Atômico</div>
+                            <div class="info-slot-value" id="infoRadius">53 pm</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="info-slot-label">Descoberto em</div>
+                            <div class="info-slot-value" id="infoDiscovered">1766</div>
+                        </div>
+                    </div>
+				</div>
+
+                <!-- Propriedades Estruturais -->
+                <div class="info-card">
+                    <div class="section-header" style="margin-bottom: var(--space-md);">
+                        <i class="fa-solid fa-cube"></i>
+                        <div class="section-title">Propriedades Estruturais</div>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-slot">
+                            <div class="atom-info-label">Prótons</div>
+                            <div class="atom-info-value" id="protonCount">1</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="atom-info-label">Nêutrons</div>
+                            <div class="atom-info-value" id="neutronCount">0</div>
+                        </div>
+                        <div class="info-slot">
+                            <div class="atom-info-label">Elétrons</div>
+                            <div class="atom-info-value" id="electronCount">1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+					
+        <!-- COLUNA DIREITA - VISUALIZAÇÃO 3D -->
+        <section class="right-panel card">
+            <div class="right-card">
+                <div class="tabs-row">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab('visualization', this)">
+                            <i class="fa-solid fa-eye"></i>
+                            Visualização
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('structure', this)">
+                            <i class="fa-solid fa-cube"></i>
+                            Estrutura
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ABA: VISUALIZAÇÃO 3D -->
+                <div id="tab-visualization" class="tab-content active">
+					<div style="position: relative; height: 100%;">
+					</div>
+                </div>
+
+                <!-- ABA: ESTRUTURA -->
+                <div id="tab-structure" class="tab-content">
+                    <div class="atom-info-panel">
+                        <div class="section-header" style="margin-bottom: var(--space-md);">
+                            <i class="fa-solid fa-atom"></i>
+                            <div class="section-title">Estrutura Atômica</div>
+                        </div>
+                        <div style="font-size: var(--font-sm); color: var(--text-secondary); line-height: 1.6;">
+                            <p id="structureDescription">Selecione um elemento para visualizar sua estrutura atômica detalhada.</p>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- ABA: Simulador de Reações -->
+            <div class="tab-content" id="reactions">
+                <div class="reaction-simulator">
+                    <div class="reaction-area">
+                        <h3>🧪 Simulador de Reações Químicas</h3>
+                        
+                        <div class="reagent-selector">
+                            <div class="reagent-dropdown">
+                                <div class="reagent-input" id="reactant1Display" onclick="toggleDropdown('reactant1')">
+                                    Selecione o Reagente 1
+                                </div>
+                                <div class="dropdown-content" id="reactant1Dropdown">
+                                    <!-- Opções serão preenchidas via JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <div class="reagent-dropdown">
+                                <div class="reagent-input" id="reactant2Display" onclick="toggleDropdown('reactant2')">
+                                    Selecione o Reagente 2
+                                </div>
+                                <div class="dropdown-content" id="reactant2Dropdown">
+                                    <!-- Opções serão preenchidas via JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="reaction-equation" id="reactionEquation">
+                            ? + ? → ?
+                        </div>
+
+                        <div class="reaction-controls">
+                            <button class="btn btn-acid" onclick="balanceEquation()">Balancear</button>
+                            <button class="btn btn-primary" onclick="simulateReaction()">Simular</button>
+                        </div>
+
+                        <div class="reaction-equation" id="reactionResult" style="display: none;">
+                            <!-- Resultado da reação aparecerá aqui -->
+                        </div>
+                    </div>
+
+                    <div class="reaction-area">
+                        <h3>🧴 Tipos de Reações</h3>
+                        
+                        <div class="reaction-controls">
+                            <button class="btn btn-acid" onclick="loadReactionExample('acid-base')">Ácido-Base</button>
+                            <button class="btn btn-salt" onclick="loadReactionExample('salt-formation')">Sais</button>
+                            <button class="btn btn-base" onclick="loadReactionExample('precipitation')">Precipitação</button>
+                            <button class="btn btn-organic" onclick="loadReactionExample('organic')">Orgânicas</button>
+                        </div>
+
+                        <div id="reactionExamples" style="margin-top: var(--space-lg);">
+                            <h4>Exemplos de Reações:</h4>
+                            <div class="reagent-option" onclick="loadExample('neutralization')">
+                                <strong>Neutralização:</strong> HCl + NaOH → NaCl + H₂O
+                            </div>
+                            <div class="reagent-option" onclick="loadExample('carbonate')">
+                                <strong>Ácido + Carbonato:</strong> 2HCl + CaCO₃ → CaCl₂ + H₂O + CO₂
+                            </div>
+                            <div class="reagent-option" onclick="loadExample('metal')">
+                                <strong>Metal + Ácido:</strong> Zn + 2HCl → ZnCl₂ + H₂
+                            </div>
+                            <div class="reagent-option" onclick="loadExample('combustion')">
+                                <strong>Combustão:</strong> CH₄ + 2O₂ → CO₂ + 2H₂O
+                            </div>
+                        </div>
+
+                        <div id="reactionInfo" style="margin-top: var(--space-lg); padding: var(--space-md); background: var(--color-bg-page); border-radius: var(--radius-sm);">
+                            <h4>Informações da Reação:</h4>
+                            <div id="reactionDetails">
+                                Selecione uma reação para ver os detalhes...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA: Visualizador 3D -->
+            <div class="tab-content" id="3d-viewer">
+                <div class="control-group">
+                    <h3>🔬 Visualizador 3D de Moléculas</h3>
+                    
+                    <div class="toggle-container">
+                        <span class="toggle-label">Interativo</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="viewModeToggle" onchange="toggleViewMode()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="toggle-label">Estático</span>
+                    </div>
+                    
+                    <div class="viewer-controls">
+                        <button class="viewer-btn active" data-molecule="h2o">H₂O</button>
+                        <button class="viewer-btn" data-molecule="co2">CO₂</button>
+                        <button class="viewer-btn" data-molecule="ch4">CH₄</button>
+                        <button class="viewer-btn" data-molecule="c2h5oh">Etanol</button>
+                        <button class="viewer-btn" data-molecule="c6h6">Benzeno</button>
+                        <button class="viewer-btn" data-molecule="c6h12o6">Glicose</button>
+                        <button class="viewer-btn" data-molecule="c3h6o">Acetona</button>
+                        <button class="viewer-btn" data-molecule="c2h4">Eteno</button>
+                        <button class="viewer-btn" data-molecule="c2h2">Etino</button>
+                        <button class="viewer-btn" data-molecule="nh3">Amoníaco</button>
+                    </div>
+                    
+                    <div class="viewer-container" id="moleculeViewer">
+                        <!-- Visualizador 3D será inserido aqui -->
+                    </div>
+
+                    <div class="molecule-info" style="margin-top: var(--space-lg);">
+                        <h4 id="moleculeName">Selecione uma molécula</h4>
+                        <div class="property">
+                            <span>Fórmula Molecular:</span>
+                            <span id="moleculeFormula">-</span>
+                        </div>
+                        <div class="property">
+                            <span>Massa Molar:</span>
+                            <span id="moleculeMass">-</span>
+                        </div>
+                        <div class="property">
+                            <span>Geometria Molecular:</span>
+                            <span id="moleculeGeometry">-</span>
+                        </div>
+                        <div class="property">
+                            <span>Tipo de Molécula:</span>
+                            <span id="moleculeType">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA: Construtor Molecular -->
+            <div class="tab-content" id="molecule-builder">
+                <div class="control-group">
+                    <h3>⚛️ Construtor de Moléculas</h3>
+                    
+                    <div class="builder-container">
+                        <div class="element-palette">
+                            <h4>Elementos Disponíveis</h4>
+                            
+                            <div class="element-category">
+                                <h4>Orgânicos</h4>
+                                <div class="palette-element" draggable="true" data-element="C">C</div>
+                                <div class="palette-element" draggable="true" data-element="H">H</div>
+                                <div class="palette-element" draggable="true" data-element="O">O</div>
+                                <div class="palette-element" draggable="true" data-element="N">N</div>
+                                <div class="palette-element" draggable="true" data-element="S">S</div>
+                                <div class="palette-element" draggable="true" data-element="P">P</div>
+                            </div>
+                            
+                            <div class="element-category">
+                                <h4>Haletos</h4>
+                                <div class="palette-element" draggable="true" data-element="F">F</div>
+                                <div class="palette-element" draggable="true" data-element="Cl">Cl</div>
+                                <div class="palette-element" draggable="true" data-element="Br">Br</div>
+                                <div class="palette-element" draggable="true" data-element="I">I</div>
+                            </div>
+                            
+                            <div class="element-category">
+                                <h4>Metais</h4>
+                                <div class="palette-element" draggable="true" data-element="Na">Na</div>
+                                <div class="palette-element" draggable="true" data-element="K">K</div>
+                                <div class="palette-element" draggable="true" data-element="Mg">Mg</div>
+                                <div class="palette-element" draggable="true" data-element="Ca">Ca</div>
+                            </div>
+
+                            <div class="bond-controls">
+                                <h4>Tipo de Ligação</h4>
+                                <div class="bond-buttons">
+                                    <button class="bond-btn active" data-bond-type="single">Simples</button>
+                                    <button class="bond-btn" data-bond-type="double">Dupla</button>
+                                    <button class="bond-btn" data-bond-type="triple">Tripla</button>
+                                </div>
+                            </div>
+
+                            <div class="molecule-stats">
+                                <h4>Estatísticas</h4>
+                                <div class="property">
+                                    <span>Fórmula:</span>
+                                    <span id="builtFormula">H₂O</span>
+                                </div>
+                                <div class="property">
+                                    <span>Massa:</span>
+                                    <span id="builtMass">18.02 g/mol</span>
+                                </div>
+                                <div class="property">
+                                    <span>Átomos:</span>
+                                    <span id="atomCount">3</span>
+                                </div>
+                                <div class="property">
+                                    <span>Ligações:</span>
+                                    <span id="bondCount">2</span>
+                                </div>
+                            </div>
+
+                            <div class="reaction-controls" style="margin-top: var(--space-md);">
+                                <button class="btn btn-primary" onclick="clearMolecule()">Limpar</button>
+                                <button class="btn btn-success" onclick="exportMolecule()">Exportar</button>
+                            </div>
+                        </div>
+
+                        <div class="viewer-container" id="builderViewer">
+                            <!-- Canvas do construtor molecular -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+						
+						<!-- PAINEL DO CONSTRUTOR (inicialmente oculto) -->
+						<div id="moleculePanel" class="molecule-panel" style="display: none;">
+							<h3 style="margin: 0 0 15px 0; color: var(--accent); font-size: 1.1em;">Construtor Molecular</h3>
+							<div id="moleculeFormula" class="molecule-formula">Selecione elementos da tabela</div>
+							<div id="moleculeElements" class="molecule-elements-list"></div>
+							<div class="molecule-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+								<button id="clearMoleculeBtn" class="control-btn" style="flex: 1;">Limpar</button>
+								<button id="saveMoleculeBtn" class="control-btn" style="flex: 1;">Salvar</button>
+							</div>
+						</div>
+					   
+						<div class="canvas-controls">
+							<button class="control-btn active" onclick="setViewMode('orbital', this)">
+								<i class="fa-solid fa-circle-notch"></i>
+								Órbitas
+							</button>
+							<button class="control-btn" onclick="setViewMode('cloud', this)">
+								<i class="fa-solid fa-cloud"></i>
+								Nuvem
+							</button>
+							<button class="control-btn" onclick="setViewMode('nucleus', this)">
+								<i class="fa-solid fa-bullseye"></i>
+								Núcleo
+							</button>
+							<button class="control-btn" onclick="toggleAnimation(this)">
+								<i class="fa-solid fa-play"></i>
+								Animar
+							</button>
+						</div>				
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

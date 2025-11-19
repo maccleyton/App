@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Físico Nuclear</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #00BF93;
+            --color-secondary: #06B6D4;
+            --color-nuclear: #DC2626;
+            --color-fusion: #F59E0B;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-nuclear), var(--color-fusion));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(22, 22, 22, 0.5);
+            border-color: var(--color-nuclear);
+            color: var(--color-text-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-nuclear), var(--color-fusion));
+            border-color: var(--color-nuclear);
+            color: white;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-nuclear);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-nuclear);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-nuclear), var(--color-fusion));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-nuclear);
+            margin-top: 0.25rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: #F59E0B;
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '⚡ ';
+            color: var(--color-nuclear);
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(220, 38, 38, 0.1);
+            border-left: 3px solid var(--color-nuclear);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .info-box h4 {
+            color: var(--color-nuclear);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Radio Groups */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .radio-option:hover {
+            background: rgba(220, 38, 38, 0.1);
+        }
+
+        .radio-option input[type="radio"] {
+            accent-color: var(--color-nuclear);
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-nuclear);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>☢️ SIMULADOR FÍSICO NUCLEAR</h1>
+            <p class="subtitle">Fusão Nuclear, Fissão Nuclear, Colisor de Partículas e Criação de Antimatéria</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="fusion">☢️ Fusão Nuclear</button>
+            <button class="tab-button" data-tab="fission">💥 Fissão Nuclear</button>
+            <button class="tab-button" data-tab="collider">⚡ Colisor de Partículas</button>
+            <button class="tab-button" data-tab="antimatter">🌀 Antimatéria</button>
+        </div>
+
+        <!-- TAB 1: Fusão Nuclear -->
+        <div id="fusion" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔥</span>
+                        <h3 class="card-title">Visualização da Fusão Nuclear</h3>
+                    </div>
+                    <div class="viewer-3d" id="fusion-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Temperatura</div>
+                            <div class="stat-value" id="fusion-temp">10 MK</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Energia Liberada</div>
+                            <div class="stat-value" id="fusion-energy">0 MeV</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles de Fusão</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">⚛️ Reações de Fusão</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="fusion-reaction" value="dt" checked>
+                                <span>D + T → He + n (17.6 MeV)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="fusion-reaction" value="dd">
+                                <span>D + D → He³ + n (3.3 MeV)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="fusion-reaction" value="pp">
+                                <span>p + p → D + e⁺ (1.4 MeV)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="fusion-reaction" value="stellar">
+                                <span>Fusão Estelar (CNO)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🔥 Parâmetros do Plasma</label>
+                        <label class="control-label">Temperatura do Plasma:</label>
+                        <input type="range" id="plasma-temp" min="1" max="100" value="10" step="1">
+                        <span id="plasma-temp-value">10 MK</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Densidade do Plasma:</label>
+                        <input type="range" id="plasma-density" min="1" max="30" value="10" step="1">
+                        <span id="plasma-density-value">10²⁰ part/m³</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Confinamento Magnético:</label>
+                        <input type="range" id="magnetic-field" min="1" max="20" value="5" step="0.5">
+                        <span id="magnetic-field-value">5 T</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📈</span>
+                    <h3 class="card-title">Métricas da Reação</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Taxa de Fusão</div>
+                        <div class="stat-value" id="fusion-rate">0/s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Ganho de Energia</div>
+                        <div class="stat-value" id="fusion-gain">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Pressão</div>
+                        <div class="stat-value" id="fusion-pressure">0 atm</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Eficiência</div>
+                        <div class="stat-value" id="fusion-efficiency">0%</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Reação Deutério-Trítio (D-T)</h4>
+                    <p><strong>Equação:</strong> D + T → He⁴ + n + 17.6 MeV</p>
+                    <p><strong>Temperatura Mínima:</strong> 100 milhões K</p>
+                    <p><strong>Aplicação:</strong> Tokamaks, ITER, energia limpa</p>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="igniteFusion()">🔥 Ignitar Fusão</button>
+                    <button class="btn btn-secondary" onclick="resetFusion()">🔄 Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="exportData('fusion')">📊 Exportar Dados</button>
+                </div>
+
+                <div class="console" id="fusion-console">
+                    <div class="console-line">Sistema de fusão inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Fissão Nuclear -->
+        <div id="fission" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>💥</span>
+                        <h3 class="card-title">Visualização da Fissão Nuclear</h3>
+                    </div>
+                    <div class="viewer-3d" id="fission-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Nêutrons por Fissão</div>
+                            <div class="stat-value" id="neutrons-count">2.5</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Energia por Fissão</div>
+                            <div class="stat-value" id="fission-energy">200 MeV</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles de Fissão</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">⚛️ Elementos Fissionáveis</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="fission-element" value="u235" checked>
+                                <span>U-235 (Urânio-235)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="fission-element" value="pu239">
+                                <span>Pu-239 (Plutônio-239)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="fission-element" value="u233">
+                                <span>U-233 (Urânio-233)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="fission-element" value="th232">
+                                <span>Th-232 (Tório-232)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">📊 Parâmetros do Reator</label>
+                        <label class="control-label">Massa Crítica:</label>
+                        <input type="range" id="critical-mass" min="10" max="100" value="52" step="1">
+                        <span id="critical-mass-value">52 kg</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Barras de Controle:</label>
+                        <input type="range" id="control-rods" min="0" max="100" value="75" step="5">
+                        <span id="control-rods-value">75%</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Moderador:</label>
+                        <select class="control-input" id="moderator">
+                            <option value="water">Água</option>
+                            <option value="heavy-water">Água Pesada</option>
+                            <option value="graphite">Grafite</option>
+                            <option value="beryllium">Berílio</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📈</span>
+                    <h3 class="card-title">Reação em Cadeia</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Fator k</div>
+                        <div class="stat-value" id="k-factor">1.00</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Taxa de Fissão</div>
+                        <div class="stat-value" id="fission-rate">0/s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Temperatura</div>
+                        <div class="stat-value" id="reactor-temp">300°C</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Potência</div>
+                        <div class="stat-value" id="reactor-power">0 MW</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Fissão do Urânio-235</h4>
+                    <p><strong>Equação:</strong> U-235 + n → Ba-141 + Kr-92 + 3n + 200 MeV</p>
+                    <p><strong>Fator k:</strong> k < 1 (subcrítico), k = 1 (crítico), k > 1 (supercrítico)</p>
+                    <p><strong>Aplicação:</strong> Reatores nucleares, produção de energia</p>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="startFission()">⚛️ Iniciar Fissão</button>
+                    <button class="btn btn-secondary" onclick="scram()">🛑 SCRAM</button>
+                    <button class="btn btn-secondary" onclick="exportData('fission')">📊 Exportar Dados</button>
+                </div>
+
+                <div class="console" id="fission-console">
+                    <div class="console-line">Reator de fissão inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Colisor de Partículas -->
+        <div id="collider" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚡</span>
+                        <h3 class="card-title">Visualização do Colisor</h3>
+                    </div>
+                    <div class="viewer-3d" id="collider-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Energia do Feixe</div>
+                            <div class="stat-value" id="beam-energy">0 TeV</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade</div>
+                            <div class="stat-value" id="particle-speed">0% c</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles do Acelerador</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">⚛️ Tipo de Partícula</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="particle-type" value="proton" checked>
+                                <span>Prótons (LHC)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="particle-type" value="electron">
+                                <span>Elétrons (LEP)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="particle-type" value="ion">
+                                <span>Íons Pesados</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="particle-type" value="positron">
+                                <span>Pósitrons</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">⚡ Energia do Acelerador</label>
+                        <label class="control-label">Energia do Feixe:</label>
+                        <input type="range" id="accelerator-energy" min="1" max="14" value="7" step="0.5">
+                        <span id="accelerator-energy-value">7 TeV</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Luminosidade:</label>
+                        <input type="range" id="luminosity" min="1" max="10" value="5" step="0.5">
+                        <span id="luminosity-value">10³⁴ cm⁻²s⁻¹</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura dos Ímãs:</label>
+                        <input type="range" id="magnet-temp" min="1" max="10" value="2" step="0.5">
+                        <span id="magnet-temp-value">1.9 K</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>🔬</span>
+                    <h3 class="card-title">Resultados da Colisão</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Colisões/s</div>
+                        <div class="stat-value" id="collision-rate">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Partículas Detectadas</div>
+                        <div class="stat-value" id="particles-detected">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Bósons de Higgs</div>
+                        <div class="stat-value" id="higgs-count">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Temperatura</div>
+                        <div class="stat-value" id="collision-temp">0 K</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Large Hadron Collider (LHC)</h4>
+                    <p><strong>Energia:</strong> 13-14 TeV por feixe</p>
+                    <p><strong>Descobertas:</strong> Bóson de Higgs (2012)</p>
+                    <p><strong>Objetivos:</strong> Matéria escura, antimatéria, supersimetria</p>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="startCollider()">⚡ Iniciar Colisão</button>
+                    <button class="btn btn-secondary" onclick="stopCollider()">⏸️ Parar</button>
+                    <button class="btn btn-secondary" onclick="exportData('collider')">📊 Exportar Dados</button>
+                </div>
+
+                <div class="console" id="collider-console">
+                    <div class="console-line">Colisor de partículas inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Antimatéria -->
+        <div id="antimatter" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌀</span>
+                        <h3 class="card-title">Visualização da Antimatéria</h3>
+                    </div>
+                    <div class="viewer-3d" id="antimatter-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Antiprótons</div>
+                            <div class="stat-value" id="antiproton-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Pósitrons</div>
+                            <div class="stat-value" id="positron-count">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles de Antimatéria</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">⚛️ Tipo de Antipartícula</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="antimatter-type" value="positron" checked>
+                                <span>Pósitron (e⁺)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="antimatter-type" value="antiproton">
+                                <span>Antipróton (p̄)</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="antimatter-type" value="antihydrogen">
+                                <span>Anti-Hidrogênio</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="antimatter-type" value="antineutron">
+                                <span>Antinêutron</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🧲 Confinamento Magnético</label>
+                        <label class="control-label">Campo Magnético:</label>
+                        <input type="range" id="antimatter-field" min="1" max="10" value="5" step="0.5">
+                        <span id="antimatter-field-value">5 T</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura do Trap:</label>
+                        <input type="range" id="trap-temp" min="1" max="100" value="4" step="1">
+                        <span id="trap-temp-value">4 K</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Vácuo:</label>
+                        <input type="range" id="vacuum-level" min="1" max="12" value="10" step="1">
+                        <span id="vacuum-level-value">10⁻¹⁰ torr</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>⚡</span>
+                    <h3 class="card-title">Produção e Aniquilação</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Taxa de Produção</div>
+                        <div class="stat-value" id="production-rate">0/s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Energia de Aniquilação</div>
+                        <div class="stat-value" id="annihilation-energy">0 MeV</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Tempo de Confinamento</div>
+                        <div class="stat-value" id="confinement-time">0 s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Eficiência</div>
+                        <div class="stat-value" id="antimatter-efficiency">0%</div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Aniquilação Matéria-Antimatéria</h4>
+                    <p><strong>Equação:</strong> e⁻ + e⁺ → 2γ (1.02 MeV)</p>
+                    <p><strong>Eficiência:</strong> 100% conversão massa-energia (E = mc²)</p>
+                    <p><strong>Aplicação:</strong> PET scan, propulsão espacial, pesquisa fundamental</p>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="createAntimatter()">✨ Criar Antimatéria</button>
+                    <button class="btn btn-primary" onclick="annihilate()">💥 Aniquilar</button>
+                    <button class="btn btn-secondary" onclick="exportData('antimatter')">📊 Exportar Dados</button>
+                </div>
+
+                <div class="console" id="antimatter-console">
+                    <div class="console-line">Sistema de antimatéria inicializado</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            fusion: {
+                running: false,
+                temperature: 10,
+                density: 10,
+                magneticField: 5,
+                reaction: 'dt',
+                energy: 0,
+                rate: 0,
+                gain: 0,
+                pressure: 0,
+                efficiency: 0
+            },
+            fission: {
+                running: false,
+                element: 'u235',
+                criticalMass: 52,
+                controlRods: 75,
+                moderator: 'water',
+                kFactor: 1.0,
+                rate: 0,
+                temperature: 300,
+                power: 0,
+                neutrons: 2.5
+            },
+            collider: {
+                running: false,
+                particleType: 'proton',
+                energy: 7,
+                luminosity: 5,
+                magnetTemp: 2,
+                collisionRate: 0,
+                particles: 0,
+                higgs: 0,
+                temp: 0
+            },
+            antimatter: {
+                type: 'positron',
+                field: 5,
+                trapTemp: 4,
+                vacuum: 10,
+                antiprotons: 0,
+                positrons: 0,
+                productionRate: 0,
+                annihilationEnergy: 0,
+                confinementTime: 0,
+                efficiency: 0
+            }
+        };
+
+        // Three.js objects
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+        const particleSystems = {};
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initialize3DViewers();
+            initializeControls();
+            updateAllDisplays();
+        });
+
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        }
+
+        function initialize3DViewers() {
+            const viewerIds = ['fusion-viewer', 'fission-viewer', 'collider-viewer', 'antimatter-viewer'];
+
+            viewerIds.forEach(id => {
+                const container = document.getElementById(id);
+                if (!container) return;
+
+                // Create scene
+                scenes[id] = new THREE.Scene();
+                scenes[id].background = new THREE.Color(0x0a0a0a);
+
+                // Create camera
+                cameras[id] = new THREE.PerspectiveCamera(
+                    50,
+                    container.clientWidth / container.clientHeight,
+                    0.1,
+                    1000
+                );
+                cameras[id].position.set(0, 0, 10);
+
+                // Create renderer
+                renderers[id] = new THREE.WebGLRenderer({ antialias: true });
+                renderers[id].setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderers[id].domElement);
+
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040, 2);
+                scenes[id].add(ambientLight);
+
+                const pointLight = new THREE.PointLight(0xDC2626, 2, 100);
+                pointLight.position.set(5, 5, 5);
+                scenes[id].add(pointLight);
+
+                // Create particle system
+                particleSystems[id] = createParticleSystem(id);
+                scenes[id].add(particleSystems[id]);
+
+                // Add orbit controls if available
+                if (typeof THREE.OrbitControls !== 'undefined') {
+                    controls[id] = new THREE.OrbitControls(cameras[id], renderers[id].domElement);
+                    controls[id].enableDamping = true;
+                    controls[id].dampingFactor = 0.05;
+                }
+
+                // Start animation loop
+                animate3D(id);
+            });
+        }
+
+        function createParticleSystem(viewerId) {
+            const particleCount = 200;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 10;
+                positions[i + 1] = (Math.random() - 0.5) * 10;
+                positions[i + 2] = (Math.random() - 0.5) * 10;
+
+                velocities[i] = (Math.random() - 0.5) * 0.02;
+                velocities[i + 1] = (Math.random() - 0.5) * 0.02;
+                velocities[i + 2] = (Math.random() - 0.5) * 0.02;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('velocity', new THREE.BufferAttribute(velocities, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: 0xF59E0B,
+                size: 0.15,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            particles.userData.velocities = velocities;
+
+            return particles;
+        }
+
+        function animate3D(viewerId) {
+            requestAnimationFrame(() => animate3D(viewerId));
+            
+            if (controls[viewerId]) {
+                controls[viewerId].update();
+            }
+
+            // Animate particles
+            if (particleSystems[viewerId]) {
+                const positions = particleSystems[viewerId].geometry.attributes.position.array;
+                const velocities = particleSystems[viewerId].userData.velocities;
+
+                for (let i = 0; i < positions.length; i += 3) {
+                    positions[i] += velocities[i];
+                    positions[i + 1] += velocities[i + 1];
+                    positions[i + 2] += velocities[i + 2];
+
+                    // Boundary check
+                    if (Math.abs(positions[i]) > 5) velocities[i] *= -1;
+                    if (Math.abs(positions[i + 1]) > 5) velocities[i + 1] *= -1;
+                    if (Math.abs(positions[i + 2]) > 5) velocities[i + 2] *= -1;
+                }
+
+                particleSystems[viewerId].geometry.attributes.position.needsUpdate = true;
+                particleSystems[viewerId].rotation.y += 0.001;
+            }
+            
+            renderers[viewerId].render(scenes[viewerId], cameras[viewerId]);
+        }
+
+        // ==================== CONTROLS ====================
+        function initializeControls() {
+            // Fusion controls
+            document.getElementById('plasma-temp').addEventListener('input', (e) => {
+                state.fusion.temperature = parseFloat(e.target.value);
+                document.getElementById('plasma-temp-value').textContent = `${state.fusion.temperature} MK`;
+                updateFusionMetrics();
+            });
+
+            document.getElementById('plasma-density').addEventListener('input', (e) => {
+                state.fusion.density = parseFloat(e.target.value);
+                document.getElementById('plasma-density-value').textContent = `${state.fusion.density}²⁰ part/m³`;
+                updateFusionMetrics();
+            });
+
+            document.getElementById('magnetic-field').addEventListener('input', (e) => {
+                state.fusion.magneticField = parseFloat(e.target.value);
+                document.getElementById('magnetic-field-value').textContent = `${state.fusion.magneticField} T`;
+            });
+
+            // Fission controls
+            document.getElementById('critical-mass').addEventListener('input', (e) => {
+                state.fission.criticalMass = parseFloat(e.target.value);
+                document.getElementById('critical-mass-value').textContent = `${state.fission.criticalMass} kg`;
+                updateFissionMetrics();
+            });
+
+            document.getElementById('control-rods').addEventListener('input', (e) => {
+                state.fission.controlRods = parseFloat(e.target.value);
+                document.getElementById('control-rods-value').textContent = `${state.fission.controlRods}%`;
+                updateFissionMetrics();
+            });
+
+            // Collider controls
+            document.getElementById('accelerator-energy').addEventListener('input', (e) => {
+                state.collider.energy = parseFloat(e.target.value);
+                document.getElementById('accelerator-energy-value').textContent = `${state.collider.energy} TeV`;
+                updateColliderMetrics();
+            });
+
+            document.getElementById('luminosity').addEventListener('input', (e) => {
+                state.collider.luminosity = parseFloat(e.target.value);
+                document.getElementById('luminosity-value').textContent = `10³⁴ cm⁻²s⁻¹`;
+            });
+
+            // Antimatter controls
+            document.getElementById('antimatter-field').addEventListener('input', (e) => {
+                state.antimatter.field = parseFloat(e.target.value);
+                document.getElementById('antimatter-field-value').textContent = `${state.antimatter.field} T`;
+            });
+
+            document.getElementById('trap-temp').addEventListener('input', (e) => {
+                state.antimatter.trapTemp = parseFloat(e.target.value);
+                document.getElementById('trap-temp-value').textContent = `${state.antimatter.trapTemp} K`;
+            });
+        }
+
+        function updateAllDisplays() {
+            updateFusionMetrics();
+            updateFissionMetrics();
+            updateColliderMetrics();
+            updateAntimatterMetrics();
+        }
+
+        // ==================== FUSION ====================
+        function updateFusionMetrics() {
+            const temp = state.fusion.temperature;
+            const density = state.fusion.density;
+
+            // Calculate fusion rate (simplified Lawson criterion)
+            state.fusion.rate = temp > 10 ? Math.pow(temp, 2) * density / 100 : 0;
+            state.fusion.energy = state.fusion.rate * 17.6; // MeV per reaction
+            state.fusion.gain = state.fusion.energy / Math.max(1, temp * 10);
+            state.fusion.pressure = density * temp * 0.1;
+            state.fusion.efficiency = Math.min(100, (state.fusion.gain / 10) * 100);
+
+            document.getElementById('fusion-temp').textContent = `${temp} MK`;
+            document.getElementById('fusion-energy').textContent = `${state.fusion.energy.toFixed(1)} MeV`;
+            document.getElementById('fusion-rate').textContent = `${state.fusion.rate.toFixed(2)}/s`;
+            document.getElementById('fusion-gain').textContent = state.fusion.gain.toFixed(2);
+            document.getElementById('fusion-pressure').textContent = `${state.fusion.pressure.toFixed(1)} atm`;
+            document.getElementById('fusion-efficiency').textContent = `${state.fusion.efficiency.toFixed(1)}%`;
+        }
+
+        function igniteFusion() {
+            if (state.fusion.temperature < 100) {
+                addConsoleMessage('fusion', '⚠️ Temperatura insuficiente para ignição! Mínimo: 100 MK');
+                return;
+            }
+
+            state.fusion.running = true;
+            addConsoleMessage('fusion', '🔥 Ignição de plasma iniciada!');
+            addConsoleMessage('fusion', `Temperatura: ${state.fusion.temperature} MK`);
+            addConsoleMessage('fusion', `Densidade: ${state.fusion.density}²⁰ part/m³`);
+            
+            // Animate fusion
+            let step = 0;
+            const fusionInterval = setInterval(() => {
+                step++;
+                updateFusionMetrics();
+                
+                if (particleSystems['fusion-viewer']) {
+                    const material = particleSystems['fusion-viewer'].material;
+                    material.size = 0.15 + Math.sin(step * 0.1) * 0.1;
+                    material.color.setHex(step % 60 < 30 ? 0xF59E0B : 0xDC2626);
+                }
+
+                addConsoleMessage('fusion', `Taxa de fusão: ${state.fusion.rate.toFixed(2)}/s`);
+
+                if (step >= 10) {
+                    clearInterval(fusionInterval);
+                    state.fusion.running = false;
+                    addConsoleMessage('fusion', '✅ Reação de fusão estabilizada');
+                }
+            }, 500);
+        }
+
+        function resetFusion() {
+            state.fusion.temperature = 10;
+            state.fusion.density = 10;
+            state.fusion.running = false;
+            updateFusionMetrics();
+            addConsoleMessage('fusion', '🔄 Sistema reiniciado');
+        }
+
+        // ==================== FISSION ====================
+        function updateFissionMetrics() {
+            const mass = state.fission.criticalMass;
+            const rods = state.fission.controlRods;
+
+            // Calculate k-factor
+            state.fission.kFactor = mass > 50 ? (100 - rods) / 100 : 0.5;
+            state.fission.rate = state.fission.kFactor > 0.9 ? Math.pow(state.fission.kFactor, 3) * 1000 : 0;
+            state.fission.temperature = 300 + state.fission.rate * 0.5;
+            state.fission.power = state.fission.rate * 200 / 1000; // MW
+
+            document.getElementById('neutrons-count').textContent = state.fission.neutrons.toFixed(1);
+            document.getElementById('fission-energy').textContent = '200 MeV';
+            document.getElementById('k-factor').textContent = state.fission.kFactor.toFixed(2);
+            document.getElementById('fission-rate').textContent = `${state.fission.rate.toFixed(0)}/s`;
+            document.getElementById('reactor-temp').textContent = `${state.fission.temperature.toFixed(0)}°C`;
+            document.getElementById('reactor-power').textContent = `${state.fission.power.toFixed(1)} MW`;
+        }
+
+        function startFission() {
+            if (state.fission.criticalMass < 50) {
+                addConsoleMessage('fission', '⚠️ Massa subcrítica! Aumente para > 50 kg');
+                return;
+            }
+
+            state.fission.running = true;
+            addConsoleMessage('fission', '⚛️ Iniciando reação em cadeia...');
+            addConsoleMessage('fission', `Massa crítica: ${state.fission.criticalMass} kg`);
+            addConsoleMessage('fission', `Fator k: ${state.fission.kFactor.toFixed(2)}`);
+
+            let step = 0;
+            const fissionInterval = setInterval(() => {
+                step++;
+                updateFissionMetrics();
+
+                if (particleSystems['fission-viewer']) {
+                    const material = particleSystems['fission-viewer'].material;
+                    material.color.setHex(0xDC2626);
+                    material.size = 0.2;
+                }
+
+                addConsoleMessage('fission', `Potência: ${state.fission.power.toFixed(1)} MW`);
+
+                if (step >= 8) {
+                    clearInterval(fissionInterval);
+                    state.fission.running = false;
+                    addConsoleMessage('fission', '✅ Reator estável');
+                }
+            }, 600);
+        }
+
+        function scram() {
+            state.fission.running = false;
+            state.fission.controlRods = 100;
+            document.getElementById('control-rods').value = 100;
+            updateFissionMetrics();
+            addConsoleMessage('fission', '🛑 SCRAM! Barras de controle inseridas');
+        }
+
+        // ==================== COLLIDER ====================
+        function updateColliderMetrics() {
+            const energy = state.collider.energy;
+            const speed = 100 - (1 / energy) * 100;
+
+            document.getElementById('beam-energy').textContent = `${energy} TeV`;
+            document.getElementById('particle-speed').textContent = `${speed.toFixed(4)}% c`;
+        }
+
+        function startCollider() {
+            state.collider.running = true;
+            addConsoleMessage('collider', '⚡ Acelerando partículas...');
+            addConsoleMessage('collider', `Energia: ${state.collider.energy} TeV`);
+
+            let step = 0;
+            const colliderInterval = setInterval(() => {
+                step++;
+                state.collider.collisionRate = Math.floor(Math.random() * 40000000) + 10000000;
+                state.collider.particles = Math.floor(Math.random() * 200) + 50;
+                state.collider.higgs = step > 5 ? Math.floor(Math.random() * 3) : 0;
+                state.collider.temp = 2000000000 * step;
+
+                document.getElementById('collision-rate').textContent = state.collider.collisionRate.toLocaleString();
+                document.getElementById('particles-detected').textContent = state.collider.particles;
+                document.getElementById('higgs-count').textContent = state.collider.higgs;
+                document.getElementById('collision-temp').textContent = `${(state.collider.temp / 1e9).toFixed(1)} GK`;
+
+                if (particleSystems['collider-viewer']) {
+                    const material = particleSystems['collider-viewer'].material;
+                    material.color.setHex(0x06B6D4);
+                    material.size = 0.2 + Math.sin(step * 0.5) * 0.1;
+                }
+
+                addConsoleMessage('collider', `Colisões: ${state.collider.collisionRate.toLocaleString()}/s`);
+
+                if (step >= 10) {
+                    clearInterval(colliderInterval);
+                    state.collider.running = false;
+                    addConsoleMessage('collider', '✅ Experimento concluído');
+                }
+            }, 700);
+        }
+
+        function stopCollider() {
+            state.collider.running = false;
+            addConsoleMessage('collider', '⏸️ Colisor pausado');
+        }
+
+        // ==================== ANTIMATTER ====================
+        function updateAntimatterMetrics() {
+            document.getElementById('antiproton-count').textContent = state.antimatter.antiprotons;
+            document.getElementById('positron-count').textContent = state.antimatter.positrons;
+            document.getElementById('production-rate').textContent = `${state.antimatter.productionRate}/s`;
+            document.getElementById('annihilation-energy').textContent = `${state.antimatter.annihilationEnergy.toFixed(2)} MeV`;
+            document.getElementById('confinement-time').textContent = `${state.antimatter.confinementTime.toFixed(1)} s`;
+            document.getElementById('antimatter-efficiency').textContent = `${state.antimatter.efficiency.toFixed(1)}%`;
+        }
+
+        function createAntimatter() {
+            addConsoleMessage('antimatter', '✨ Iniciando produção de antimatéria...');
+            addConsoleMessage('antimatter', `Tipo: ${state.antimatter.type}`);
+
+            let step = 0;
+            const antimatterInterval = setInterval(() => {
+                step++;
+                
+                if (state.antimatter.type === 'positron') {
+                    state.antimatter.positrons += Math.floor(Math.random() * 10) + 5;
+                } else if (state.antimatter.type === 'antiproton') {
+                    state.antimatter.antiprotons += Math.floor(Math.random() * 3) + 1;
+                }
+
+                state.antimatter.productionRate = Math.floor(Math.random() * 20) + 10;
+                state.antimatter.confinementTime = step * 0.5;
+                state.antimatter.efficiency = Math.min(100, step * 10);
+
+                updateAntimatterMetrics();
+
+                if (particleSystems['antimatter-viewer']) {
+                    const material = particleSystems['antimatter-viewer'].material;
+                    material.color.setHex(0xA855F7);
+                    material.size = 0.25;
+                }
+
+                addConsoleMessage('antimatter', `Criadas: ${state.antimatter.positrons} pósitrons`);
+
+                if (step >= 8) {
+                    clearInterval(antimatterInterval);
+                    addConsoleMessage('antimatter', '✅ Produção completa');
+                }
+            }, 500);
+        }
+
+        function annihilate() {
+            if (state.antimatter.positrons === 0 && state.antimatter.antiprotons === 0) {
+                addConsoleMessage('antimatter', '⚠️ Nenhuma antimatéria disponível');
+                return;
+            }
+
+            const totalParticles = state.antimatter.positrons + state.antimatter.antiprotons;
+            state.antimatter.annihilationEnergy = totalParticles * 1.02; // MeV
+
+            addConsoleMessage('antimatter', '💥 ANIQUILAÇÃO INICIADA!');
+            addConsoleMessage('antimatter', `Energia liberada: ${state.antimatter.annihilationEnergy.toFixed(2)} MeV`);
+
+            setTimeout(() => {
+                state.antimatter.positrons = 0;
+                state.antimatter.antiprotons = 0;
+                updateAntimatterMetrics();
+                addConsoleMessage('antimatter', '✨ Conversão matéria-energia completa (E=mc²)');
+            }, 1000);
+        }
+
+        // ==================== UTILITY ====================
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+
+        function exportData(module) {
+            const data = JSON.stringify(state[module], null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${module}-data.json`;
+            a.click();
+            
+            addConsoleMessage(module, '📊 Dados exportados com sucesso');
+        }
+    </script>
+</body>
+</html>

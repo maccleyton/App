@@ -1,0 +1,2464 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Termodinâmico</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Polyfills -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <!-- MathJax -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        /* === CSS VARIABLES - Design System Nuclear === */
+        :root {
+            /* Color System */
+            --color-primary-100: #E8F4F8;
+            --color-primary-500: #00BF93; /* Verde ciano workspace */
+            --color-primary-700: #00A085;
+            --color-nuclear-100: #FEF2F2;
+            --color-nuclear-500: #DC2626; /* Vermelho nuclear */
+            --color-nuclear-700: #B91C1C;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-bg-surface-hover: rgba(22, 22, 22, 0.5);
+            --color-border-default: #3f3f46;
+            --color-border-focus: #00BF93;
+            --color-border-light: #262626;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+            --color-text-tertiary: #71717A;
+            --color-accent-cyan: #06B6D4;
+            --color-accent-green: #10B981;
+            --color-accent-yellow: #F59E0B;
+            --color-accent-red: #EF4444;
+            --color-accent-purple: #A855F7;
+            
+            /* Spacing */
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 0.75rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            
+            /* Border Radius */
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 191, 147, 0.3);
+            
+            /* Typography */
+            --font-mono: 'Monaco', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+        }
+
+        header {
+            text-align: center;
+            padding: var(--spacing-xl) 0;
+            border-bottom: 2px solid var(--color-border-default);
+            margin-bottom: var(--spacing-xl);
+            background: linear-gradient(135deg, rgba(0, 191, 147, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border-radius: var(--radius-lg);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-xl);
+            background: var(--color-bg-surface);
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border-default);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 150px;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: transparent;
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-md);
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+
+        .tab-button:hover {
+            background: var(--color-bg-surface-hover);
+            border-color: var(--color-primary-500);
+            color: var(--color-text-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-accent-cyan));
+            border-color: var(--color-primary-500);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Module Grid */
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--color-border-light);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+
+        /* Canvas Containers */
+        .canvas-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border-default);
+            margin-bottom: var(--spacing-md);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-container canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .control-input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-sm);
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary-500);
+            box-shadow: 0 0 0 3px rgba(0, 191, 147, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border-default);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary-500);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary-500);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary-500), var(--color-accent-cyan));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border-default);
+        }
+
+        .btn-secondary:hover {
+            background: var(--color-bg-surface-hover);
+            border-color: var(--color-primary-500);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--color-nuclear-500), var(--color-accent-red));
+            color: white;
+        }
+
+        .button-group {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        /* Stats Display */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border-light);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-tertiary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--color-primary-500);
+            font-family: var(--font-mono);
+        }
+
+        /* Radio Button Groups */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .radio-option:hover {
+            background: rgba(0, 191, 147, 0.1);
+        }
+
+        .radio-option input[type="radio"] {
+            accent-color: var(--color-primary-500);
+        }
+
+        /* Console Log */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border-default);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            height: 150px;
+            overflow-y: auto;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-accent-green);
+            margin-top: var(--spacing-md);
+        }
+
+        .console-line {
+            margin-bottom: var(--spacing-xs);
+            padding: 2px 0;
+        }
+
+        .console-line::before {
+            content: '> ';
+            color: var(--color-primary-500);
+        }
+
+        /* Formula Display */
+        .formula {
+            background: rgba(0, 191, 147, 0.1);
+            border: 1px solid var(--color-primary-500);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin: var(--spacing-md) 0;
+            color: var(--color-primary-500);
+        }
+
+        /* Info Boxes */
+        .info-box {
+            background: rgba(6, 182, 212, 0.1);
+            border-left: 3px solid var(--color-accent-cyan);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-sm);
+            margin: var(--spacing-md) 0;
+        }
+
+        .info-box p {
+            color: var(--color-text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .module-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tab-navigation {
+                flex-wrap: nowrap;
+                overflow-x: scroll;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border-default);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary-500);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌡️ MÓDULO TERMODINÂMICO</h1>
+            <p class="subtitle">Leis da Termodinâmica, Máquinas Térmicas, Transferência de Calor e Diagramas de Fase</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="laws">📚 Leis da Termodinâmica</button>
+            <button class="tab-button" data-tab="engines">⚙️ Máquinas Térmicas</button>
+            <button class="tab-button" data-tab="heat">🔥 Transferência de Calor</button>
+            <button class="tab-button" data-tab="gases">💨 Leis dos Gases</button>
+            <button class="tab-button" data-tab="phases">🌀 Mudanças de Fase</button>
+            <button class="tab-button" data-tab="diagrams">📊 Diagramas Termodinâmicos</button>
+        </div>
+
+        <!-- TAB 1: Leis da Termodinâmica -->
+        <div id="laws" class="tab-content active">
+            <div class="module-grid">
+                <!-- Stats Cards -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚡</span>
+                        <h3 class="card-title">Energia Interna (U)</h3>
+                    </div>
+                    <div class="stat-value" id="internal-energy">0 J</div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔄</span>
+                        <h3 class="card-title">Entropia (S)</h3>
+                    </div>
+                    <div class="stat-value" id="entropy">0 J/K</div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="card">
+                <div class="card-header">
+                    <span>🎛️</span>
+                    <h3 class="card-title">Princípios Termodinâmicos</h3>
+                </div>
+
+                <!-- Four Laws -->
+                <div class="control-group">
+                    <label class="control-label">📖 As Quatro Leis</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="law" value="zero" checked>
+                            <span>Lei Zero</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="law" value="first">
+                            <span>Primeira Lei</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="law" value="second">
+                            <span>Segunda Lei</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="law" value="third">
+                            <span>Terceira Lei</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="info-box" id="law-description">
+                    <p><strong>Lei Zero:</strong><br>
+                    Se dois sistemas estão em equilíbrio térmico com um terceiro, então estão em equilíbrio térmico entre si.</p>
+                </div>
+
+                <!-- Energy Balance -->
+                <div class="control-group">
+                    <label class="control-label">⚖️ Balanço Energético</label>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Calor Adicionado (Q):</div>
+                            <div class="stat-value" id="heat-added">0 J</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Trabalho Realizado (W):</div>
+                            <div class="stat-value" id="work-done">0 J</div>
+                        </div>
+                    </div>
+                    <div class="formula" id="first-law-result">ΔU = Q - W = 0 J</div>
+                </div>
+
+                <!-- Process Type -->
+                <div class="control-group">
+                    <label class="control-label">📈 Processos Termodinâmicos</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="process" value="isothermal" checked>
+                            <span>Isotérmico</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="process" value="adiabatic">
+                            <span>Adiabático</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="process" value="isobaric">
+                            <span>Isobárico</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="process" value="isochoric">
+                            <span>Isocórico</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- State Variables -->
+                <div class="control-group">
+                    <label class="control-label">Temperatura</label>
+                    <input type="range" id="temp-slider" min="200" max="500" value="300" step="10">
+                    <span id="temp-value">300 K</span>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Pressão</label>
+                    <input type="range" id="pressure-slider" min="0.5" max="5" value="1" step="0.1">
+                    <span id="pressure-value">1 atm</span>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Volume</label>
+                    <input type="range" id="volume-slider" min="0.5" max="3" value="1" step="0.1">
+                    <span id="volume-value">1 m³</span>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Entropia</label>
+                    <input type="range" id="entropy-slider" min="0" max="1000" value="0" step="10">
+                    <span id="entropy-value">0 J/K</span>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="simulateThermo()">Simular Processo</button>
+                    <button class="btn btn-secondary" onclick="resetThermo()">Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="exportData('thermo')">Exportar Dados</button>
+                </div>
+
+                <div class="console" id="thermo-console">
+                    <div class="console-line">Sistema termodinâmico inicializado a 300 K</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Máquinas Térmicas -->
+        <div id="engines" class="tab-content">
+            <div class="module-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚙️</span>
+                        <h3 class="card-title">Visualização da Máquina Térmica</h3>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="engine-canvas"></canvas>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Eficiência</div>
+                            <div class="stat-value" id="engine-efficiency">0%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Potência</div>
+                            <div class="stat-value" id="engine-power">0 W</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles da Máquina Térmica</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🔧 Tipos de Máquinas</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="engine-type" value="carnot" checked>
+                                <span>Carnot</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="engine-type" value="stirling">
+                                <span>Stirling</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="engine-type" value="otto">
+                                <span>Otto</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="engine-type" value="diesel">
+                                <span>Diesel</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="engine-type" value="rankine">
+                                <span>Rankine</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🌡️ Reservatórios Térmicos</label>
+                        <label class="control-label">Temperatura da Fonte Quente (T₁):</label>
+                        <input type="range" id="t1-slider" min="400" max="1000" value="600" step="50">
+                        <span id="t1-value">600 K</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura da Fonte Fria (T₂):</label>
+                        <input type="range" id="t2-slider" min="200" max="400" value="300" step="10">
+                        <span id="t2-value">300 K</span>
+                    </div>
+
+                    <div class="formula" id="carnot-efficiency">η = 1 - T₂/T₁ = 50%</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📊</span>
+                    <h3 class="card-title">Ciclo Termodinâmico</h3>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="cycle-chart"></canvas>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">⚡ Performance</label>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Trabalho Líquido</div>
+                            <div class="stat-value" id="net-work">0 J</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Calor Absorvido</div>
+                            <div class="stat-value" id="heat-in">0 J</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Calor Rejeitado</div>
+                            <div class="stat-value" id="heat-out">0 J</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Razão de Compressão</div>
+                            <div class="stat-value" id="compression-ratio">8:1</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="startEngine()">Iniciar Máquina</button>
+                    <button class="btn btn-danger" onclick="stopEngine()">Parar Máquina</button>
+                    <button class="btn btn-secondary" onclick="exportData('engine')">Exportar Dados</button>
+                </div>
+
+                <div class="console" id="engine-console">
+                    <div class="console-line">Máquina térmica inicializada</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Transferência de Calor -->
+        <div id="heat" class="tab-content">
+            <div class="module-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔥</span>
+                        <h3 class="card-title">Visualização da Transferência de Calor</h3>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="heat-canvas"></canvas>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Fluxo de Calor</div>
+                            <div class="stat-value" id="heat-flux">0 W/m²</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Condutividade</div>
+                            <div class="stat-value" id="conductivity">0 W/m·K</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles de Transferência de Calor</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">📊 Mecanismos de Transferência</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="heat-mode" value="conduction" checked>
+                                <span>Condução</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="heat-mode" value="convection">
+                                <span>Convecção</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="heat-mode" value="radiation">
+                                <span>Radiação</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🌡️ Gradiente Térmico</label>
+                        <label class="control-label">Temperatura Quente:</label>
+                        <input type="range" id="temp-hot-slider" min="0" max="200" value="100" step="5">
+                        <span id="temp-hot-value">100°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura Fria:</label>
+                        <input type="range" id="temp-cold-slider" min="0" max="100" value="0" step="5">
+                        <span id="temp-cold-value">0°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Comprimento:</label>
+                        <input type="range" id="length-slider" min="0.01" max="1" value="0.1" step="0.01">
+                        <span id="length-value">0.1 m</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🏗️ Materiais</label>
+                        <select class="control-input" id="material-select">
+                            <option value="copper">Cobre</option>
+                            <option value="aluminum">Alumínio</option>
+                            <option value="steel">Aço</option>
+                            <option value="glass">Vidro</option>
+                            <option value="wood">Madeira</option>
+                        </select>
+                    </div>
+
+                    <div class="formula">q = -k·ΔT/Δx</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📈</span>
+                    <h3 class="card-title">Taxas de Transferência</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Condução</div>
+                        <div class="stat-value" id="conduction-rate">0 W</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Convecção</div>
+                        <div class="stat-value" id="convection-rate">0 W</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Radiação</div>
+                        <div class="stat-value" id="radiation-rate">0 W</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Resistência Térmica</div>
+                        <div class="stat-value" id="thermal-resistance">0 K/W</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="startHeatTransfer()">Iniciar Transferência</button>
+                    <button class="btn btn-secondary" onclick="resetHeatTransfer()">Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="exportData('heat')">Exportar Dados</button>
+                </div>
+
+                <div class="console" id="heat-console">
+                    <div class="console-line">Sistema de transferência de calor inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Leis dos Gases -->
+        <div id="gases" class="tab-content">
+            <div class="module-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span>💨</span>
+                        <h3 class="card-title">Comportamento dos Gases</h3>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="gas-canvas"></canvas>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Energia Cinética Média</div>
+                            <div class="stat-value" id="kinetic-energy">0 J</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade RMS</div>
+                            <div class="stat-value" id="rms-velocity">0 m/s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles do Gás Ideal</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">📖 Leis dos Gases</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="gas-law" value="boyle" checked>
+                                <span>Boyle</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="gas-law" value="charles">
+                                <span>Charles</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="gas-law" value="gay-lussac">
+                                <span>Gay-Lussac</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="gas-law" value="combined">
+                                <span>Combinada</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="gas-law" value="ideal">
+                                <span>Ideal</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">⚖️ Variáveis de Estado</label>
+                        <label class="control-label">Pressão (P):</label>
+                        <input type="range" id="gas-pressure-slider" min="50" max="200" value="101.3" step="0.1">
+                        <span id="gas-pressure-value">101.3 kPa</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Volume (V):</label>
+                        <input type="range" id="gas-volume-slider" min="0.01" max="0.05" value="0.0224" step="0.001">
+                        <span id="gas-volume-value">0.0224 m³</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura (T):</label>
+                        <input type="range" id="gas-temp-slider" min="200" max="400" value="273" step="1">
+                        <span id="gas-temp-value">273 K</span>
+                    </div>
+
+                    <div class="formula">PV = nRT</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>🔢</span>
+                    <h3 class="card-title">Propriedades do Gás</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Número de Mols (n)</div>
+                        <div class="stat-value">1.0 mol</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Constante R</div>
+                        <div class="stat-value">8.314 J/mol·K</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Número de Partículas</div>
+                        <div class="stat-value">6.02×10²³</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Massa Molar</div>
+                        <div class="stat-value">0.029 kg/mol</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">📊 Estatísticas Moleculares</label>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Pressão</div>
+                            <div class="stat-value" id="gas-stats-pressure">101.3 kPa</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade Média</div>
+                            <div class="stat-value" id="avg-velocity">461 m/s</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Collisions/s</div>
+                            <div class="stat-value" id="collisions">7.2×10⁹</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Free Path</div>
+                            <div class="stat-value" id="free-path">68 nm</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="simulateGas()">Simular Gás</button>
+                    <button class="btn btn-secondary" onclick="resetGas()">Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="exportData('gas')">Exportar Dados</button>
+                </div>
+
+                <div class="console" id="gas-console">
+                    <div class="console-line">Sistema de gás ideal inicializado a 273 K</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Mudanças de Fase -->
+        <div id="phases" class="tab-content">
+            <div class="module-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌀</span>
+                        <h3 class="card-title">Diagrama de Fases</h3>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="phase-canvas"></canvas>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Calor Latente</div>
+                            <div class="stat-value" id="latent-heat">0 kJ/kg</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ponto Crítico</div>
+                            <div class="stat-value" id="critical-point">647 K</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles de Mudança de Fase</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">💧 Substâncias</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="substance" value="water" checked>
+                                <span>Água</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="substance" value="co2">
+                                <span>CO₂</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="substance" value="nitrogen">
+                                <span>Nitrogênio</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="substance" value="oxygen">
+                                <span>Oxigênio</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="substance" value="argon">
+                                <span>Argônio</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">🌡️ Condições Atuais</label>
+                        <label class="control-label">Temperatura:</label>
+                        <input type="range" id="phase-temp-slider" min="-50" max="200" value="20" step="1">
+                        <span id="phase-temp-value">20°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Pressão:</label>
+                        <input type="range" id="phase-pressure-slider" min="0.1" max="10" value="1" step="0.1">
+                        <span id="phase-pressure-value">1 atm</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Calor Adicionado:</label>
+                        <input type="range" id="heat-added-slider" min="0" max="1000" value="0" step="10">
+                        <span id="heat-added-value">0 kJ</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📈</span>
+                    <h3 class="card-title">Estados da Matéria</h3>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Fase Atual</div>
+                        <div class="stat-value" id="current-phase">Líquido</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Ponto de Fusão</div>
+                        <div class="stat-value" id="melting-point">0°C</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Ponto de Ebulição</div>
+                        <div class="stat-value" id="boiling-point">100°C</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Calor Específico</div>
+                        <div class="stat-value" id="specific-heat">4.18 kJ/kg·K</div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">🔥 Transições de Fase</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="transition" value="melting" checked>
+                            <span>Fusão</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="transition" value="vaporization">
+                            <span>Vaporização</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="transition" value="sublimation">
+                            <span>Sublimação</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="transition" value="deposition">
+                            <span>Deposição</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="formula">Q = m·L</div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="simulatePhaseChange()">Simular Mudança</button>
+                    <button class="btn btn-secondary" onclick="resetPhase()">Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="exportData('phase')">Exportar Dados</button>
+                </div>
+
+                <div class="console" id="phase-console">
+                    <div class="console-line">Sistema de mudança de fase inicializado</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Diagramas -->
+        <div id="diagrams" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <span>📊</span>
+                    <h3 class="card-title">Diagrama P-V (Pressão-Volume)</h3>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="pv-diagram"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span>📊</span>
+                    <h3 class="card-title">Diagrama T-S (Temperatura-Entropia)</h3>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="ts-diagram"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            thermo: {
+                temperature: 300,
+                pressure: 1,
+                volume: 1,
+                entropy: 0,
+                internalEnergy: 0,
+                heat: 0,
+                work: 0,
+                process: 'isothermal',
+                law: 'zero'
+            },
+            engine: {
+                type: 'carnot',
+                t1: 600,
+                t2: 300,
+                efficiency: 0,
+                power: 0,
+                running: false,
+                netWork: 0,
+                heatIn: 0,
+                heatOut: 0,
+                compressionRatio: 8
+            },
+            heat: {
+                mode: 'conduction',
+                tempHot: 100,
+                tempCold: 0,
+                length: 0.1,
+                material: 'copper',
+                flux: 0,
+                conductivity: 0,
+                conductionRate: 0,
+                convectionRate: 0,
+                radiationRate: 0,
+                thermalResistance: 0,
+                running: false
+            },
+            gas: {
+                pressure: 101.3,
+                volume: 0.0224,
+                temperature: 273,
+                mols: 1.0,
+                R: 8.314,
+                law: 'boyle',
+                kineticEnergy: 0,
+                rmsVelocity: 0,
+                avgVelocity: 461,
+                collisions: 7.2e9,
+                freePath: 68
+            },
+            phase: {
+                substance: 'water',
+                temperature: 20,
+                pressure: 1,
+                heatAdded: 0,
+                currentPhase: 'Líquido',
+                meltingPoint: 0,
+                boilingPoint: 100,
+                specificHeat: 4.18,
+                latentHeat: 0,
+                criticalPoint: 647,
+                transition: 'melting'
+            }
+        };
+
+        // Material properties
+        const materials = {
+            copper: { conductivity: 385, name: 'Cobre' },
+            aluminum: { conductivity: 205, name: 'Alumínio' },
+            steel: { conductivity: 50, name: 'Aço' },
+            glass: { conductivity: 0.8, name: 'Vidro' },
+            wood: { conductivity: 0.15, name: 'Madeira' }
+        };
+
+        // Substance properties
+        const substances = {
+            water: {
+                name: 'Água',
+                meltingPoint: 0,
+                boilingPoint: 100,
+                specificHeat: 4.18,
+                latentHeatFusion: 334,
+                latentHeatVap: 2260,
+                criticalTemp: 647,
+                criticalPressure: 220.6
+            },
+            co2: {
+                name: 'CO₂',
+                meltingPoint: -78.5,
+                boilingPoint: -56.6,
+                specificHeat: 0.844,
+                latentHeatFusion: 184,
+                latentHeatVap: 574,
+                criticalTemp: 304,
+                criticalPressure: 73.8
+            },
+            nitrogen: {
+                name: 'Nitrogênio',
+                meltingPoint: -210,
+                boilingPoint: -196,
+                specificHeat: 1.04,
+                latentHeatFusion: 25.5,
+                latentHeatVap: 199,
+                criticalTemp: 126,
+                criticalPressure: 33.9
+            },
+            oxygen: {
+                name: 'Oxigênio',
+                meltingPoint: -218,
+                boilingPoint: -183,
+                specificHeat: 0.918,
+                latentHeatFusion: 13.8,
+                latentHeatVap: 213,
+                criticalTemp: 155,
+                criticalPressure: 50.4
+            },
+            argon: {
+                name: 'Argônio',
+                meltingPoint: -189,
+                boilingPoint: -186,
+                specificHeat: 0.52,
+                latentHeatFusion: 29.5,
+                latentHeatVap: 163,
+                criticalTemp: 151,
+                criticalPressure: 48.9
+            }
+        };
+
+        // Charts
+        let charts = {};
+        let scenes = {};
+        let renderers = {};
+        let cameras = {};
+        let controls = {};
+        let animationFrames = {};
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initializeEventListeners();
+            initializeCharts();
+            initialize3DVisualizations();
+            updateAllDisplays();
+        });
+
+        function initializeTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+        }
+
+        function initializeCharts() {
+            initializeThermoChart();
+            initializeCycleChart();
+            initializeGasLawChart();
+            initializePhaseChart();
+        }
+
+        function initializeThermoChart() {
+            const ctx = document.getElementById('pv-diagram');
+            if (!ctx) return;
+            
+            charts.pvDiagram = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Processo Termodinâmico',
+                        data: [],
+                        borderColor: '#00BF93',
+                        backgroundColor: 'rgba(0, 191, 147, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true },
+                        title: { display: true, text: 'Diagrama P-V' }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear',
+                            title: { display: true, text: 'Volume (m³)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Pressão (atm)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+
+            const tsCtx = document.getElementById('ts-diagram');
+            if (!tsCtx) return;
+
+            charts.tsDiagram = new Chart(tsCtx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Diagrama T-S',
+                        data: [],
+                        borderColor: '#06B6D4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true },
+                        title: { display: true, text: 'Diagrama T-S' }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear',
+                            title: { display: true, text: 'Entropia (J/K)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Temperatura (K)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeCycleChart() {
+            const ctx = document.getElementById('cycle-chart');
+            if (!ctx) return;
+
+            charts.cycle = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Ciclo',
+                        data: [],
+                        borderColor: '#00BF93',
+                        backgroundColor: 'rgba(0, 191, 147, 0.1)',
+                        tension: 0,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { 
+                            type: 'linear',
+                            title: { display: true, text: 'Volume' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Pressão' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeGasLawChart() {
+            // No specific chart needed, using 3D visualization
+        }
+
+        function initializePhaseChart() {
+            // Phase diagram will be drawn in 3D canvas
+        }
+
+        // ==================== 3D VISUALIZATIONS ====================
+        function initialize3DVisualizations() {
+            initializeEngine3D();
+            initializeHeatTransfer3D();
+            initializeGasLaws3D();
+            initializePhaseDiagram3D();
+        }
+
+        function initializeEngine3D() {
+            const canvas = document.getElementById('engine-canvas');
+            if (!canvas) return;
+
+            scenes.engine = new THREE.Scene();
+            scenes.engine.background = new THREE.Color(0x0a0a0a);
+
+            cameras.engine = new THREE.PerspectiveCamera(
+                75,
+                canvas.clientWidth / canvas.clientHeight,
+                0.1,
+                1000
+            );
+            cameras.engine.position.z = 5;
+
+            renderers.engine = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderers.engine.setSize(canvas.clientWidth, canvas.clientHeight);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scenes.engine.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x00BF93, 1, 100);
+            pointLight.position.set(5, 5, 5);
+            scenes.engine.add(pointLight);
+
+            // Create engine visualization (cylinder and piston)
+            const cylinderGeometry = new THREE.CylinderGeometry(1, 1, 3, 32);
+            const cylinderMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x3f3f46,
+                transparent: true,
+                opacity: 0.6
+            });
+            const cylinder = new THREE.Mesh(cylinderGeometry, cylinderMaterial);
+            scenes.engine.add(cylinder);
+            scenes.engine.cylinder = cylinder;
+
+            const pistonGeometry = new THREE.CylinderGeometry(0.9, 0.9, 0.3, 32);
+            const pistonMaterial = new THREE.MeshPhongMaterial({ color: 0x00BF93 });
+            const piston = new THREE.Mesh(pistonGeometry, pistonMaterial);
+            piston.position.y = 1;
+            scenes.engine.add(piston);
+            scenes.engine.piston = piston;
+
+            function animate() {
+                if (state.engine.running) {
+                    animationFrames.engine = requestAnimationFrame(animate);
+                    
+                    // Animate piston
+                    piston.position.y = 1 + Math.sin(Date.now() * 0.003) * 0.5;
+                    
+                    renderers.engine.render(scenes.engine, cameras.engine);
+                }
+            }
+
+            renderers.engine.render(scenes.engine, cameras.engine);
+        }
+
+        function initializeHeatTransfer3D() {
+            const canvas = document.getElementById('heat-canvas');
+            if (!canvas) return;
+
+            scenes.heat = new THREE.Scene();
+            scenes.heat.background = new THREE.Color(0x0a0a0a);
+
+            cameras.heat = new THREE.PerspectiveCamera(
+                75,
+                canvas.clientWidth / canvas.clientHeight,
+                0.1,
+                1000
+            );
+            cameras.heat.position.z = 5;
+
+            renderers.heat = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderers.heat.setSize(canvas.clientWidth, canvas.clientHeight);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scenes.heat.add(ambientLight);
+
+            // Create heat transfer visualization (bar with gradient)
+            const barGeometry = new THREE.BoxGeometry(4, 1, 1);
+            const barMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x00BF93,
+                emissive: 0x00BF93,
+                emissiveIntensity: 0.2
+            });
+            const bar = new THREE.Mesh(barGeometry, barMaterial);
+            scenes.heat.add(bar);
+            scenes.heat.bar = bar;
+
+            // Hot source
+            const hotGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const hotMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000,
+                emissive: 0xff0000
+            });
+            const hotSource = new THREE.Mesh(hotGeometry, hotMaterial);
+            hotSource.position.x = -2.5;
+            scenes.heat.add(hotSource);
+
+            // Cold source
+            const coldGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+            const coldMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x0000ff,
+                emissive: 0x0000ff
+            });
+            const coldSource = new THREE.Mesh(coldGeometry, coldMaterial);
+            coldSource.position.x = 2.5;
+            scenes.heat.add(coldSource);
+
+            // Create particles for heat flow
+            const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+            scenes.heat.particles = [];
+
+            for (let i = 0; i < 20; i++) {
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                particle.position.set(-2 + Math.random() * 4, 0, 0);
+                particle.userData.velocity = 0.02 + Math.random() * 0.02;
+                scenes.heat.add(particle);
+                scenes.heat.particles.push(particle);
+            }
+
+            function animate() {
+                if (state.heat.running) {
+                    animationFrames.heat = requestAnimationFrame(animate);
+                    
+                    // Animate particles
+                    scenes.heat.particles.forEach(particle => {
+                        particle.position.x += particle.userData.velocity;
+                        if (particle.position.x > 2.5) {
+                            particle.position.x = -2.5;
+                        }
+                    });
+                    
+                    renderers.heat.render(scenes.heat, cameras.heat);
+                }
+            }
+
+            renderers.heat.render(scenes.heat, cameras.heat);
+        }
+
+        function initializeGasLaws3D() {
+            const canvas = document.getElementById('gas-canvas');
+            if (!canvas) return;
+
+            scenes.gas = new THREE.Scene();
+            scenes.gas.background = new THREE.Color(0x0a0a0a);
+
+            cameras.gas = new THREE.PerspectiveCamera(
+                75,
+                canvas.clientWidth / canvas.clientHeight,
+                0.1,
+                1000
+            );
+            cameras.gas.position.z = 5;
+
+            renderers.gas = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderers.gas.setSize(canvas.clientWidth, canvas.clientHeight);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scenes.gas.add(ambientLight);
+
+            // Create container
+            const containerGeometry = new THREE.BoxGeometry(4, 4, 4);
+            const edges = new THREE.EdgesGeometry(containerGeometry);
+            const lineMaterial = new THREE.LineBasicMaterial({ color: 0x00BF93 });
+            const container = new THREE.LineSegments(edges, lineMaterial);
+            scenes.gas.add(container);
+
+            // Create gas particles
+            scenes.gas.particles = [];
+            const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: 0x00BF93 });
+
+            for (let i = 0; i < 50; i++) {
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                particle.position.set(
+                    (Math.random() - 0.5) * 3.5,
+                    (Math.random() - 0.5) * 3.5,
+                    (Math.random() - 0.5) * 3.5
+                );
+                particle.userData.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.02,
+                    (Math.random() - 0.5) * 0.02,
+                    (Math.random() - 0.5) * 0.02
+                );
+                scenes.gas.add(particle);
+                scenes.gas.particles.push(particle);
+            }
+
+            function animate() {
+                animationFrames.gas = requestAnimationFrame(animate);
+                
+                // Animate particles
+                scenes.gas.particles.forEach(particle => {
+                    particle.position.add(particle.userData.velocity);
+                    
+                    // Bounce off walls
+                    if (Math.abs(particle.position.x) > 1.95) {
+                        particle.userData.velocity.x *= -1;
+                    }
+                    if (Math.abs(particle.position.y) > 1.95) {
+                        particle.userData.velocity.y *= -1;
+                    }
+                    if (Math.abs(particle.position.z) > 1.95) {
+                        particle.userData.velocity.z *= -1;
+                    }
+                });
+                
+                container.rotation.y += 0.002;
+                renderers.gas.render(scenes.gas, cameras.gas);
+            }
+
+            animate();
+        }
+
+        function initializePhaseDiagram3D() {
+            const canvas = document.getElementById('phase-canvas');
+            if (!canvas) return;
+
+            scenes.phase = new THREE.Scene();
+            scenes.phase.background = new THREE.Color(0x0a0a0a);
+
+            cameras.phase = new THREE.PerspectiveCamera(
+                75,
+                canvas.clientWidth / canvas.clientHeight,
+                0.1,
+                1000
+            );
+            cameras.phase.position.set(5, 5, 5);
+            cameras.phase.lookAt(0, 0, 0);
+
+            renderers.phase = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderers.phase.setSize(canvas.clientWidth, canvas.clientHeight);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scenes.phase.add(ambientLight);
+
+            // Create axes
+            const axesHelper = new THREE.AxesHelper(3);
+            scenes.phase.add(axesHelper);
+
+            // Create phase diagram surface
+            const points = [];
+            for (let i = 0; i <= 20; i++) {
+                for (let j = 0; j <= 20; j++) {
+                    const x = (i / 20) * 4 - 2;
+                    const z = (j / 20) * 4 - 2;
+                    const y = Math.sin(x) * Math.cos(z);
+                    points.push(new THREE.Vector3(x, y, z));
+                }
+            }
+
+            function animate() {
+                animationFrames.phase = requestAnimationFrame(animate);
+                scenes.phase.rotation.y += 0.005;
+                renderers.phase.render(scenes.phase, cameras.phase);
+            }
+
+            animate();
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function initializeEventListeners() {
+            // Thermodynamics controls
+            document.getElementById('temp-slider')?.addEventListener('input', (e) => {
+                state.thermo.temperature = parseFloat(e.target.value);
+                updateAllDisplays();
+            });
+
+            document.getElementById('pressure-slider')?.addEventListener('input', (e) => {
+                state.thermo.pressure = parseFloat(e.target.value);
+                updateAllDisplays();
+            });
+
+            document.getElementById('volume-slider')?.addEventListener('input', (e) => {
+                state.thermo.volume = parseFloat(e.target.value);
+                updateAllDisplays();
+            });
+
+            document.getElementById('entropy-slider')?.addEventListener('input', (e) => {
+                state.thermo.entropy = parseFloat(e.target.value);
+                updateAllDisplays();
+            });
+
+            document.querySelectorAll('input[name="process"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.thermo.process = e.target.value;
+                    updateProcessDisplay();
+                });
+            });
+
+            document.querySelectorAll('input[name="law"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.thermo.law = e.target.value;
+                    updateLawDescription();
+                });
+            });
+
+            // Engine controls
+            document.getElementById('t1-slider')?.addEventListener('input', (e) => {
+                state.engine.t1 = parseFloat(e.target.value);
+                updateEngineEfficiency();
+            });
+
+            document.getElementById('t2-slider')?.addEventListener('input', (e) => {
+                state.engine.t2 = parseFloat(e.target.value);
+                updateEngineEfficiency();
+            });
+
+            document.querySelectorAll('input[name="engine-type"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.engine.type = e.target.value;
+                    updateEngineDisplay();
+                });
+            });
+
+            // Heat transfer controls
+            document.getElementById('temp-hot-slider')?.addEventListener('input', (e) => {
+                state.heat.tempHot = parseFloat(e.target.value);
+                updateHeatTransfer();
+            });
+
+            document.getElementById('temp-cold-slider')?.addEventListener('input', (e) => {
+                state.heat.tempCold = parseFloat(e.target.value);
+                updateHeatTransfer();
+            });
+
+            document.getElementById('length-slider')?.addEventListener('input', (e) => {
+                state.heat.length = parseFloat(e.target.value);
+                updateHeatTransfer();
+            });
+
+            document.getElementById('material-select')?.addEventListener('change', (e) => {
+                state.heat.material = e.target.value;
+                updateHeatTransfer();
+            });
+
+            document.querySelectorAll('input[name="heat-mode"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.heat.mode = e.target.value;
+                    updateHeatTransfer();
+                });
+            });
+
+            // Gas controls
+            document.getElementById('gas-pressure-slider')?.addEventListener('input', (e) => {
+                state.gas.pressure = parseFloat(e.target.value);
+                updateGasDisplay();
+            });
+
+            document.getElementById('gas-volume-slider')?.addEventListener('input', (e) => {
+                state.gas.volume = parseFloat(e.target.value);
+                updateGasDisplay();
+            });
+
+            document.getElementById('gas-temp-slider')?.addEventListener('input', (e) => {
+                state.gas.temperature = parseFloat(e.target.value);
+                updateGasDisplay();
+            });
+
+            document.querySelectorAll('input[name="gas-law"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.gas.law = e.target.value;
+                    updateGasDisplay();
+                });
+            });
+
+            // Phase controls
+            document.getElementById('phase-temp-slider')?.addEventListener('input', (e) => {
+                state.phase.temperature = parseFloat(e.target.value);
+                updatePhaseDisplay();
+            });
+
+            document.getElementById('phase-pressure-slider')?.addEventListener('input', (e) => {
+                state.phase.pressure = parseFloat(e.target.value);
+                updatePhaseDisplay();
+            });
+
+            document.getElementById('heat-added-slider')?.addEventListener('input', (e) => {
+                state.phase.heatAdded = parseFloat(e.target.value);
+                updatePhaseDisplay();
+            });
+
+            document.querySelectorAll('input[name="substance"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.phase.substance = e.target.value;
+                    updatePhaseDisplay();
+                });
+            });
+
+            document.querySelectorAll('input[name="transition"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    state.phase.transition = e.target.value;
+                    updatePhaseDisplay();
+                });
+            });
+        }
+
+        // ==================== UPDATE FUNCTIONS ====================
+        function updateAllDisplays() {
+            updateFirstLaw();
+            updateProcessDisplay();
+            updateEngineEfficiency();
+            updateHeatTransfer();
+            updateGasDisplay();
+            updatePhaseDisplay();
+        }
+
+        function updateFirstLaw() {
+            const { temperature, pressure, volume, entropy } = state.thermo;
+            
+            document.getElementById('temp-value').textContent = `${temperature} K`;
+            document.getElementById('pressure-value').textContent = `${pressure.toFixed(1)} atm`;
+            document.getElementById('volume-value').textContent = `${volume.toFixed(1)} m³`;
+            document.getElementById('entropy-value').textContent = `${entropy} J/K`;
+
+            // Calculate internal energy (simplified)
+            const n = 1; // mols
+            const R = 8.314;
+            const internalEnergy = (3/2) * n * R * temperature;
+            state.thermo.internalEnergy = internalEnergy;
+            
+            document.getElementById('internal-energy').textContent = `${internalEnergy.toFixed(0)} J`;
+            document.getElementById('entropy').textContent = `${entropy} J/K`;
+        }
+
+        function updateProcessDisplay() {
+            const { process, temperature, pressure, volume } = state.thermo;
+            const n = 1;
+            const R = 8.314;
+
+            let heat = 0;
+            let work = 0;
+
+            switch(process) {
+                case 'isothermal':
+                    // Q = nRT ln(V2/V1), W = Q
+                    work = n * R * temperature * Math.log(volume / 0.5);
+                    heat = work;
+                    break;
+                case 'adiabatic':
+                    // Q = 0, W = -ΔU
+                    heat = 0;
+                    const gamma = 1.4;
+                    work = (n * R * temperature) / (gamma - 1);
+                    break;
+                case 'isobaric':
+                    // Q = nCpΔT, W = PΔV
+                    const Cp = 29.1;
+                    heat = n * Cp * (temperature - 273);
+                    work = pressure * 101325 * (volume - 0.5);
+                    break;
+                case 'isochoric':
+                    // W = 0, Q = nCvΔT
+                    work = 0;
+                    const Cv = 20.8;
+                    heat = n * Cv * (temperature - 273);
+                    break;
+            }
+
+            state.thermo.heat = heat;
+            state.thermo.work = work;
+
+            document.getElementById('heat-added').textContent = `${heat.toFixed(0)} J`;
+            document.getElementById('work-done').textContent = `${work.toFixed(0)} J`;
+            
+            const deltaU = heat - work;
+            document.getElementById('first-law-result').textContent = `ΔU = Q - W = ${deltaU.toFixed(0)} J`;
+        }
+
+        function updateLawDescription() {
+            const lawDescriptions = {
+                zero: '<p><strong>Lei Zero:</strong><br>Se dois sistemas estão em equilíbrio térmico com um terceiro, então estão em equilíbrio térmico entre si.</p>',
+                first: '<p><strong>Primeira Lei:</strong><br>A energia não pode ser criada nem destruída, apenas transformada. ΔU = Q - W</p>',
+                second: '<p><strong>Segunda Lei:</strong><br>A entropia de um sistema isolado sempre aumenta. O calor flui naturalmente de corpos quentes para frios.</p>',
+                third: '<p><strong>Terceira Lei:</strong><br>À medida que a temperatura se aproxima do zero absoluto, a entropia de um sistema se aproxima de zero.</p>'
+            };
+
+            document.getElementById('law-description').innerHTML = lawDescriptions[state.thermo.law];
+        }
+
+        function updateEngineEfficiency() {
+            const { t1, t2, type } = state.engine;
+            
+            document.getElementById('t1-value').textContent = `${t1} K`;
+            document.getElementById('t2-value').textContent = `${t2} K`;
+
+            let efficiency = 0;
+
+            switch(type) {
+                case 'carnot':
+                    efficiency = (1 - t2 / t1) * 100;
+                    break;
+                case 'stirling':
+                    efficiency = (1 - t2 / t1) * 0.9 * 100; // 90% of Carnot
+                    break;
+                case 'otto':
+                    const r = state.engine.compressionRatio;
+                    const gamma = 1.4;
+                    efficiency = (1 - 1 / Math.pow(r, gamma - 1)) * 100;
+                    break;
+                case 'diesel':
+                    efficiency = (1 - 1 / Math.pow(state.engine.compressionRatio, 0.4)) * 100;
+                    break;
+                case 'rankine':
+                    efficiency = (1 - t2 / t1) * 0.85 * 100; // 85% of Carnot
+                    break;
+            }
+
+            state.engine.efficiency = efficiency;
+            
+            document.getElementById('engine-efficiency').textContent = `${efficiency.toFixed(1)}%`;
+            document.getElementById('carnot-efficiency').textContent = `η = 1 - T₂/T₁ = ${efficiency.toFixed(0)}%`;
+
+            // Calculate work output
+            const heatIn = 10000; // 10 kJ
+            const netWork = heatIn * (efficiency / 100);
+            const heatOut = heatIn - netWork;
+
+            document.getElementById('net-work').textContent = `${netWork.toFixed(0)} J`;
+            document.getElementById('heat-in').textContent = `${heatIn.toFixed(0)} J`;
+            document.getElementById('heat-out').textContent = `${heatOut.toFixed(0)} J`;
+        }
+
+        function updateEngineDisplay() {
+            updateEngineEfficiency();
+            updateCycleChart();
+        }
+
+        function updateCycleChart() {
+            if (!charts.cycle) return;
+
+            const { type, compressionRatio } = state.engine;
+            const dataPoints = [];
+
+            // Generate cycle data based on type
+            switch(type) {
+                case 'carnot':
+                    // Two isotherms and two adiabatics
+                    for (let v = 1; v <= 2; v += 0.1) {
+                        dataPoints.push({ x: v, y: 1 / v }); // Isothermal expansion
+                    }
+                    for (let v = 2; v >= 1; v -= 0.1) {
+                        dataPoints.push({ x: v, y: Math.pow(v, -1.4) * 2 }); // Adiabatic compression
+                    }
+                    break;
+                case 'otto':
+                    // Otto cycle points
+                    dataPoints.push({ x: 1, y: 1 });
+                    dataPoints.push({ x: 1 / compressionRatio, y: Math.pow(compressionRatio, 1.4) });
+                    dataPoints.push({ x: 1 / compressionRatio, y: Math.pow(compressionRatio, 1.4) * 2 });
+                    dataPoints.push({ x: 1, y: 2 });
+                    dataPoints.push({ x: 1, y: 1 });
+                    break;
+                default:
+                    for (let v = 0.5; v <= 2; v += 0.1) {
+                        dataPoints.push({ x: v, y: 1 / v });
+                    }
+            }
+
+            charts.cycle.data.datasets[0].data = dataPoints;
+            charts.cycle.update();
+        }
+
+        function updateHeatTransfer() {
+            const { tempHot, tempCold, length, material, mode } = state.heat;
+            
+            document.getElementById('temp-hot-value').textContent = `${tempHot}°C`;
+            document.getElementById('temp-cold-value').textContent = `${tempCold}°C`;
+            document.getElementById('length-value').textContent = `${length} m`;
+
+            const k = materials[material].conductivity;
+            state.heat.conductivity = k;
+            
+            document.getElementById('conductivity').textContent = `${k} W/m·K`;
+
+            const deltaT = tempHot - tempCold;
+            const area = 1; // m²
+
+            // Conduction: q = k * A * ΔT / L
+            const conductionRate = k * area * deltaT / length;
+            state.heat.conductionRate = conductionRate;
+
+            // Convection: q = h * A * ΔT (simplified, h = 10 W/m²·K)
+            const h = 10;
+            const convectionRate = h * area * deltaT;
+            state.heat.convectionRate = convectionRate;
+
+            // Radiation: q = ε * σ * A * (T₁⁴ - T₂⁴)
+            const epsilon = 0.9;
+            const sigma = 5.67e-8;
+            const T1 = tempHot + 273.15;
+            const T2 = tempCold + 273.15;
+            const radiationRate = epsilon * sigma * area * (Math.pow(T1, 4) - Math.pow(T2, 4));
+            state.heat.radiationRate = radiationRate;
+
+            // Thermal resistance: R = L / (k * A)
+            const thermalResistance = length / (k * area);
+            state.heat.thermalResistance = thermalResistance;
+
+            const flux = conductionRate / area;
+            state.heat.flux = flux;
+
+            document.getElementById('heat-flux').textContent = `${flux.toFixed(0)} W/m²`;
+            document.getElementById('conduction-rate').textContent = `${conductionRate.toFixed(0)} W`;
+            document.getElementById('convection-rate').textContent = `${convectionRate.toFixed(0)} W`;
+            document.getElementById('radiation-rate').textContent = `${radiationRate.toFixed(2)} W`;
+            document.getElementById('thermal-resistance').textContent = `${thermalResistance.toFixed(4)} K/W`;
+        }
+
+        function updateGasDisplay() {
+            const { pressure, volume, temperature, mols, R, law } = state.gas;
+            
+            document.getElementById('gas-pressure-value').textContent = `${pressure.toFixed(1)} kPa`;
+            document.getElementById('gas-volume-value').textContent = `${volume.toFixed(4)} m³`;
+            document.getElementById('gas-temp-value').textContent = `${temperature} K`;
+
+            // Apply gas law
+            let newValue;
+            switch(law) {
+                case 'boyle':
+                    // PV = constant, adjust pressure if volume changes
+                    newValue = (pressure * volume) / volume;
+                    break;
+                case 'charles':
+                    // V/T = constant
+                    newValue = volume * (temperature / 273);
+                    break;
+                case 'gay-lussac':
+                    // P/T = constant
+                    newValue = pressure * (temperature / 273);
+                    break;
+                case 'ideal':
+                    // PV = nRT, check consistency
+                    const calculated = (mols * R * temperature) / (volume * 1000);
+                    newValue = calculated;
+                    break;
+            }
+
+            // Calculate kinetic energy: KE = (3/2) * k * T
+            const k = 1.38e-23; // Boltzmann constant
+            const kineticEnergy = (3/2) * k * temperature;
+            state.gas.kineticEnergy = kineticEnergy;
+
+            // RMS velocity: v_rms = sqrt(3RT/M)
+            const M = 0.029; // kg/mol (air)
+            const rmsVelocity = Math.sqrt((3 * R * temperature) / M);
+            state.gas.rmsVelocity = rmsVelocity;
+
+            // Average velocity
+            const avgVelocity = Math.sqrt((8 * R * temperature) / (Math.PI * M));
+            state.gas.avgVelocity = avgVelocity;
+
+            // Collision frequency (simplified)
+            const n = (pressure * 1000) / (R * temperature); // number density
+            const d = 3.7e-10; // molecular diameter (m)
+            const collisions = n * Math.PI * d * d * avgVelocity;
+            state.gas.collisions = collisions;
+
+            // Mean free path
+            const freePath = 1 / (Math.sqrt(2) * Math.PI * d * d * n);
+            state.gas.freePath = freePath * 1e9; // convert to nm
+
+            document.getElementById('kinetic-energy').textContent = `${(kineticEnergy * 1e23).toFixed(2)}×10⁻²³ J`;
+            document.getElementById('rms-velocity').textContent = `${rmsVelocity.toFixed(0)} m/s`;
+            document.getElementById('gas-stats-pressure').textContent = `${pressure.toFixed(1)} kPa`;
+            document.getElementById('avg-velocity').textContent = `${avgVelocity.toFixed(0)} m/s`;
+            document.getElementById('collisions').textContent = `${(collisions / 1e9).toFixed(1)}×10⁹`;
+            document.getElementById('free-path').textContent = `${state.gas.freePath.toFixed(0)} nm`;
+        }
+
+        function updatePhaseDisplay() {
+            const { substance, temperature, pressure, heatAdded, transition } = state.phase;
+            const substanceData = substances[substance];
+            
+            document.getElementById('phase-temp-value').textContent = `${temperature}°C`;
+            document.getElementById('phase-pressure-value').textContent = `${pressure.toFixed(1)} atm`;
+            document.getElementById('heat-added-value').textContent = `${heatAdded} kJ`;
+
+            // Determine current phase
+            let currentPhase = 'Sólido';
+            if (temperature > substanceData.meltingPoint && temperature < substanceData.boilingPoint) {
+                currentPhase = 'Líquido';
+            } else if (temperature >= substanceData.boilingPoint) {
+                currentPhase = 'Gás';
+            }
+
+            // Adjust for pressure effects (simplified)
+            if (pressure > 1 && temperature < substanceData.boilingPoint) {
+                currentPhase = 'Líquido';
+            }
+
+            state.phase.currentPhase = currentPhase;
+            state.phase.meltingPoint = substanceData.meltingPoint;
+            state.phase.boilingPoint = substanceData.boilingPoint;
+            state.phase.specificHeat = substanceData.specificHeat;
+            state.phase.criticalPoint = substanceData.criticalTemp;
+
+            // Calculate latent heat based on transition
+            let latentHeat = 0;
+            switch(transition) {
+                case 'melting':
+                case 'solidification':
+                    latentHeat = substanceData.latentHeatFusion;
+                    break;
+                case 'vaporization':
+                case 'condensation':
+                    latentHeat = substanceData.latentHeatVap;
+                    break;
+                case 'sublimation':
+                case 'deposition':
+                    latentHeat = substanceData.latentHeatFusion + substanceData.latentHeatVap;
+                    break;
+            }
+            state.phase.latentHeat = latentHeat;
+
+            document.getElementById('current-phase').textContent = currentPhase;
+            document.getElementById('melting-point').textContent = `${substanceData.meltingPoint}°C`;
+            document.getElementById('boiling-point').textContent = `${substanceData.boilingPoint}°C`;
+            document.getElementById('specific-heat').textContent = `${substanceData.specificHeat} kJ/kg·K`;
+            document.getElementById('latent-heat').textContent = `${latentHeat} kJ/kg`;
+            document.getElementById('critical-point').textContent = `${substanceData.criticalTemp} K`;
+        }
+
+        // ==================== SIMULATION FUNCTIONS ====================
+        function simulateThermo() {
+            const { process, temperature, pressure, volume } = state.thermo;
+            
+            addConsoleMessage('thermo', `Simulando processo ${process} a ${temperature} K`);
+            addConsoleMessage('thermo', `Pressão: ${pressure.toFixed(1)} atm, Volume: ${volume.toFixed(1)} m³`);
+            addConsoleMessage('thermo', `Calor adicionado: ${state.thermo.heat.toFixed(0)} J`);
+            addConsoleMessage('thermo', `Trabalho realizado: ${state.thermo.work.toFixed(0)} J`);
+            addConsoleMessage('thermo', `Variação de energia interna: ${(state.thermo.heat - state.thermo.work).toFixed(0)} J`);
+
+            // Update P-V diagram
+            updatePVDiagram();
+        }
+
+        function updatePVDiagram() {
+            if (!charts.pvDiagram) return;
+
+            const { process, temperature, pressure, volume } = state.thermo;
+            const dataPoints = [];
+
+            const v0 = 0.5;
+            const vf = volume;
+            const p0 = pressure;
+
+            switch(process) {
+                case 'isothermal':
+                    // PV = constant
+                    for (let v = v0; v <= vf + 0.5; v += 0.1) {
+                        dataPoints.push({ x: v, y: (p0 * v0) / v });
+                    }
+                    break;
+                case 'adiabatic':
+                    // PV^γ = constant
+                    const gamma = 1.4;
+                    for (let v = v0; v <= vf + 0.5; v += 0.1) {
+                        dataPoints.push({ x: v, y: p0 * Math.pow(v0 / v, gamma) });
+                    }
+                    break;
+                case 'isobaric':
+                    // P = constant
+                    for (let v = v0; v <= vf + 0.5; v += 0.1) {
+                        dataPoints.push({ x: v, y: p0 });
+                    }
+                    break;
+                case 'isochoric':
+                    // V = constant
+                    for (let p = 0.5; p <= pressure + 0.5; p += 0.1) {
+                        dataPoints.push({ x: volume, y: p });
+                    }
+                    break;
+            }
+
+            charts.pvDiagram.data.datasets[0].data = dataPoints;
+            charts.pvDiagram.update();
+
+            // Update T-S diagram
+            updateTSDiagram();
+        }
+
+        function updateTSDiagram() {
+            if (!charts.tsDiagram) return;
+
+            const { process, temperature, entropy } = state.thermo;
+            const dataPoints = [];
+
+            const t0 = 273;
+            const tf = temperature;
+            const s0 = 0;
+            const sf = entropy;
+
+            switch(process) {
+                case 'isothermal':
+                    // T = constant, entropy increases
+                    for (let s = s0; s <= sf + 100; s += 10) {
+                        dataPoints.push({ x: s, y: temperature });
+                    }
+                    break;
+                case 'adiabatic':
+                    // S = constant, temperature changes
+                    for (let t = t0; t <= tf; t += 10) {
+                        dataPoints.push({ x: entropy, y: t });
+                    }
+                    break;
+                case 'isobaric':
+                case 'isochoric':
+                    // Both T and S change
+                    const steps = 20;
+                    for (let i = 0; i <= steps; i++) {
+                        const t = t0 + (tf - t0) * (i / steps);
+                        const s = s0 + (sf - s0) * (i / steps);
+                        dataPoints.push({ x: s, y: t });
+                    }
+                    break;
+            }
+
+            charts.tsDiagram.data.datasets[0].data = dataPoints;
+            charts.tsDiagram.update();
+        }
+
+        function resetThermo() {
+            state.thermo.temperature = 300;
+            state.thermo.pressure = 1;
+            state.thermo.volume = 1;
+            state.thermo.entropy = 0;
+            
+            document.getElementById('temp-slider').value = 300;
+            document.getElementById('pressure-slider').value = 1;
+            document.getElementById('volume-slider').value = 1;
+            document.getElementById('entropy-slider').value = 0;
+            
+            updateAllDisplays();
+            addConsoleMessage('thermo', 'Sistema reiniciado');
+        }
+
+        function startEngine() {
+            if (state.engine.running) return;
+            
+            state.engine.running = true;
+            addConsoleMessage('engine', `Máquina ${state.engine.type} iniciada`);
+            addConsoleMessage('engine', `Eficiência: ${state.engine.efficiency.toFixed(1)}%`);
+            
+            // Start 3D animation
+            if (scenes.engine && scenes.engine.piston) {
+                function animate() {
+                    if (state.engine.running) {
+                        requestAnimationFrame(animate);
+                        
+                        scenes.engine.piston.position.y = 1 + Math.sin(Date.now() * 0.003) * 0.5;
+                        
+                        renderers.engine.render(scenes.engine, cameras.engine);
+                    }
+                }
+                animate();
+            }
+
+            // Calculate power (simplified)
+            const power = state.engine.netWork * 10; // 10 Hz frequency
+            state.engine.power = power;
+            document.getElementById('engine-power').textContent = `${power.toFixed(0)} W`;
+        }
+
+        function stopEngine() {
+            state.engine.running = false;
+            addConsoleMessage('engine', 'Máquina parada');
+        }
+
+        function startHeatTransfer() {
+            if (state.heat.running) return;
+            
+            state.heat.running = true;
+            addConsoleMessage('heat', `Transferência de calor por ${state.heat.mode} iniciada`);
+            addConsoleMessage('heat', `Material: ${materials[state.heat.material].name}`);
+            addConsoleMessage('heat', `Fluxo de calor: ${state.heat.flux.toFixed(0)} W/m²`);
+            
+            // Start 3D animation
+            if (scenes.heat && scenes.heat.particles) {
+                function animate() {
+                    if (state.heat.running) {
+                        requestAnimationFrame(animate);
+                        
+                        scenes.heat.particles.forEach(particle => {
+                            particle.position.x += particle.userData.velocity;
+                            if (particle.position.x > 2.5) {
+                                particle.position.x = -2.5;
+                            }
+                        });
+                        
+                        renderers.heat.render(scenes.heat, cameras.heat);
+                    }
+                }
+                animate();
+            }
+        }
+
+        function resetHeatTransfer() {
+            state.heat.running = false;
+            state.heat.tempHot = 100;
+            state.heat.tempCold = 0;
+            state.heat.length = 0.1;
+            
+            document.getElementById('temp-hot-slider').value = 100;
+            document.getElementById('temp-cold-slider').value = 0;
+            document.getElementById('length-slider').value = 0.1;
+            
+            updateHeatTransfer();
+            addConsoleMessage('heat', 'Sistema reiniciado');
+        }
+
+        function simulateGas() {
+            const { law, pressure, volume, temperature } = state.gas;
+            
+            addConsoleMessage('gas', `Simulando lei ${law}`);
+            addConsoleMessage('gas', `P = ${pressure.toFixed(1)} kPa, V = ${volume.toFixed(4)} m³, T = ${temperature} K`);
+            addConsoleMessage('gas', `Energia cinética: ${(state.gas.kineticEnergy * 1e23).toFixed(2)}×10⁻²³ J`);
+            addConsoleMessage('gas', `Velocidade RMS: ${state.gas.rmsVelocity.toFixed(0)} m/s`);
+            addConsoleMessage('gas', `Caminho livre médio: ${state.gas.freePath.toFixed(0)} nm`);
+        }
+
+        function resetGas() {
+            state.gas.pressure = 101.3;
+            state.gas.volume = 0.0224;
+            state.gas.temperature = 273;
+            
+            document.getElementById('gas-pressure-slider').value = 101.3;
+            document.getElementById('gas-volume-slider').value = 0.0224;
+            document.getElementById('gas-temp-slider').value = 273;
+            
+            updateGasDisplay();
+            addConsoleMessage('gas', 'Sistema reiniciado');
+        }
+
+        function simulatePhaseChange() {
+            const { substance, temperature, transition, currentPhase } = state.phase;
+            const substanceData = substances[substance];
+            
+            addConsoleMessage('phase', `Simulando ${transition} de ${substanceData.name}`);
+            addConsoleMessage('phase', `Temperatura: ${temperature}°C, Fase: ${currentPhase}`);
+            addConsoleMessage('phase', `Calor latente: ${state.phase.latentHeat.toFixed(0)} kJ/kg`);
+            addConsoleMessage('phase', `Ponto crítico: ${state.phase.criticalPoint} K`);
+        }
+
+        function resetPhase() {
+            state.phase.temperature = 20;
+            state.phase.pressure = 1;
+            state.phase.heatAdded = 0;
+            
+            document.getElementById('phase-temp-slider').value = 20;
+            document.getElementById('phase-pressure-slider').value = 1;
+            document.getElementById('heat-added-slider').value = 0;
+            
+            updatePhaseDisplay();
+            addConsoleMessage('phase', 'Sistema reiniciado');
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function addConsoleMessage(moduleId, message) {
+            const consoleElement = document.getElementById(`${moduleId}-console`);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            // Keep only last 10 messages
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+
+        function exportData(module) {
+            const data = {
+                module: module,
+                timestamp: new Date().toISOString(),
+                state: state[module]
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const filename = `${module}-data`;
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `${filename}_${new Date().getTime()}.json`;
+            link.click();
+        }
+
+        // Configurar MathJax
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+</body>
+</html>

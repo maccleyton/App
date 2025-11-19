@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Arqueológico</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #D97706;
+            --color-secondary: #92400E;
+            --color-accent: #F59E0B;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(146, 64, 14, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(217, 119, 6, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(217, 119, 6, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Fossil Image Display */
+        .fossil-display {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fossil-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .fossil-image.revealed {
+            opacity: 1;
+        }
+
+        .excavation-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(146, 64, 14, 0.3),
+                rgba(146, 64, 14, 0.3) 10px,
+                rgba(217, 119, 6, 0.3) 10px,
+                rgba(217, 119, 6, 0.3) 20px
+            );
+            transition: opacity 0.5s ease;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(217, 119, 6, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(217, 119, 6, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '🏛️ ';
+        }
+
+        /* Chart */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Fossil Grid */
+        .fossil-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .fossil-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .fossil-card:hover {
+            background: rgba(217, 119, 6, 0.2);
+            border-color: var(--color-primary);
+            transform: translateY(-5px);
+        }
+
+        .fossil-card.selected {
+            background: rgba(217, 119, 6, 0.3);
+            border-color: var(--color-primary);
+        }
+
+        .fossil-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .fossil-name {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏛️ SIMULADOR ARQUEOLÓGICO</h1>
+            <p class="subtitle">Escavações • Fósseis • Datação • Reconstrução • Análise Científica</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="excavation">⛏️ Escavação</button>
+            <button class="tab-button" data-tab="fossils">🦴 Fósseis</button>
+            <button class="tab-button" data-tab="dating">📅 Datação</button>
+            <button class="tab-button" data-tab="lab">🔬 Laboratório</button>
+            <button class="tab-button" data-tab="reconstruction">🎨 Reconstrução</button>
+            <button class="tab-button" data-tab="museum">🏛️ Museu</button>
+        </div>
+
+        <!-- TAB 1: Escavação -->
+        <div id="excavation" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⛏️</span>
+                        <h3 class="card-title">Sítio de Escavação</h3>
+                    </div>
+                    <div class="viewer-3d" id="excavation-viewer"></div>
+                    
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="excavation-progress" style="width: 0%">
+                            0% Escavado
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Profundidade</div>
+                            <div class="stat-value" id="depth">0 m</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Artefatos</div>
+                            <div class="stat-value" id="artifacts">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Fósseis</div>
+                            <div class="stat-value" id="fossils-found">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Condição</div>
+                            <div class="stat-value" id="condition">Intacto</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Ferramentas de Escavação</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Ferramenta:</label>
+                        <select class="control-input" id="tool-select">
+                            <option value="brush">🖌️ Pincel (Preciso)</option>
+                            <option value="trowel">🔨 Espátula (Moderado)</option>
+                            <option value="shovel">⛏️ Pá (Rápido)</option>
+                            <option value="pickaxe">⚒️ Picareta (Muito Rápido)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade:</label>
+                        <input type="range" id="excavation-speed" min="1" max="10" value="5" step="1">
+                        <span id="speed-value">5x</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Área de Escavação:</label>
+                        <select class="control-input" id="site-type">
+                            <option value="dinosaur">🦖 Era dos Dinossauros</option>
+                            <option value="ice-age">🦣 Era do Gelo</option>
+                            <option value="ancient">🏛️ Civilização Antiga</option>
+                            <option value="prehistoric">🗿 Pré-História</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startExcavation()">⛏️ Escavar</button>
+                        <button class="btn btn-secondary" onclick="pauseExcavation()">⏸️ Pausar</button>
+                        <button class="btn btn-secondary" onclick="resetExcavation()">🔄 Novo Sítio</button>
+                    </div>
+
+                    <div class="console" id="excavation-console">
+                        <div class="console-line">Sítio arqueológico preparado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Fósseis -->
+        <div id="fossils" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🦴</span>
+                        <h3 class="card-title">Fóssil Descoberto</h3>
+                    </div>
+                    
+                    <div class="fossil-display" id="fossil-display">
+                        <div class="excavation-overlay" id="fossil-overlay"></div>
+                        <img class="fossil-image" id="fossil-image" src="" alt="Fóssil">
+                    </div>
+
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fossil-progress" style="width: 0%">
+                            0% Revelado
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Espécie</div>
+                            <div class="stat-value" id="species-name">Desconhecido</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Idade</div>
+                            <div class="stat-value" id="fossil-age">? milhões anos</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Completude</div>
+                            <div class="stat-value" id="completeness">0%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Raridade</div>
+                            <div class="stat-value" id="rarity">Comum</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🗂️</span>
+                        <h3 class="card-title">Catálogo de Fósseis</h3>
+                    </div>
+
+                    <div class="fossil-grid">
+                        <div class="fossil-card" onclick="selectFossil('trex')">
+                            <div class="fossil-icon">🦖</div>
+                            <div class="fossil-name">T-Rex</div>
+                        </div>
+                        <div class="fossil-card" onclick="selectFossil('triceratops')">
+                            <div class="fossil-icon">🦕</div>
+                            <div class="fossil-name">Triceratops</div>
+                        </div>
+                        <div class="fossil-card" onclick="selectFossil('mammoth')">
+                            <div class="fossil-icon">🦣</div>
+                            <div class="fossil-name">Mamute</div>
+                        </div>
+                        <div class="fossil-card" onclick="selectFossil('saber')">
+                            <div class="fossil-icon">🐅</div>
+                            <div class="fossil-name">Tigre-Dente-Sabre</div>
+                        </div>
+                        <div class="fossil-card" onclick="selectFossil('ammonite')">
+                            <div class="fossil-icon">🐚</div>
+                            <div class="fossil-name">Amonite</div>
+                        </div>
+                        <div class="fossil-card" onclick="selectFossil('trilobite')">
+                            <div class="fossil-icon">🦐</div>
+                            <div class="fossil-name">Trilobita</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="revealFossil()">🖌️ Limpar Fóssil</button>
+                        <button class="btn btn-secondary" onclick="photographFossil()">📸 Fotografar</button>
+                        <button class="btn btn-secondary" onclick="extractFossil()">📦 Extrair</button>
+                    </div>
+
+                    <div class="console" id="fossil-console">
+                        <div class="console-line">Selecione um fóssil para examinar</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Datação -->
+        <div id="dating" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>📅</span>
+                        <h3 class="card-title">Datação Radiométrica</h3>
+                    </div>
+                    <div class="viewer-3d" id="dating-viewer"></div>
+                    <div class="chart-container">
+                        <canvas id="decay-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Métodos de Datação</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Método:</label>
+                        <select class="control-input" id="dating-method">
+                            <option value="carbon14">Carbono-14 (até 50k anos)</option>
+                            <option value="potassium">Potássio-Argônio (>100k anos)</option>
+                            <option value="uranium">Urânio-Chumbo (milhões de anos)</option>
+                            <option value="thermoluminescence">Termoluminescência</option>
+                        </select>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Idade Estimada</div>
+                            <div class="stat-value" id="estimated-age">65 Ma</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Meia-Vida</div>
+                            <div class="stat-value" id="half-life">5730 anos</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Precisão</div>
+                            <div class="stat-value" id="precision">±2%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Confiabilidade</div>
+                            <div class="stat-value" id="reliability">95%</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="runDating()">🔬 Analisar Amostra</button>
+                        <button class="btn btn-secondary" onclick="calibrateDating()">⚖️ Calibrar</button>
+                    </div>
+
+                    <div class="console" id="dating-console">
+                        <div class="console-line">Sistema de datação calibrado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Laboratório -->
+        <div id="lab" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🔬</span>
+                        <h3 class="card-title">Análise Laboratorial</h3>
+                    </div>
+                    <div class="viewer-3d" id="lab-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Composição</div>
+                            <div class="stat-value" id="composition">CaCO₃</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Densidade</div>
+                            <div class="stat-value" id="density">2.7 g/cm³</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Dureza (Mohs)</div>
+                            <div class="stat-value" id="hardness">3</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Preservação</div>
+                            <div class="stat-value" id="preservation">Excelente</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Equipamentos</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Análise:</label>
+                        <select class="control-input" id="analysis-type">
+                            <option value="microscopy">🔬 Microscopia</option>
+                            <option value="xray">📡 Raio-X</option>
+                            <option value="ct">💿 Tomografia CT</option>
+                            <option value="spectroscopy">🌈 Espectroscopia</option>
+                            <option value="dna">🧬 Extração de DNA</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="runAnalysis()">▶️ Iniciar Análise</button>
+                        <button class="btn btn-secondary" onclick="generateReport()">📄 Gerar Relatório</button>
+                    </div>
+
+                    <div class="console" id="lab-console">
+                        <div class="console-line">Laboratório pronto para análise</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Reconstrução -->
+        <div id="reconstruction" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎨</span>
+                        <h3 class="card-title">Reconstrução 3D</h3>
+                    </div>
+                    <div class="viewer-3d" id="reconstruction-viewer"></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="reconstruction-progress" style="width: 0%">
+                            0% Completo
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Opções de Reconstrução</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Nível de Detalhe:</label>
+                        <input type="range" id="detail-level" min="1" max="5" value="3" step="1">
+                        <span id="detail-value">Médio</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Ossos</div>
+                            <div class="stat-value" id="bones">156/206</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Precisão</div>
+                            <div class="stat-value" id="accuracy">87%</div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="reconstruct()">🔨 Reconstruir</button>
+                        <button class="btn btn-secondary" onclick="addTextures()">🎨 Texturizar</button>
+                        <button class="btn btn-secondary" onclick="export3D()">💾 Exportar 3D</button>
+                    </div>
+
+                    <div class="console" id="reconstruction-console">
+                        <div class="console-line">Sistema de reconstrução inicializado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Museu -->
+        <div id="museum" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🏛️</span>
+                        <h3 class="card-title">Galeria do Museu</h3>
+                    </div>
+                    <div class="viewer-3d" id="museum-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Coleção</div>
+                            <div class="stat-value" id="collection">12 peças</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Visitantes</div>
+                            <div class="stat-value" id="visitors">1.2k</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Valor Científico</div>
+                            <div class="stat-value" id="value">Alto</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Completude</div>
+                            <div class="stat-value" id="museum-complete">25%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Curadoria</h3>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="addToMuseum()">➕ Adicionar à Coleção</button>
+                        <button class="btn btn-secondary" onclick="organizeExhibit()">📋 Organizar Exposição</button>
+                        <button class="btn btn-secondary" onclick="viewCollection()">👁️ Ver Coleção</button>
+                    </div>
+
+                    <div class="console" id="museum-console">
+                        <div class="console-line">Museu virtual inicializado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'excavation',
+            excavation: {
+                progress: 0,
+                depth: 0,
+                artifacts: 0,
+                fossils: 0,
+                running: false,
+                speed: 5
+            },
+            fossil: {
+                current: 'trex',
+                progress: 0,
+                revealed: false
+            },
+            dating: {
+                method: 'carbon14',
+                age: 65000000
+            },
+            lab: {
+                analyzing: false
+            },
+            reconstruction: {
+                progress: 0
+            },
+            museum: {
+                collection: []
+            }
+        };
+
+        // Fossil database with images
+        const fossilDatabase = {
+            trex: {
+                name: 'Tyrannosaurus Rex',
+                age: '65-68 milhões anos',
+                rarity: 'Raro',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23D97706" font-size="24" font-family="Arial"%3E🦖 T-Rex Skull%3C/text%3E%3C/svg%3E'
+            },
+            triceratops: {
+                name: 'Triceratops',
+                age: '66-68 milhões anos',
+                rarity: 'Comum',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23D97706" font-size="24" font-family="Arial"%3E🦕 Triceratops%3C/text%3E%3C/svg%3E'
+            },
+            mammoth: {
+                name: 'Mammuthus primigenius',
+                age: '10-50 mil anos',
+                rarity: 'Raro',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23D97706" font-size="24" font-family="Arial"%3E🦣 Mammoth%3C/text%3E%3C/svg%3E'
+            },
+            saber: {
+                name: 'Smilodon fatalis',
+                age: '10 mil-2.5 milhões anos',
+                rarity: 'Muito Raro',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23D97706" font-size="24" font-family="Arial"%3E🐅 Saber-Tooth%3C/text%3E%3C/svg%3E'
+            },
+            ammonite: {
+                name: 'Ammonoidea',
+                age: '240-66 milhões anos',
+                rarity: 'Comum',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23D97706" font-size="24" font-family="Arial"%3E🐚 Ammonite%3C/text%3E%3C/svg%3E'
+            },
+            trilobite: {
+                name: 'Trilobita',
+                age: '521-252 milhões anos',
+                rarity: 'Comum',
+                image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23D97706" font-size="24" font-family="Arial"%3E🦐 Trilobite%3C/text%3E%3C/svg%3E'
+            }
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+
+        // Chart
+        let decayChart;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initializeControls();
+            initialize3DScenes();
+            initializeChart();
+            selectFossil('trex'); // Load default fossil
+            animate();
+        });
+
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function initializeControls() {
+            document.getElementById('excavation-speed')?.addEventListener('input', (e) => {
+                state.excavation.speed = parseInt(e.target.value);
+                document.getElementById('speed-value').textContent = `${e.target.value}x`;
+            });
+
+            document.getElementById('detail-level')?.addEventListener('input', (e) => {
+                const levels = ['Baixo', 'Médio-Baixo', 'Médio', 'Médio-Alto', 'Alto'];
+                document.getElementById('detail-value').textContent = levels[parseInt(e.target.value) - 1];
+            });
+        }
+
+        // ==================== 3D SCENES ====================
+        function initialize3DScenes() {
+            const viewerIds = ['excavation', 'dating', 'lab', 'reconstruction', 'museum'];
+            
+            viewerIds.forEach(id => {
+                const container = document.getElementById(`${id}-viewer`);
+                if (!container) return;
+
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x000000);
+
+                const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+                camera.position.set(0, 5, 15);
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0x404040, 2);
+                scene.add(ambientLight);
+
+                const pointLight = new THREE.PointLight(0xD97706, 1, 100);
+                pointLight.position.set(10, 10, 10);
+                scene.add(pointLight);
+
+                // Add ground for excavation
+                if (id === 'excavation') {
+                    const groundGeometry = new THREE.PlaneGeometry(20, 20);
+                    const groundMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+                    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+                    ground.rotation.x = -Math.PI / 2;
+                    scene.add(ground);
+
+                    // Add some rocks
+                    for (let i = 0; i < 10; i++) {
+                        const rock = new THREE.Mesh(
+                            new THREE.SphereGeometry(Math.random() + 0.5, 8, 8),
+                            new THREE.MeshPhongMaterial({ color: 0x808080 })
+                        );
+                        rock.position.set(
+                            (Math.random() - 0.5) * 15,
+                            0.5,
+                            (Math.random() - 0.5) * 15
+                        );
+                        scene.add(rock);
+                    }
+                }
+
+                scenes[id] = scene;
+                cameras[id] = camera;
+                renderers[id] = renderer;
+
+                if (typeof THREE.OrbitControls !== 'undefined') {
+                    controls[id] = new THREE.OrbitControls(camera, renderer.domElement);
+                }
+            });
+        }
+
+        // ==================== CHART ====================
+        function initializeChart() {
+            const ctx = document.getElementById('decay-chart');
+            if (!ctx) return;
+
+            decayChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Isótopo Radioativo (%)',
+                        data: [],
+                        borderColor: '#D97706',
+                        backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#E4E4E7' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' },
+                            title: { display: true, text: 'Tempo (anos)', color: '#A1A1AA' }
+                        },
+                        y: {
+                            grid: { color: '#3f3f46' },
+                            ticks: { color: '#A1A1AA' },
+                            title: { display: true, text: 'Quantidade (%)', color: '#A1A1AA' }
+                        }
+                    }
+                }
+            });
+
+            // Initialize with decay curve
+            for (let t = 0; t <= 50000; t += 5000) {
+                decayChart.data.labels.push(t);
+                decayChart.data.datasets[0].data.push(100 * Math.exp(-0.693 * t / 5730));
+            }
+            decayChart.update();
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            Object.keys(scenes).forEach(key => {
+                if (scenes[key] && cameras[key] && renderers[key]) {
+                    if (controls[key]) controls[key].update();
+                    renderers[key].render(scenes[key], cameras[key]);
+                }
+            });
+        }
+
+        // ==================== EXCAVATION FUNCTIONS ====================
+        function startExcavation() {
+            state.excavation.running = true;
+            addConsoleMessage('excavation', '⛏️ Escavação iniciada');
+
+            const interval = setInterval(() => {
+                if (!state.excavation.running) {
+                    clearInterval(interval);
+                    return;
+                }
+
+                state.excavation.progress = Math.min(100, state.excavation.progress + state.excavation.speed);
+                state.excavation.depth = (state.excavation.progress / 10).toFixed(1);
+                
+                updateExcavationUI();
+
+                if (state.excavation.progress >= 100) {
+                    clearInterval(interval);
+                    state.excavation.running = false;
+                    discoverFossil();
+                }
+
+                // Random artifact discovery
+                if (Math.random() < 0.1) {
+                    state.excavation.artifacts++;
+                    document.getElementById('artifacts').textContent = state.excavation.artifacts;
+                    addConsoleMessage('excavation', '🏺 Artefato encontrado!');
+                }
+            }, 500);
+        }
+
+        function pauseExcavation() {
+            state.excavation.running = false;
+            addConsoleMessage('excavation', '⏸️ Escavação pausada');
+        }
+
+        function resetExcavation() {
+            state.excavation = { progress: 0, depth: 0, artifacts: 0, fossils: 0, running: false, speed: 5 };
+            updateExcavationUI();
+            addConsoleMessage('excavation', '🔄 Novo sítio preparado');
+        }
+
+        function updateExcavationUI() {
+            const progressBar = document.getElementById('excavation-progress');
+            progressBar.style.width = `${state.excavation.progress}%`;
+            progressBar.textContent = `${state.excavation.progress}% Escavado`;
+            document.getElementById('depth').textContent = `${state.excavation.depth} m`;
+        }
+
+        function discoverFossil() {
+            state.excavation.fossils++;
+            document.getElementById('fossils-found').textContent = state.excavation.fossils;
+            addConsoleMessage('excavation', '🦴 FÓSSIL DESCOBERTO!');
+            addConsoleMessage('excavation', 'Acesse a aba Fósseis para examinar');
+        }
+
+        // ==================== FOSSIL FUNCTIONS ====================
+        function selectFossil(fossilType) {
+            state.fossil.current = fossilType;
+            state.fossil.progress = 0;
+            state.fossil.revealed = false;
+
+            const fossil = fossilDatabase[fossilType];
+            
+            // Update UI
+            document.getElementById('species-name').textContent = 'Escavando...';
+            document.getElementById('fossil-age').textContent = fossil.age;
+            document.getElementById('rarity').textContent = fossil.rarity;
+            document.getElementById('completeness').textContent = '0%';
+
+            // Load image
+            const img = document.getElementById('fossil-image');
+            img.src = fossil.image;
+            img.classList.remove('revealed');
+
+            // Reset overlay
+            const overlay = document.getElementById('fossil-overlay');
+            overlay.style.opacity = '1';
+
+            // Update progress bar
+            const progressBar = document.getElementById('fossil-progress');
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0% Revelado';
+
+            // Highlight selected card
+            document.querySelectorAll('.fossil-card').forEach(card => card.classList.remove('selected'));
+            event.target.closest('.fossil-card')?.classList.add('selected');
+
+            addConsoleMessage('fossil', `🦴 ${fossil.name} selecionado para escavação`);
+        }
+
+        function revealFossil() {
+            if (state.fossil.revealed) {
+                addConsoleMessage('fossil', '✅ Fóssil já completamente revelado');
+                return;
+            }
+
+            const interval = setInterval(() => {
+                state.fossil.progress = Math.min(100, state.fossil.progress + 5);
+                
+                const progressBar = document.getElementById('fossil-progress');
+                progressBar.style.width = `${state.fossil.progress}%`;
+                progressBar.textContent = `${state.fossil.progress}% Revelado`;
+                
+                document.getElementById('completeness').textContent = `${state.fossil.progress}%`;
+
+                // Update overlay opacity
+                const overlay = document.getElementById('fossil-overlay');
+                overlay.style.opacity = (100 - state.fossil.progress) / 100;
+
+                if (state.fossil.progress >= 100) {
+                    clearInterval(interval);
+                    state.fossil.revealed = true;
+                    
+                    // Reveal image
+                    const img = document.getElementById('fossil-image');
+                    img.classList.add('revealed');
+                    
+                    const fossil = fossilDatabase[state.fossil.current];
+                    document.getElementById('species-name').textContent = fossil.name;
+                    
+                    addConsoleMessage('fossil', '✨ Fóssil completamente revelado!');
+                    addConsoleMessage('fossil', `Identificado: ${fossil.name}`);
+                }
+            }, 300);
+        }
+
+        function photographFossil() {
+            addConsoleMessage('fossil', '📸 Fóssil fotografado para registro');
+        }
+
+        function extractFossil() {
+            if (!state.fossil.revealed) {
+                addConsoleMessage('fossil', '⚠️ Revele completamente antes de extrair');
+                return;
+            }
+            addConsoleMessage('fossil', '📦 Fóssil embalado para transporte ao laboratório');
+        }
+
+        // ==================== DATING FUNCTIONS ====================
+        function runDating() {
+            addConsoleMessage('dating', '🔬 Iniciando análise radiométrica...');
+            
+            setTimeout(() => {
+                const method = document.getElementById('dating-method').value;
+                let age = 65000000; // Default
+                
+                switch(method) {
+                    case 'carbon14':
+                        age = Math.floor(Math.random() * 50000) + 1000;
+                        document.getElementById('estimated-age').textContent = `${(age/1000).toFixed(1)} ka`;
+                        break;
+                    case 'potassium':
+                        age = Math.floor(Math.random() * 10000000) + 100000;
+                        document.getElementById('estimated-age').textContent = `${(age/1000000).toFixed(2)} Ma`;
+                        break;
+                    case 'uranium':
+                        age = Math.floor(Math.random() * 100000000) + 1000000;
+                        document.getElementById('estimated-age').textContent = `${(age/1000000).toFixed(1)} Ma`;
+                        break;
+                }
+                
+                addConsoleMessage('dating', `✅ Datação completa: ${document.getElementById('estimated-age').textContent}`);
+            }, 2000);
+        }
+
+        function calibrateDating() {
+            addConsoleMessage('dating', '⚖️ Calibrando equipamento...');
+            setTimeout(() => {
+                addConsoleMessage('dating', '✅ Calibração concluída');
+            }, 1000);
+        }
+
+        // ==================== LAB FUNCTIONS ====================
+        function runAnalysis() {
+            const analysisType = document.getElementById('analysis-type').value;
+            const analyses = {
+                microscopy: '🔬 Microscopia revelou estrutura celular fossilizada',
+                xray: '📡 Raio-X mostrou densidade óssea de 2.7 g/cm³',
+                ct: '💿 Tomografia CT gerou modelo 3D interno',
+                spectroscopy: '🌈 Espectroscopia identificou cálcio e fósforo',
+                dna: '🧬 DNA antigo extraído com sucesso (15% preservado)'
+            };
+            
+            addConsoleMessage('lab', '▶️ Iniciando análise...');
+            setTimeout(() => {
+                addConsoleMessage('lab', analyses[analysisType]);
+            }, 1500);
+        }
+
+        function generateReport() {
+            addConsoleMessage('lab', '📄 Gerando relatório científico...');
+            setTimeout(() => {
+                addConsoleMessage('lab', '✅ Relatório exportado em PDF');
+            }, 1000);
+        }
+
+        // ==================== RECONSTRUCTION FUNCTIONS ====================
+        function reconstruct() {
+            let progress = 0;
+            addConsoleMessage('reconstruction', '🔨 Iniciando reconstrução 3D...');
+            
+            const interval = setInterval(() => {
+                progress = Math.min(100, progress + 10);
+                
+                const progressBar = document.getElementById('reconstruction-progress');
+                progressBar.style.width = `${progress}%`;
+                progressBar.textContent = `${progress}% Completo`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    addConsoleMessage('reconstruction', '✅ Reconstrução completa!');
+                }
+            }, 500);
+        }
+
+        function addTextures() {
+            addConsoleMessage('reconstruction', '🎨 Aplicando texturas fotorealísticas...');
+        }
+
+        function export3D() {
+            addConsoleMessage('reconstruction', '💾 Modelo 3D exportado (.obj)');
+        }
+
+        // ==================== MUSEUM FUNCTIONS ====================
+        function addToMuseum() {
+            if (!state.fossil.revealed) {
+                addConsoleMessage('museum', '⚠️ Complete a escavação primeiro');
+                return;
+            }
+            
+            const fossil = fossilDatabase[state.fossil.current];
+            state.museum.collection.push(fossil);
+            
+            const count = state.museum.collection.length;
+            document.getElementById('collection').textContent = `${count} peças`;
+            document.getElementById('museum-complete').textContent = `${(count * 8.33).toFixed(0)}%`;
+            
+            addConsoleMessage('museum', `✅ ${fossil.name} adicionado à coleção`);
+        }
+
+        function organizeExhibit() {
+            addConsoleMessage('museum', '📋 Exposição reorganizada por era geológica');
+        }
+
+        function viewCollection() {
+            addConsoleMessage('museum', `👁️ Visualizando ${state.museum.collection.length} peças`);
+        }
+
+        // ==================== CONSOLE ====================
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

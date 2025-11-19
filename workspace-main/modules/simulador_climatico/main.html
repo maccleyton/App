@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Climático</title>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <style>
+        :root {
+            --color-primary: #0EA5E9;
+            --color-secondary: #10B981;
+            --color-accent: #F59E0B;
+            --color-danger: #EF4444;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+            border-bottom: 2px solid var(--color-border);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border-radius: 0.75rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--color-bg-surface);
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: rgba(14, 165, 233, 0.1);
+            border-color: var(--color-primary);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-color: var(--color-primary);
+            color: white;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* 3D Viewer */
+        .viewer-3d {
+            width: 100%;
+            height: 500px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            border: 1px solid var(--color-border);
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            color: var(--color-text-primary);
+            font-size: 0.95rem;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--color-danger), #DC2626);
+            color: white;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-top: 0.25rem;
+        }
+
+        .stat-value.danger {
+            color: var(--color-danger);
+        }
+
+        .stat-value.warning {
+            color: var(--color-accent);
+        }
+
+        /* Grid Layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Console */
+        .console {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 0.85rem;
+            color: var(--color-primary);
+            margin-top: 1rem;
+        }
+
+        .console-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .console-line::before {
+            content: '🌍 ';
+        }
+
+        /* Chart */
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        /* Alert Box */
+        .alert-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--color-danger);
+            color: var(--color-danger);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌍 SIMULADOR CLIMÁTICO</h1>
+            <p class="subtitle">Tempestades • Furacões • Mudanças Climáticas • Derretimento Glacial • Eventos Extremos</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="storms">⛈️ Tempestades</button>
+            <button class="tab-button" data-tab="hurricanes">🌀 Furacões</button>
+            <button class="tab-button" data-tab="climate">🌡️ Aquecimento Global</button>
+            <button class="tab-button" data-tab="glaciers">🧊 Derretimento Glacial</button>
+            <button class="tab-button" data-tab="atmosphere">☁️ Atmosfera</button>
+            <button class="tab-button" data-tab="extremes">⚠️ Eventos Extremos</button>
+        </div>
+
+        <!-- TAB 1: Tempestades -->
+        <div id="storms" class="tab-content active">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⛈️</span>
+                        <h3 class="card-title">Formação de Tempestades</h3>
+                    </div>
+                    <div class="viewer-3d" id="storm-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Intensidade</div>
+                            <div class="stat-value warning" id="storm-intensity">Moderada</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Raios</div>
+                            <div class="stat-value" id="lightning-count">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Precipitação</div>
+                            <div class="stat-value" id="precipitation">25 mm/h</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade do Vento</div>
+                            <div class="stat-value" id="wind-speed">45 km/h</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Controles</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura do Solo (°C):</label>
+                        <input type="range" id="ground-temp" min="15" max="40" value="25" step="1">
+                        <span id="ground-temp-value">25°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Umidade Relativa (%):</label>
+                        <input type="range" id="humidity" min="30" max="100" value="70" step="5">
+                        <span id="humidity-value">70%</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Pressão Atmosférica (hPa):</label>
+                        <input type="range" id="pressure" min="980" max="1020" value="1013" step="1">
+                        <span id="pressure-value">1013 hPa</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startStorm()">▶️ Iniciar Tempestade</button>
+                        <button class="btn btn-secondary" onclick="pauseStorm()">⏸️ Pausar</button>
+                        <button class="btn btn-secondary" onclick="resetStorm()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="storm-console">
+                        <div class="console-line">Sistema de tempestade inicializado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Furacões -->
+        <div id="hurricanes" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌀</span>
+                        <h3 class="card-title">Simulador de Furacões</h3>
+                    </div>
+                    <div class="viewer-3d" id="hurricane-viewer"></div>
+                    
+                    <div class="alert-box alert-danger" id="hurricane-alert" style="display: none;">
+                        <strong>⚠️ ALERTA:</strong> Furacão de categoria alta detectado!
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Categoria</div>
+                            <div class="stat-value danger" id="hurricane-category">Cat 3</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Velocidade Máxima</div>
+                            <div class="stat-value" id="max-wind">180 km/h</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Pressão Central</div>
+                            <div class="stat-value" id="central-pressure">960 hPa</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Diâmetro</div>
+                            <div class="stat-value" id="hurricane-size">450 km</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Parâmetros do Furacão</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura da Água (°C):</label>
+                        <input type="range" id="water-temp" min="20" max="35" value="28" step="1">
+                        <span id="water-temp-value">28°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Categoria (Saffir-Simpson):</label>
+                        <select class="control-input" id="hurricane-cat" onchange="updateHurricane()">
+                            <option value="1">Categoria 1 (119-153 km/h)</option>
+                            <option value="2">Categoria 2 (154-177 km/h)</option>
+                            <option value="3" selected>Categoria 3 (178-209 km/h)</option>
+                            <option value="4">Categoria 4 (210-251 km/h)</option>
+                            <option value="5">Categoria 5 (>252 km/h)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Velocidade de Rotação:</label>
+                        <input type="range" id="rotation-speed" min="1" max="10" value="5" step="1">
+                        <span id="rotation-value">5x</span>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startHurricane()">🌀 Gerar Furacão</button>
+                        <button class="btn btn-danger" onclick="intensifyHurricane()">⚡ Intensificar</button>
+                        <button class="btn btn-secondary" onclick="dissipateHurricane()">💨 Dissipar</button>
+                    </div>
+
+                    <div class="console" id="hurricane-console">
+                        <div class="console-line">Furacão categoria 3 inicializado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Aquecimento Global -->
+        <div id="climate" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🌡️</span>
+                        <h3 class="card-title">Mudanças Climáticas</h3>
+                    </div>
+                    <div class="viewer-3d" id="climate-viewer"></div>
+                    <div class="chart-container">
+                        <canvas id="climate-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Emissões e Impactos</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Emissões de CO₂ (Gt/ano):</label>
+                        <input type="range" id="co2-emissions" min="20" max="60" value="36" step="2">
+                        <span id="co2-value">36 Gt/ano</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Desmatamento (%):</label>
+                        <input type="range" id="deforestation" min="0" max="30" value="10" step="1">
+                        <span id="deforest-value">10%</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Temp. Global</div>
+                            <div class="stat-value danger" id="global-temp">+1.2°C</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">CO₂ (ppm)</div>
+                            <div class="stat-value warning" id="co2-ppm">420</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Nível do Mar</div>
+                            <div class="stat-value" id="sea-level">+20 cm</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Calota Polar</div>
+                            <div class="stat-value danger" id="ice-cover">-13%</div>
+                        </div>
+                    </div>
+
+                    <div class="alert-box alert-warning">
+                        <strong>⚠️ Projeção 2100:</strong> Aumento de 2-4°C previsto
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="runProjection()">📈 Projetar 50 anos</button>
+                        <button class="btn btn-secondary" onclick="resetClimate()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="climate-console">
+                        <div class="console-line">Modelo climático carregado (1850-2024)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Derretimento Glacial -->
+        <div id="glaciers" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>🧊</span>
+                        <h3 class="card-title">Derretimento de Geleiras</h3>
+                    </div>
+                    <div class="viewer-3d" id="glacier-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Volume de Gelo</div>
+                            <div class="stat-value" id="ice-volume">1500 km³</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Taxa de Derretimento</div>
+                            <div class="stat-value danger" id="melt-rate">-50 km³/ano</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Área Superficial</div>
+                            <div class="stat-value" id="ice-area">800 km²</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Albedo</div>
+                            <div class="stat-value" id="albedo">0.75</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Condições Ambientais</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Temperatura Ambiente (°C):</label>
+                        <input type="range" id="ambient-temp" min="-10" max="15" value="2" step="1">
+                        <span id="ambient-temp-value">2°C</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Radiação Solar (W/m²):</label>
+                        <input type="range" id="solar-radiation" min="100" max="400" value="250" step="10">
+                        <span id="radiation-value">250 W/m²</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Anos de Simulação:</label>
+                        <input type="range" id="sim-years" min="10" max="100" value="30" step="10">
+                        <span id="years-value">30 anos</span>
+                    </div>
+
+                    <div class="alert-box alert-danger">
+                        <strong>🚨 Crítico:</strong> Derretimento acelerado detectado
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="startMelting()">▶️ Simular Derretimento</button>
+                        <button class="btn btn-secondary" onclick="pauseMelting()">⏸️ Pausar</button>
+                        <button class="btn btn-secondary" onclick="resetGlacier()">🔄 Resetar</button>
+                    </div>
+
+                    <div class="console" id="glacier-console">
+                        <div class="console-line">Geleira ártica inicializada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: Atmosfera -->
+        <div id="atmosphere" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>☁️</span>
+                        <h3 class="card-title">Padrões Atmosféricos</h3>
+                    </div>
+                    <div class="viewer-3d" id="atmosphere-viewer"></div>
+                    <div class="chart-container">
+                        <canvas id="atmosphere-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Composição Atmosférica</h3>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">N₂</div>
+                            <div class="stat-value">78%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">O₂</div>
+                            <div class="stat-value">21%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ar</div>
+                            <div class="stat-value">0.93%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">CO₂</div>
+                            <div class="stat-value warning" id="atm-co2">0.042%</div>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Altitude (km):</label>
+                        <input type="range" id="altitude" min="0" max="100" value="10" step="5">
+                        <span id="altitude-value">10 km</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Camada:</label>
+                        <select class="control-input" id="layer-select">
+                            <option value="troposphere">Troposfera (0-12 km)</option>
+                            <option value="stratosphere">Estratosfera (12-50 km)</option>
+                            <option value="mesosphere">Mesosfera (50-85 km)</option>
+                            <option value="thermosphere">Termosfera (85-600 km)</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="analyzeAtmosphere()">🔍 Analisar</button>
+                        <button class="btn btn-secondary" onclick="showCirculation()">🌀 Circulação</button>
+                    </div>
+
+                    <div class="console" id="atmosphere-console">
+                        <div class="console-line">Atmosfera terrestre carregada</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Eventos Extremos -->
+        <div id="extremes" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span>⚠️</span>
+                        <h3 class="card-title">Eventos Climáticos Extremos</h3>
+                    </div>
+                    <div class="viewer-3d" id="extreme-viewer"></div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Secas</div>
+                            <div class="stat-value danger" id="droughts">+45%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Inundações</div>
+                            <div class="stat-value danger" id="floods">+60%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ondas de Calor</div>
+                            <div class="stat-value danger" id="heatwaves">+80%</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Tornados</div>
+                            <div class="stat-value warning" id="tornadoes">+25%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span>🎛️</span>
+                        <h3 class="card-title">Selecionar Evento</h3>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Tipo de Evento:</label>
+                        <select class="control-input" id="event-type">
+                            <option value="drought">🏜️ Seca Extrema</option>
+                            <option value="flood">🌊 Inundação</option>
+                            <option value="heatwave">🔥 Onda de Calor</option>
+                            <option value="tornado">🌪️ Tornado</option>
+                            <option value="wildfire">🔥 Incêndio Florestal</option>
+                            <option value="blizzard">❄️ Nevasca</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">Intensidade:</label>
+                        <input type="range" id="event-intensity" min="1" max="10" value="5" step="1">
+                        <span id="intensity-value">5/10</span>
+                    </div>
+
+                    <div class="alert-box alert-danger">
+                        <strong>⚠️ Aumento:</strong> Eventos extremos 40% mais frequentes
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="triggerEvent()">⚡ Disparar Evento</button>
+                        <button class="btn btn-secondary" onclick="analyzeImpact()">📊 Analisar Impacto</button>
+                    </div>
+
+                    <div class="console" id="extreme-console">
+                        <div class="console-line">Sistema de eventos extremos ativo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL STATE ====================
+        const state = {
+            currentTab: 'storms',
+            storms: {
+                groundTemp: 25,
+                humidity: 70,
+                pressure: 1013,
+                lightningCount: 0,
+                running: false
+            },
+            hurricanes: {
+                category: 3,
+                waterTemp: 28,
+                rotationSpeed: 5,
+                intensity: 180
+            },
+            climate: {
+                co2Emissions: 36,
+                deforestation: 10,
+                globalTemp: 1.2,
+                year: 2024
+            },
+            glaciers: {
+                volume: 1500,
+                meltRate: -50,
+                ambientTemp: 2,
+                running: false
+            },
+            atmosphere: {
+                altitude: 10,
+                layer: 'troposphere'
+            },
+            extremes: {
+                eventType: 'drought',
+                intensity: 5
+            }
+        };
+
+        // Three.js scenes
+        const scenes = {};
+        const cameras = {};
+        const renderers = {};
+        const controls = {};
+
+        // Charts
+        let climateChart, atmosphereChart;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTabs();
+            initializeControls();
+            initialize3DScenes();
+            initializeCharts();
+            animate();
+        });
+
+        function initializeTabs() {
+            const tabs = document.querySelectorAll('.tab-button');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function initializeControls() {
+            // Storm controls
+            document.getElementById('ground-temp')?.addEventListener('input', (e) => {
+                state.storms.groundTemp = parseInt(e.target.value);
+                document.getElementById('ground-temp-value').textContent = `${e.target.value}°C`;
+            });
+
+            document.getElementById('humidity')?.addEventListener('input', (e) => {
+                state.storms.humidity = parseInt(e.target.value);
+                document.getElementById('humidity-value').textContent = `${e.target.value}%`;
+            });
+
+            document.getElementById('pressure')?.addEventListener('input', (e) => {
+                state.storms.pressure = parseInt(e.target.value);
+                document.getElementById('pressure-value').textContent = `${e.target.value} hPa`;
+            });
+
+            // Hurricane controls
+            document.getElementById('water-temp')?.addEventListener('input', (e) => {
+                state.hurricanes.waterTemp = parseInt(e.target.value);
+                document.getElementById('water-temp-value').textContent = `${e.target.value}°C`;
+            });
+
+            document.getElementById('rotation-speed')?.addEventListener('input', (e) => {
+                state.hurricanes.rotationSpeed = parseInt(e.target.value);
+                document.getElementById('rotation-value').textContent = `${e.target.value}x`;
+            });
+
+            // Climate controls
+            document.getElementById('co2-emissions')?.addEventListener('input', (e) => {
+                state.climate.co2Emissions = parseInt(e.target.value);
+                document.getElementById('co2-value').textContent = `${e.target.value} Gt/ano`;
+            });
+
+            document.getElementById('deforestation')?.addEventListener('input', (e) => {
+                state.climate.deforestation = parseInt(e.target.value);
+                document.getElementById('deforest-value').textContent = `${e.target.value}%`;
+            });
+
+            // Glacier controls
+            document.getElementById('ambient-temp')?.addEventListener('input', (e) => {
+                state.glaciers.ambientTemp = parseInt(e.target.value);
+                document.getElementById('ambient-temp-value').textContent = `${e.target.value}°C`;
+            });
+
+            document.getElementById('solar-radiation')?.addEventListener('input', (e) => {
+                document.getElementById('radiation-value').textContent = `${e.target.value} W/m²`;
+            });
+
+            document.getElementById('sim-years')?.addEventListener('input', (e) => {
+                document.getElementById('years-value').textContent = `${e.target.value} anos`;
+            });
+
+            // Atmosphere controls
+            document.getElementById('altitude')?.addEventListener('input', (e) => {
+                state.atmosphere.altitude = parseInt(e.target.value);
+                document.getElementById('altitude-value').textContent = `${e.target.value} km`;
+            });
+
+            // Extreme events controls
+            document.getElementById('event-intensity')?.addEventListener('input', (e) => {
+                state.extremes.intensity = parseInt(e.target.value);
+                document.getElementById('intensity-value').textContent = `${e.target.value}/10`;
+            });
+        }
+
+        // ==================== 3D SCENES ====================
+        function initialize3DScenes() {
+            initializeStormScene();
+            initializeHurricaneScene();
+            initializeClimateScene();
+            initializeGlacierScene();
+            initializeAtmosphereScene();
+            initializeExtremeScene();
+        }
+
+        function createScene(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return null;
+
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000000);
+
+            const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 10, 20);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0xFFFFFF, 1, 100);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+
+            let sceneControls = null;
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                sceneControls = new THREE.OrbitControls(camera, renderer.domElement);
+            }
+
+            return { scene, camera, renderer, controls: sceneControls };
+        }
+
+        function initializeStormScene() {
+            const result = createScene('storm-viewer');
+            if (!result) return;
+
+            scenes.storm = result.scene;
+            cameras.storm = result.camera;
+            renderers.storm = result.renderer;
+            controls.storm = result.controls;
+
+            // Create storm clouds
+            const cloudGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const cloudMaterial = new THREE.MeshPhongMaterial({
+                color: 0x808080,
+                transparent: true,
+                opacity: 0.7
+            });
+
+            for (let i = 0; i < 10; i++) {
+                const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+                cloud.position.set(
+                    (Math.random() - 0.5) * 30,
+                    Math.random() * 10,
+                    (Math.random() - 0.5) * 30
+                );
+                cloud.scale.set(Math.random() + 0.5, 0.5, Math.random() + 0.5);
+                scenes.storm.add(cloud);
+            }
+        }
+
+        function initializeHurricaneScene() {
+            const result = createScene('hurricane-viewer');
+            if (!result) return;
+
+            scenes.hurricane = result.scene;
+            cameras.hurricane = result.camera;
+            renderers.hurricane = result.renderer;
+            controls.hurricane = result.controls;
+
+            // Create hurricane spiral
+            const spiralGroup = new THREE.Group();
+            
+            for (let i = 0; i < 50; i++) {
+                const angle = (i / 50) * Math.PI * 8;
+                const radius = i / 5;
+                
+                const geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                const material = new THREE.MeshPhongMaterial({ color: 0x0EA5E9 });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                particle.position.set(
+                    radius * Math.cos(angle),
+                    0,
+                    radius * Math.sin(angle)
+                );
+                
+                spiralGroup.add(particle);
+            }
+            
+            scenes.hurricane.add(spiralGroup);
+        }
+
+        function initializeClimateScene() {
+            const result = createScene('climate-viewer');
+            if (!result) return;
+
+            scenes.climate = result.scene;
+            cameras.climate = result.camera;
+            renderers.climate = result.renderer;
+            controls.climate = result.controls;
+
+            // Create Earth
+            const earthGeometry = new THREE.SphereGeometry(5, 32, 32);
+            const earthMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x2F6A9F,
+                emissive: 0x001F3F
+            });
+            const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+            scenes.climate.add(earth);
+
+            // Add atmosphere glow
+            const glowGeometry = new THREE.SphereGeometry(5.5, 32, 32);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x0EA5E9,
+                transparent: true,
+                opacity: 0.2
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            scenes.climate.add(glow);
+        }
+
+        function initializeGlacierScene() {
+            const result = createScene('glacier-viewer');
+            if (!result) return;
+
+            scenes.glacier = result.scene;
+            cameras.glacier = result.camera;
+            renderers.glacier = result.renderer;
+            controls.glacier = result.controls;
+
+            // Create glacier
+            const glacierGeometry = new THREE.BoxGeometry(15, 3, 10);
+            const glacierMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xB0E0E6,
+                transparent: true,
+                opacity: 0.8
+            });
+            const glacier = new THREE.Mesh(glacierGeometry, glacierMaterial);
+            scenes.glacier.add(glacier);
+        }
+
+        function initializeAtmosphereScene() {
+            const result = createScene('atmosphere-viewer');
+            if (!result) return;
+
+            scenes.atmosphere = result.scene;
+            cameras.atmosphere = result.camera;
+            renderers.atmosphere = result.renderer;
+            controls.atmosphere = result.controls;
+
+            // Create atmospheric layers
+            const layers = [
+                { radius: 6.4, color: 0x0EA5E9, name: 'Troposphere' },
+                { radius: 7.4, color: 0x3B82F6, name: 'Stratosphere' },
+                { radius: 8.4, color: 0x6366F1, name: 'Mesosphere' },
+                { radius: 9.4, color: 0x8B5CF6, name: 'Thermosphere' }
+            ];
+
+            layers.forEach(layer => {
+                const geometry = new THREE.SphereGeometry(layer.radius, 32, 32);
+                const material = new THREE.MeshBasicMaterial({
+                    color: layer.color,
+                    transparent: true,
+                    opacity: 0.2,
+                    wireframe: true
+                });
+                const sphere = new THREE.Mesh(geometry, material);
+                scenes.atmosphere.add(sphere);
+            });
+        }
+
+        function initializeExtremeScene() {
+            const result = createScene('extreme-viewer');
+            if (!result) return;
+
+            scenes.extreme = result.scene;
+            cameras.extreme = result.camera;
+            renderers.extreme = result.renderer;
+            controls.extreme = result.controls;
+        }
+
+        // ==================== CHARTS ====================
+        function initializeCharts() {
+            // Climate Chart
+            const ctx1 = document.getElementById('climate-chart');
+            if (ctx1) {
+                climateChart = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Temperatura Global (°C)',
+                            data: [],
+                            borderColor: '#EF4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#E4E4E7' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: '#3f3f46' },
+                                ticks: { color: '#A1A1AA' }
+                            },
+                            y: {
+                                grid: { color: '#3f3f46' },
+                                ticks: { color: '#A1A1AA' }
+                            }
+                        }
+                    }
+                });
+
+                // Initialize with historical data
+                for (let year = 1880; year <= 2024; year += 10) {
+                    climateChart.data.labels.push(year);
+                    climateChart.data.datasets[0].data.push(Math.random() * 1.5);
+                }
+                climateChart.update();
+            }
+
+            // Atmosphere Chart
+            const ctx2 = document.getElementById('atmosphere-chart');
+            if (ctx2) {
+                atmosphereChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['N₂', 'O₂', 'Ar', 'CO₂', 'Outros'],
+                        datasets: [{
+                            label: 'Composição (%)',
+                            data: [78, 21, 0.93, 0.042, 0.028],
+                            backgroundColor: [
+                                'rgba(14, 165, 233, 0.7)',
+                                'rgba(16, 185, 129, 0.7)',
+                                'rgba(99, 102, 241, 0.7)',
+                                'rgba(239, 68, 68, 0.7)',
+                                'rgba(139, 92, 246, 0.7)'
+                            ],
+                            borderColor: '#3f3f46',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: '#3f3f46' },
+                                ticks: { color: '#A1A1AA' }
+                            },
+                            x: {
+                                grid: { color: '#3f3f46' },
+                                ticks: { color: '#A1A1AA' }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ==================== ANIMATION ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Animate hurricane rotation
+            if (scenes.hurricane) {
+                scenes.hurricane.children.forEach(child => {
+                    if (child.type === 'Group') {
+                        child.rotation.y += 0.01 * state.hurricanes.rotationSpeed;
+                    }
+                });
+            }
+
+            // Animate Earth rotation
+            if (scenes.climate) {
+                scenes.climate.children.forEach(child => {
+                    if (child.geometry && child.geometry.type === 'SphereGeometry') {
+                        child.rotation.y += 0.001;
+                    }
+                });
+            }
+
+            Object.keys(scenes).forEach(key => {
+                if (scenes[key] && cameras[key] && renderers[key]) {
+                    if (controls[key]) controls[key].update();
+                    renderers[key].render(scenes[key], cameras[key]);
+                }
+            });
+        }
+
+        // ==================== STORM FUNCTIONS ====================
+        function startStorm() {
+            state.storms.running = true;
+            addConsoleMessage('storm', '⛈️ Tempestade iniciada');
+            
+            const intensity = state.storms.humidity > 80 && state.storms.pressure < 1000 ? 'Severa' : 'Moderada';
+            document.getElementById('storm-intensity').textContent = intensity;
+            
+            setInterval(() => {
+                if (state.storms.running) {
+                    state.storms.lightningCount++;
+                    document.getElementById('lightning-count').textContent = state.storms.lightningCount;
+                }
+            }, 2000);
+        }
+
+        function pauseStorm() {
+            state.storms.running = false;
+            addConsoleMessage('storm', '⏸️ Tempestade pausada');
+        }
+
+        function resetStorm() {
+            state.storms.lightningCount = 0;
+            state.storms.running = false;
+            document.getElementById('lightning-count').textContent = '0';
+            addConsoleMessage('storm', '🔄 Tempestade resetada');
+        }
+
+        // ==================== HURRICANE FUNCTIONS ====================
+        function updateHurricane() {
+            const cat = parseInt(document.getElementById('hurricane-cat').value);
+            state.hurricanes.category = cat;
+            
+            const speeds = { 1: 136, 2: 165, 3: 193, 4: 230, 5: 270 };
+            const pressures = { 1: 980, 2: 965, 3: 945, 4: 920, 5: 890 };
+            
+            document.getElementById('hurricane-category').textContent = `Cat ${cat}`;
+            document.getElementById('max-wind').textContent = `${speeds[cat]} km/h`;
+            document.getElementById('central-pressure').textContent = `${pressures[cat]} hPa`;
+            
+            if (cat >= 3) {
+                document.getElementById('hurricane-alert').style.display = 'block';
+            } else {
+                document.getElementById('hurricane-alert').style.display = 'none';
+            }
+        }
+
+        function startHurricane() {
+            addConsoleMessage('hurricane', '🌀 Furacão gerado');
+            updateHurricane();
+        }
+
+        function intensifyHurricane() {
+            const cat = Math.min(5, state.hurricanes.category + 1);
+            document.getElementById('hurricane-cat').value = cat;
+            updateHurricane();
+            addConsoleMessage('hurricane', `⚡ Furacão intensificado para categoria ${cat}`);
+        }
+
+        function dissipateHurricane() {
+            addConsoleMessage('hurricane', '💨 Furacão dissipando...');
+        }
+
+        // ==================== CLIMATE FUNCTIONS ====================
+        function runProjection() {
+            addConsoleMessage('climate', '📈 Executando projeção para 2074...');
+            
+            setTimeout(() => {
+                const tempIncrease = (state.climate.co2Emissions / 36) * 2;
+                document.getElementById('global-temp').textContent = `+${(1.2 + tempIncrease).toFixed(1)}°C`;
+                addConsoleMessage('climate', `Projeção: +${(1.2 + tempIncrease).toFixed(1)}°C até 2074`);
+            }, 1000);
+        }
+
+        function resetClimate() {
+            addConsoleMessage('climate', '🔄 Modelo climático resetado');
+        }
+
+        // ==================== GLACIER FUNCTIONS ====================
+        function startMelting() {
+            state.glaciers.running = true;
+            addConsoleMessage('glacier', '▶️ Simulação de derretimento iniciada');
+            
+            const interval = setInterval(() => {
+                if (!state.glaciers.running) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                state.glaciers.volume = Math.max(0, state.glaciers.volume + state.glaciers.meltRate);
+                document.getElementById('ice-volume').textContent = `${state.glaciers.volume} km³`;
+                
+                if (state.glaciers.volume <= 0) {
+                    clearInterval(interval);
+                    addConsoleMessage('glacier', '❌ Geleira completamente derretida');
+                }
+            }, 1000);
+        }
+
+        function pauseMelting() {
+            state.glaciers.running = false;
+            addConsoleMessage('glacier', '⏸️ Simulação pausada');
+        }
+
+        function resetGlacier() {
+            state.glaciers.volume = 1500;
+            state.glaciers.running = false;
+            document.getElementById('ice-volume').textContent = '1500 km³';
+            addConsoleMessage('glacier', '🔄 Geleira resetada');
+        }
+
+        // ==================== ATMOSPHERE FUNCTIONS ====================
+        function analyzeAtmosphere() {
+            const altitude = state.atmosphere.altitude;
+            addConsoleMessage('atmosphere', `🔍 Analisando atmosfera a ${altitude} km...`);
+            addConsoleMessage('atmosphere', `Temperatura: ${(15 - altitude * 6.5).toFixed(1)}°C`);
+            addConsoleMessage('atmosphere', `Pressão: ${(1013 * Math.exp(-altitude / 8)).toFixed(0)} hPa`);
+        }
+
+        function showCirculation() {
+            addConsoleMessage('atmosphere', '🌀 Mostrando padrões de circulação global');
+            addConsoleMessage('atmosphere', 'Células de Hadley, Ferrel e Polar ativas');
+        }
+
+        // ==================== EXTREME FUNCTIONS ====================
+        function triggerEvent() {
+            const eventType = document.getElementById('event-type').value;
+            const intensity = state.extremes.intensity;
+            
+            addConsoleMessage('extreme', `⚡ Evento ${eventType} disparado (intensidade ${intensity}/10)`);
+            addConsoleMessage('extreme', `⚠️ Impacto estimado: ${intensity * 10}% acima do normal`);
+        }
+
+        function analyzeImpact() {
+            addConsoleMessage('extreme', '📊 Analisando impacto socioeconômico...');
+            addConsoleMessage('extreme', 'Danos estimados: $${(Math.random() * 100).toFixed(1)}B');
+            addConsoleMessage('extreme', `População afetada: ${(Math.random() * 5).toFixed(1)}M pessoas`);
+        }
+
+        // ==================== CONSOLE ====================
+        function addConsoleMessage(module, message) {
+            const consoleId = `${module}-console`;
+            const consoleElement = document.getElementById(consoleId);
+            if (!consoleElement) return;
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = message;
+            
+            consoleElement.appendChild(line);
+            consoleElement.scrollTop = consoleElement.scrollHeight;
+
+            while (consoleElement.children.length > 10) {
+                consoleElement.removeChild(consoleElement.firstChild);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Lab - Hub de Simuladores Científicos</title>
+    
+    <style>
+        :root {
+            --color-primary: #8B5CF6;
+            --color-secondary: #3B82F6;
+            --color-accent: #10B981;
+            --color-warning: #F59E0B;
+            --color-danger: #EF4444;
+            --color-bg-page: #0A0A0A;
+            --color-bg-surface: #141414;
+            --color-border: #3f3f46;
+            --color-text-primary: #E4E4E7;
+            --color-text-secondary: #A1A1AA;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--color-bg-page) 0%, #1a1a1a 100%);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #8B5CF6, #3B82F6, #10B981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 3s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .version-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        /* Search Bar */
+        .search-section {
+            margin-bottom: 2rem;
+        }
+
+        .search-bar {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            padding-left: 3rem;
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 2rem;
+            color: var(--color-text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        /* Stats */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--color-primary);
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 3rem 0 1.5rem 0;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--color-border);
+            color: var(--color-text-primary);
+        }
+
+        /* Simulators Grid */
+        .simulators-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .simulator-card {
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            text-decoration: none;
+            color: var(--color-text-primary);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simulator-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--card-color), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .simulator-card:hover::before {
+            opacity: 1;
+        }
+
+        .simulator-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--card-color);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--color-text-primary);
+        }
+
+        .card-description {
+            font-size: 0.95rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .card-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-new {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+
+        .badge-3d {
+            background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+            color: white;
+        }
+
+        .badge-interactive {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+        }
+
+        .badge-advanced {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+
+        /* Color assignments for cards */
+        .card-nuclear { --card-color: #DC2626; }
+        .card-chemical { --card-color: #10B981; }
+        .card-organic { --card-color: #8B5CF6; }
+        .card-atomic { --card-color: #3B82F6; }
+        .card-physics { --card-color: #F59E0B; }
+        .card-thermo { --card-color: #EF4444; }
+        .card-bio { --card-color: #10B981; }
+        .card-cosmic { --card-color: #8B5CF6; }
+        .card-gravity { --card-color: #F59E0B; }
+        .card-editor { --card-color: #6366F1; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 4rem;
+            border-top: 1px solid var(--color-border);
+            color: var(--color-text-secondary);
+        }
+
+        footer a {
+            color: var(--color-primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .simulators-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-primary);
+        }
+
+        /* Loading Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .simulator-card {
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .simulator-card:nth-child(1) { animation-delay: 0.1s; }
+        .simulator-card:nth-child(2) { animation-delay: 0.2s; }
+        .simulator-card:nth-child(3) { animation-delay: 0.3s; }
+        .simulator-card:nth-child(4) { animation-delay: 0.4s; }
+        .simulator-card:nth-child(5) { animation-delay: 0.5s; }
+        .simulator-card:nth-child(6) { animation-delay: 0.6s; }
+        .simulator-card:nth-child(7) { animation-delay: 0.7s; }
+        .simulator-card:nth-child(8) { animation-delay: 0.8s; }
+        .simulator-card:nth-child(9) { animation-delay: 0.9s; }
+        .simulator-card:nth-child(10) { animation-delay: 1s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 QUANTUM LAB</h1>
+            <p class="subtitle">Plataforma Integrada de Simulação Científica</p>
+            <span class="version-badge">v2.0 - 10 Simuladores Completos</span>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-section">
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" 
+                       class="search-input" 
+                       id="search-input"
+                       placeholder="Buscar simuladores...">
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Simuladores</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">50+</div>
+                <div class="stat-label">Módulos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3D</div>
+                <div class="stat-label">Visualizações</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">100%</div>
+                <div class="stat-label">Funcional</div>
+            </div>
+        </div>
+
+        <!-- Simulators Section -->
+        <h2 class="section-header">⚗️ Simuladores Disponíveis</h2>
+
+        <div class="simulators-grid" id="simulators-grid">
+            <!-- Nuclear -->
+            <a href="simulador-nuclear.html" class="simulator-card card-nuclear">
+                <span class="card-icon">☢️</span>
+                <h3 class="card-title">Nuclear</h3>
+                <p class="card-description">Simulação de decaimento radioativo com 20 isótopos, cálculo de meia-vida e visualização 3D de núcleos atômicos.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-interactive">Interativo</span>
+                </div>
+            </a>
+
+            <!-- Químico -->
+            <a href="simulador-quimico.html" class="simulator-card card-chemical">
+                <span class="card-icon">⚗️</span>
+                <h3 class="card-title">Químico</h3>
+                <p class="card-description">Tabela periódica 100% completa (118 elementos), reações químicas, balanceamento e visualização molecular 3D.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-new">Completo</span>
+                </div>
+            </a>
+
+            <!-- Orgânico -->
+            <a href="simulador-organico.html" class="simulator-card card-organic">
+                <span class="card-icon">🧪</span>
+                <h3 class="card-title">Orgânico</h3>
+                <p class="card-description">Química orgânica com estruturas moleculares, grupos funcionais e nomenclatura IUPAC completa.</p>
+                <div class="card-badges">
+                    <span class="badge badge-interactive">Interativo</span>
+                </div>
+            </a>
+
+            <!-- Atômico -->
+            <a href="simulador-atomico.html" class="simulator-card card-atomic">
+                <span class="card-icon">⚛️</span>
+                <h3 class="card-title">Atômico</h3>
+                <p class="card-description">4 visualizações (3D, 2D, espectro, níveis de energia), modelo de Bohr e transições eletrônicas animadas.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-advanced">Avançado</span>
+                </div>
+            </a>
+
+            <!-- Físico -->
+            <a href="simulador-fisico.html" class="simulator-card card-physics">
+                <span class="card-icon">🔬</span>
+                <h3 class="card-title">Físico</h3>
+                <p class="card-description">Mecânica clássica, cinemática, dinâmica, energia, ondas e física moderna com visualizações 3D.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-interactive">Interativo</span>
+                </div>
+            </a>
+
+            <!-- Termodinâmico -->
+            <a href="simulador-termodinamico.html" class="simulator-card card-thermo">
+                <span class="card-icon">🌡️</span>
+                <h3 class="card-title">Termodinâmico</h3>
+                <p class="card-description">Leis da termodinâmica, ciclos térmicos, transferência de calor e diagramas P-V animados.</p>
+                <div class="card-badges">
+                    <span class="badge badge-interactive">Interativo</span>
+                </div>
+            </a>
+
+            <!-- Biológico -->
+            <a href="simulador-biologico.html" class="simulator-card card-bio">
+                <span class="card-icon">🔬</span>
+                <h3 class="card-title">Biológico</h3>
+                <p class="card-description">6 módulos: células, DNA, ecossistemas, microbiologia, fisiologia humana e evolução com visualizações 3D.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-new">6 Módulos</span>
+                </div>
+            </a>
+
+            <!-- Cósmico -->
+            <a href="simulador-cosmico.html" class="simulator-card card-cosmic">
+                <span class="card-icon">🌌</span>
+                <h3 class="card-title">Cósmico</h3>
+                <p class="card-description">8 módulos unificados: sistema solar, estrelas, galáxias, buracos negros, fusão nuclear e exoplanetas em 3D.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-new">8 Módulos</span>
+                    <span class="badge badge-advanced">Avançado</span>
+                </div>
+            </a>
+
+            <!-- Gravitacional -->
+            <a href="simulador-gravitacional.html" class="simulator-card card-gravity">
+                <span class="card-icon">🪐</span>
+                <h3 class="card-title">Gravitacional</h3>
+                <p class="card-description">Simulação N-body com física gravitacional realista, 6 cenários pré-definidos e detecção de colisões.</p>
+                <div class="card-badges">
+                    <span class="badge badge-3d">3D</span>
+                    <span class="badge badge-advanced">N-Body</span>
+                </div>
+            </a>
+
+            <!-- Editor Markdown -->
+            <a href="editor_markdown.html" class="simulator-card card-editor">
+                <span class="card-icon">📝</span>
+                <h3 class="card-title">Editor Markdown</h3>
+                <p class="card-description">Editor completo com preview ao vivo, syntax highlighting, exportação HTML e suporte a equações LaTeX.</p>
+                <div class="card-badges">
+                    <span class="badge badge-interactive">Interativo</span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p><strong>Quantum Lab</strong> - Plataforma Integrada de Simulação Científica</p>
+            <p>10 Simuladores • 50+ Módulos • Visualizações 3D • 100% Funcional</p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">
+                Desenvolvido com Three.js, Chart.js, Marked.js e ❤️
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== SEARCH FUNCTIONALITY ====================
+        const searchInput = document.getElementById('search-input');
+        const simulatorCards = document.querySelectorAll('.simulator-card');
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+
+            simulatorCards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const description = card.querySelector('.card-description').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // ==================== ANALYTICS ====================
+        document.querySelectorAll('.simulator-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const simulatorName = card.querySelector('.card-title').textContent;
+                console.log(`Acessando: ${simulatorName}`);
+                
+                // Store in localStorage
+                const history = JSON.parse(localStorage.getItem('quantum-lab-history') || '[]');
+                history.unshift({
+                    name: simulatorName,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Keep only last 10
+                if (history.length > 10) history.pop();
+                
+                localStorage.setItem('quantum-lab-history', JSON.stringify(history));
+            });
+        });
+
+        // ==================== KEYBOARD SHORTCUTS ====================
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + K = Focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+
+            // Esc = Clear search
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+                searchInput.blur();
+            }
+        });
+
+        // ==================== INITIALIZATION ====================
+        console.log('%c🔬 Quantum Lab v2.0', 'font-size: 24px; font-weight: bold; color: #8B5CF6;');
+        console.log('%c10 Simuladores Carregados', 'font-size: 14px; color: #10B981;');
+        console.log('%cAtalhos: Ctrl+K (buscar), Esc (limpar)', 'font-size: 12px; color: #A1A1AA;');
+    </script>
+</body>
+</html>

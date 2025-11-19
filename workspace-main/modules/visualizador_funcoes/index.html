@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Funções - Workspace</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-wave-square"></i>
+            <h1 class="header-title">Visualizador de Funções</h1>
+        </div>
+        <div class="header-center">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="f(x) = ..." id="functionInput">
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="back-button" id="plotBtn" title="Plotar">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="theme-toggle" id="addFunctionBtn" title="Adicionar Função">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="user-menu" id="exportBtn" title="Exportar">
+                <i class="fas fa-download"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <!-- Painel Esquerdo - Funções -->
+        <div class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-function"></i>
+                    <h2 class="section-title">Funções</h2>
+                </div>
+                <div id="functionsList">
+                    <div class="element-item function-item" data-function="sin(x)">
+                        <span class="element-number"><i class="fas fa-wave-square"></i></span>
+                        <span class="element-symbol">sin(x)</span>
+                        <span class="element-name">Seno</span>
+                    </div>
+                    <div class="element-item function-item" data-function="cos(x)">
+                        <span class="element-number"><i class="fas fa-wave-square"></i></span>
+                        <span class="element-symbol">cos(x)</span>
+                        <span class="element-name">Cosseno</span>
+                    </div>
+                    <div class="element-item function-item" data-function="x^2">
+                        <span class="element-number"><i class="fas fa-superscript"></i></span>
+                        <span class="element-symbol">x²</span>
+                        <span class="element-name">Quadrática</span>
+                    </div>
+                    <div class="element-item function-item" data-function="exp(x)">
+                        <span class="element-number"><i class="fas fa-chart-line"></i></span>
+                        <span class="element-symbol">eˣ</span>
+                        <span class="element-name">Exponencial</span>
+                    </div>
+                    <div class="element-item function-item" data-function="log(x)">
+                        <span class="element-number"><i class="fas fa-chart-line"></i></span>
+                        <span class="element-symbol">ln(x)</span>
+                        <span class="element-name">Logaritmo Natural</span>
+                    </div>
+                    <div class="element-item function-item" data-function="1/x">
+                        <span class="element-number"><i class="fas fa-divide"></i></span>
+                        <span class="element-symbol">1/x</span>
+                        <span class="element-name">Recíproca</span>
+                    </div>
+                </div>
+                <div class="action-buttons" style="margin-top: var(--space-md);">
+                    <button class="action-btn primary" id="customFunctionBtn">
+                        <i class="fas fa-plus"></i> Função Custom
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Central - Plot -->
+        <div class="center-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-chart-area"></i>
+                    <h2 class="section-title">Plot</h2>
+                    <div style="margin-left: auto; font-size: var(--font-xs); color: var(--text-tertiary);" id="plotInfo">
+                        Pronto para plotar
+                    </div>
+                </div>
+                <div class="center-scroll" style="height: calc(100% - 40px);">
+                    <div id="plotArea">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Plot de Funções</h3>
+                            <p>Entre com uma função ou selecione da lista para visualizar o gráfico.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel Direito - Controles -->
+        <div class="right-panel">
+            <div class="panel-card" style="height: 100%;">
+                <div class="section-header">
+                    <i class="fas fa-sliders-h"></i>
+                    <h2 class="section-title">Controles</h2>
+                </div>
+                <div class="center-scroll" id="controlsPanel">
+                    <div class="empty-state">
+                        <i class="fas fa-cog"></i>
+                        <p>Controles de plotagem</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

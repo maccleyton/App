@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Formatos - Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --workspace-bg: #0a0a0a;
+            --surface-bg: #141414;
+            --color-bg-page: #0a0a0a;
+            --surface-alt: #1a1a1a;
+            --border-color: #1a1a1a;
+            --border-hover: #10b981;
+            --text-primary: #e0e0e0;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --accent: #10b981;
+            --accent-soft: rgba(16, 185, 129, 0.15);
+            --accent-hover: #34d399;
+            --danger: #ef4444;
+            --color-primary-500: #10b981;
+            --color-primary-400: #34d399;
+            --color-primary-700: #047857;
+            --radius-md: 6px;
+            --radius-sm: 4px;
+            --shadow-hover: 0 4px 12px rgba(16, 185, 129, 0.2);
+            --space-xs: 3px;
+            --space-sm: 6px;
+            --space-md: 8px;
+            --space-lg: 10px;
+            --space-xl: 12px;
+            --font-xs: 9px;
+            --font-sm: 10px;
+            --font-md: 11px;
+            --font-lg: 12px;
+            --font-xl: 16px;
+            --font-regular: 400;
+            --font-medium: 500;
+            --font-semibold: 600;
+            --font-bold: 700;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--workspace-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--font-md);
+            font-weight: var(--font-regular);
+            line-height: 1.4;
+        }
+
+        .app-header {
+            background: var(--surface-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 12px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-left i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .header-title {
+            font-size: var(--font-xl);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-button,
+        .theme-toggle,
+        .user-menu {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            transition: all 0.2s ease-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+
+        .back-button:hover,
+        .theme-toggle:hover,
+        .user-menu:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .app-main {
+            height: calc(100vh - 48px);
+            padding: var(--space-md);
+            display: grid;
+            grid-template-columns: 240px 1fr 400px;
+            gap: var(--space-md);
+            background: var(--workspace-bg);
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+            overflow: hidden;
+        }
+
+        .panel-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md) var(--space-lg);
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-header i {
+            color: var(--accent);
+            font-size: var(--font-lg);
+        }
+
+        .section-title {
+            font-size: var(--font-lg);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+        }
+
+        .converters-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            overflow-y: auto;
+            padding-right: var(--space-xs);
+        }
+
+        .converters-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .converters-list::-webkit-scrollbar-track {
+            background: var(--surface-alt);
+        }
+
+        .converters-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .converters-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .converter-item {
+            background: var(--surface-bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md);
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .converter-item:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        .converter-item.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .converter-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: var(--font-lg);
+            flex-shrink: 0;
+        }
+
+        .converter-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .converter-name {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .converter-desc {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            gap: var(--space-md);
+        }
+
+        .input-card,
+        .output-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-md);
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+        }
+
+        .textarea-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100%;
+            padding: var(--space-md);
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+            font-size: var(--font-sm);
+            resize: none;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-lg);
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-secondary {
+            background: var(--surface-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .info-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-card::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .info-card::-webkit-scrollbar-track {
+            background: var(--surface-alt);
+        }
+
+        .info-card::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .info-card::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .info-section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .info-section h4 {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+            margin-bottom: var(--space-sm);
+        }
+
+        .info-section p {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--space-sm);
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-section li {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            padding: var(--space-xs) 0;
+            padding-left: var(--space-lg);
+            position: relative;
+        }
+
+        .info-section li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+
+        code {
+            background: var(--color-bg-page);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-family: 'Courier New', monospace;
+            font-size: var(--font-xs);
+            color: var(--accent);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        .stat-item {
+            background: var(--color-bg-page);
+            padding: var(--space-md);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-label {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .stat-value {
+            font-size: var(--font-lg);
+            font-weight: var(--font-bold);
+            color: var(--accent);
+        }
+
+        .conversion-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        .conversion-item {
+            background: var(--color-bg-page);
+            padding: var(--space-md);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .conversion-label {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xs);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .conversion-value {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        .badge {
+            display: inline-flex;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-xs);
+            font-weight: var(--font-semibold);
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        /* ✨ RESPONSIVIDADE */
+        
+        /* Tablets em paisagem */
+        @media (max-width: 1400px) {
+            .app-main {
+                grid-template-columns: 220px 1fr 350px;
+            }
+        }
+
+        /* Tablets em retrato */
+        @media (max-width: 1024px) {
+            .app-main {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+
+            .left-panel {
+                order: 1;
+            }
+
+            .center-panel {
+                order: 3;
+            }
+
+            .right-panel {
+                order: 2;
+                max-height: 200px;
+            }
+
+            .panel-card {
+                max-height: 150px;
+            }
+
+            .converters-list {
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+
+            .converter-item {
+                min-width: 150px;
+            }
+        }
+
+        /* Smartphones */
+        @media (max-width: 768px) {
+            .header-title {
+                font-size: var(--font-lg);
+            }
+
+            .app-main {
+                padding: var(--space-sm);
+                gap: var(--space-sm);
+            }
+
+            .input-card,
+            .output-card {
+                padding: var(--space-md);
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-group {
+                width: 100%;
+            }
+
+            .btn {
+                flex: 1;
+                padding: var(--space-sm) var(--space-md);
+                font-size: var(--font-sm);
+            }
+
+            .stats-grid,
+            .conversion-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .right-panel {
+                max-height: 150px;
+            }
+
+            .info-card {
+                padding: var(--space-md);
+            }
+        }
+
+        /* Smartphones pequenos */
+        @media (max-width: 480px) {
+            .header-left i {
+                display: none;
+            }
+
+            .converter-desc {
+                display: none;
+            }
+
+            .section-header {
+                margin-bottom: var(--space-md);
+            }
+
+            .btn i {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-exchange-alt"></i>
+            <h1 class="header-title">Conversor de Formatos</h1>
+        </div>
+        <div class="header-right">
+            <button class="back-button" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="user-menu">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <aside class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-list"></i>
+                    <h2 class="section-title">Conversores</h2>
+                </div>
+                
+                <div class="converters-list">
+                    <div class="converter-item active" onclick="selectConverter('json-xml')">
+                        <div class="converter-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">JSON ↔ XML</div>
+                            <div class="converter-desc">Converte entre formatos</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('json-yaml')">
+                        <div class="converter-icon">
+                            <i class="fas fa-file-code"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">JSON ↔ YAML</div>
+                            <div class="converter-desc">Formato legível</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('json-csv')">
+                        <div class="converter-icon">
+                            <i class="fas fa-table"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">JSON ↔ CSV</div>
+                            <div class="converter-desc">Dados tabulares</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('csv-sql')">
+                        <div class="converter-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">CSV → SQL</div>
+                            <div class="converter-desc">Gerar INSERT statements</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('number-bases')">
+                        <div class="converter-icon">
+                            <i class="fas fa-calculator"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Números: Base N</div>
+                            <div class="converter-desc">Bin, Oct, Dec, Hex</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('text-binary')">
+                        <div class="converter-icon">
+                            <i class="fas fa-binary"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Texto ↔ Binário</div>
+                            <div class="converter-desc">ASCII para binário</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('text-hex')">
+                        <div class="converter-icon">
+                            <i class="fas fa-hashtag"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Texto ↔ Hexadecimal</div>
+                            <div class="converter-desc">ASCII para hex</div>
+                        </div>
+                    </div>
+
+                    <!-- ✨ NOVOS: Minificadores -->
+                    <div class="converter-item" onclick="selectConverter('minify-css')">
+                        <div class="converter-icon">
+                            <i class="fab fa-css3-alt"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Minificar CSS</div>
+                            <div class="converter-desc">Compactar estilos</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('minify-js')">
+                        <div class="converter-icon">
+                            <i class="fab fa-js"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Minificar JavaScript</div>
+                            <div class="converter-desc">Compactar código</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('minify-json')">
+                        <div class="converter-icon">
+                            <i class="fas fa-compress"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Minificar JSON</div>
+                            <div class="converter-desc">Remover espaços</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('beautify')">
+                        <div class="converter-icon">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Formatar JSON</div>
+                            <div class="converter-desc">Identação legível</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('validate')">
+                        <div class="converter-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Validar JSON</div>
+                            <div class="converter-desc">Verificar sintaxe</div>
+                        </div>
+                    </div>
+
+                    <div class="converter-item" onclick="selectConverter('base64')">
+                        <div class="converter-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="converter-info">
+                            <div class="converter-name">Base64 Encode/Decode</div>
+                            <div class="converter-desc">Codificar texto</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="center-panel">
+            <div class="input-card">
+                <div class="card-header">
+                    <div class="section-header" style="margin-bottom: 0;">
+                        <i class="fas fa-file-import"></i>
+                        <h2 class="section-title">Entrada</h2>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="clearInput()">
+                            <i class="fas fa-trash"></i> Limpar
+                        </button>
+                        <button class="btn" onclick="convert()">
+                            <i class="fas fa-exchange-alt"></i> Converter
+                        </button>
+                    </div>
+                </div>
+                <div class="textarea-container">
+                    <textarea id="inputText" placeholder="Cole seu conteúdo aqui..."></textarea>
+                </div>
+            </div>
+
+            <div class="output-card">
+                <div class="card-header">
+                    <div class="section-header" style="margin-bottom: 0;">
+                        <i class="fas fa-file-export"></i>
+                        <h2 class="section-title">Resultado</h2>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="copyOutput()">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                        <button class="btn btn-secondary" onclick="downloadOutput()">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                </div>
+                <div class="textarea-container">
+                    <textarea id="outputText" placeholder="O resultado aparecerá aqui..." readonly></textarea>
+                </div>
+            </div>
+        </section>
+
+        <aside class="right-panel">
+            <div class="info-card">
+                <div class="section-header">
+                    <i class="fas fa-info-circle"></i>
+                    <h2 class="section-title">Informações</h2>
+                </div>
+
+                <div id="info-json-xml" class="info-content active">
+                    <div class="info-section">
+                        <h4>JSON ↔ XML</h4>
+                        <p>Converte dados estruturados entre formatos.</p>
+                    </div>
+                    <div class="stats-grid" id="statsJson">
+                        <div class="stat-item">
+                            <div class="stat-label">Caracteres</div>
+                            <div class="stat-value">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Linhas</div>
+                            <div class="stat-value">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="info-json-yaml" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>JSON ↔ YAML</h4>
+                        <p>YAML é mais legível para configs.</p>
+                    </div>
+                </div>
+
+                <div id="info-json-csv" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>JSON ↔ CSV</h4>
+                        <p>CSV ideal para Excel.</p>
+                    </div>
+                </div>
+
+                <div id="info-csv-sql" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>CSV → SQL</h4>
+                        <p>Gera INSERT statements.</p>
+                    </div>
+                </div>
+
+                <div id="info-number-bases" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Números: Sistemas de Base</h4>
+                        <p>Converte entre Bin, Oct, Dec, Hex.</p>
+                    </div>
+                    <div id="baseConversions" class="conversion-grid"></div>
+                </div>
+
+                <div id="info-text-binary" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Texto ↔ Binário</h4>
+                        <p>ASCII para representação binária.</p>
+                    </div>
+                </div>
+
+                <div id="info-text-hex" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Texto ↔ Hexadecimal</h4>
+                        <p>ASCII para hex compacto.</p>
+                    </div>
+                </div>
+
+                <!-- ✨ NOVAS INFOS: Minificadores -->
+                <div id="info-minify-css" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Minificar CSS</h4>
+                        <p>Compacta código CSS removendo espaços, comentários e quebras de linha.</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Remove</h4>
+                        <ul>
+                            <li>Comentários /* */</li>
+                            <li>Espaços desnecessários</li>
+                            <li>Quebras de linha</li>
+                            <li>Último ponto-e-vírgula</li>
+                        </ul>
+                    </div>
+                    <div class="info-section">
+                        <h4>Redução</h4>
+                        <p>Tipicamente <span class="badge">30-40%</span> menor</p>
+                    </div>
+                </div>
+
+                <div id="info-minify-js" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Minificar JavaScript</h4>
+                        <p>Compacta código JS removendo elementos desnecessários.</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Remove</h4>
+                        <ul>
+                            <li>Comentários // e /* */</li>
+                            <li>Espaços extras</li>
+                            <li>Quebras de linha</li>
+                            <li>Ponto-e-vírgula opcional</li>
+                        </ul>
+                    </div>
+                    <div class="info-section">
+                        <h4>⚠️ Nota</h4>
+                        <p>Minificação básica. Para produção, use ferramentas como Terser ou UglifyJS.</p>
+                    </div>
+                </div>
+
+                <div id="info-minify-json" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Minificar JSON</h4>
+                        <p>Remove espaços e quebras de linha.</p>
+                    </div>
+                </div>
+
+                <div id="info-beautify" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Formatar JSON</h4>
+                        <p>Adiciona indentação para legibilidade.</p>
+                    </div>
+                </div>
+
+                <div id="info-validate" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Validar JSON</h4>
+                        <p>Verifica sintaxe do JSON.</p>
+                    </div>
+                </div>
+
+                <div id="info-base64" class="info-content" style="display: none;">
+                    <div class="info-section">
+                        <h4>Base64 Encode/Decode</h4>
+                        <p>Codifica/decodifica em Base64.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        let currentConverter = 'json-xml';
+
+        function selectConverter(converter) {
+            currentConverter = converter;
+            
+            document.querySelectorAll('.converter-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.info-content').forEach(info => info.style.display = 'none');
+            const infoId = 'info-' + converter;
+            const infoElement = document.getElementById(infoId);
+            if (infoElement) {
+                infoElement.style.display = 'block';
+            }
+
+            document.getElementById('outputText').value = '';
+            
+            const conversionsDiv = document.getElementById('baseConversions');
+            if (conversionsDiv) conversionsDiv.innerHTML = '';
+        }
+
+        function convert() {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputText');
+
+            if (!input) {
+                output.value = 'Por favor, insira algum conteúdo na entrada.';
+                return;
+            }
+
+            try {
+                let result = '';
+
+                switch (currentConverter) {
+                    case 'json-xml':
+                        result = convertJsonToXml(input);
+                        break;
+                    case 'json-yaml':
+                        result = convertJsonToYaml(input);
+                        break;
+                    case 'json-csv':
+                        result = convertJsonToCsv(input);
+                        break;
+                    case 'csv-sql':
+                        result = convertCsvToSql(input);
+                        break;
+                    case 'number-bases':
+                        result = convertNumberBases(input);
+                        break;
+                    case 'text-binary':
+                        result = convertTextBinary(input);
+                        break;
+                    case 'text-hex':
+                        result = convertTextHex(input);
+                        break;
+                    case 'minify-css':
+                        result = minifyCSS(input);
+                        break;
+                    case 'minify-js':
+                        result = minifyJS(input);
+                        break;
+                    case 'minify-json':
+                        result = minifyJson(input);
+                        break;
+                    case 'beautify':
+                        result = beautifyJson(input);
+                        break;
+                    case 'validate':
+                        result = validateJson(input);
+                        break;
+                    case 'base64':
+                        result = convertBase64(input);
+                        break;
+                    default:
+                        result = 'Conversor não implementado.';
+                }
+
+                output.value = result;
+                updateStats(input, result);
+
+            } catch (error) {
+                output.value = 'ERRO: ' + error.message;
+            }
+        }
+
+        // ✨ MINIFICADORES CSS E JS
+
+        function minifyCSS(css) {
+            let minified = css;
+            
+            // Remove comentários
+            minified = minified.replace(/\/\*[\s\S]*?\*\//g, '');
+            
+            // Remove espaços ao redor de {, }, :, ;, ,
+            minified = minified.replace(/\s*{\s*/g, '{');
+            minified = minified.replace(/\s*}\s*/g, '}');
+            minified = minified.replace(/\s*:\s*/g, ':');
+            minified = minified.replace(/\s*;\s*/g, ';');
+            minified = minified.replace(/\s*,\s*/g, ',');
+            
+            // Remove quebras de linha e espaços múltiplos
+            minified = minified.replace(/\s+/g, ' ');
+            
+            // Remove espaços antes e depois
+            minified = minified.trim();
+            
+            // Remove último ponto-e-vírgula antes de }
+            minified = minified.replace(/;}/g, '}');
+            
+            const original = css.length;
+            const result = minified.length;
+            const saved = ((1 - result / original) * 100).toFixed(1);
+            
+            return `/* CSS Minificado */
+/* Original: ${original.toLocaleString()} bytes */
+/* Minificado: ${result.toLocaleString()} bytes */
+/* Economia: ${saved}% */
+
+${minified}`;
+        }
+
+        function minifyJS(js) {
+            let minified = js;
+            
+            // Remove comentários de linha
+            minified = minified.replace(/\/\/.*$/gm, '');
+            
+            // Remove comentários de bloco
+            minified = minified.replace(/\/\*[\s\S]*?\*\//g, '');
+            
+            // Remove espaços ao redor de operadores e pontuação
+            minified = minified.replace(/\s*([{};,=()[\]])\s*/g, '$1');
+            
+            // Remove quebras de linha e espaços múltiplos
+            minified = minified.replace(/\s+/g, ' ');
+            
+            // Remove espaços antes e depois
+            minified = minified.trim();
+            
+            const original = js.length;
+            const result = minified.length;
+            const saved = ((1 - result / original) * 100).toFixed(1);
+            
+            return `/* JavaScript Minificado */
+/* Original: ${original.toLocaleString()} bytes */
+/* Minificado: ${result.toLocaleString()} bytes */
+/* Economia: ${saved}% */
+
+${minified}`;
+        }
+
+        // Funções existentes (mantidas)
+        function convertNumberBases(input) {
+            const num = input.trim();
+            let decimal;
+
+            if (num.startsWith('0b')) {
+                decimal = parseInt(num.slice(2), 2);
+            } else if (num.startsWith('0x')) {
+                decimal = parseInt(num.slice(2), 16);
+            } else if (num.startsWith('0o')) {
+                decimal = parseInt(num.slice(2), 8);
+            } else {
+                decimal = parseInt(num, 10);
+            }
+
+            if (isNaN(decimal)) {
+                throw new Error('Número inválido');
+            }
+
+            const binary = decimal.toString(2);
+            const octal = decimal.toString(8);
+            const hex = decimal.toString(16).toUpperCase();
+
+            showBaseConversions(decimal, binary, octal, hex);
+
+            return `Conversões de Base para: ${decimal}
+
+BINÁRIO (Base 2):
+${binary}
+
+OCTAL (Base 8):
+${octal}
+
+DECIMAL (Base 10):
+${decimal}
+
+HEXADECIMAL (Base 16):
+${hex}`;
+        }
+
+        function showBaseConversions(dec, bin, oct, hex) {
+            const conversionsDiv = document.getElementById('baseConversions');
+            if (!conversionsDiv) return;
+
+            conversionsDiv.innerHTML = `
+                <div class="conversion-item">
+                    <div class="conversion-label"><span class="badge">DEC</span> Decimal</div>
+                    <div class="conversion-value">${dec}</div>
+                </div>
+                <div class="conversion-item">
+                    <div class="conversion-label"><span class="badge">BIN</span> Binário</div>
+                    <div class="conversion-value">${bin}</div>
+                </div>
+                <div class="conversion-item">
+                    <div class="conversion-label"><span class="badge">OCT</span> Octal</div>
+                    <div class="conversion-value">${oct}</div>
+                </div>
+                <div class="conversion-item">
+                    <div class="conversion-label"><span class="badge">HEX</span> Hexadecimal</div>
+                    <div class="conversion-value">${hex}</div>
+                </div>
+            `;
+        }
+
+        function convertTextBinary(input) {
+            if (/^[01\s]+$/.test(input)) {
+                const binary = input.replace(/\s/g, '');
+                let text = '';
+                for (let i = 0; i < binary.length; i += 8) {
+                    const byte = binary.substr(i, 8);
+                    if (byte.length === 8) {
+                        text += String.fromCharCode(parseInt(byte, 2));
+                    }
+                }
+                return `BINÁRIO → TEXTO\n\n${text}`;
+            } else {
+                let binary = '';
+                for (let i = 0; i < input.length; i++) {
+                    const byte = input.charCodeAt(i).toString(2).padStart(8, '0');
+                    binary += byte + ' ';
+                    if ((i + 1) % 4 === 0) binary += ' ';
+                }
+                return `TEXTO → BINÁRIO\n\n${binary.trim()}`;
+            }
+        }
+
+        function convertTextHex(input) {
+            if (/^[0-9A-Fa-f\s]+$/.test(input) && input.length > 3) {
+                const hex = input.replace(/\s/g, '');
+                let text = '';
+                for (let i = 0; i < hex.length; i += 2) {
+                    const byte = hex.substr(i, 2);
+                    text += String.fromCharCode(parseInt(byte, 16));
+                }
+                return `HEXADECIMAL → TEXTO\n\n${text}`;
+            } else {
+                let hex = '';
+                for (let i = 0; i < input.length; i++) {
+                    const byte = input.charCodeAt(i).toString(16).toUpperCase().padStart(2, '0');
+                    hex += byte + ' ';
+                    if ((i + 1) % 8 === 0) hex += '\n';
+                }
+                return `TEXTO → HEXADECIMAL\n\n${hex.trim()}`;
+            }
+        }
+
+        function convertJsonToXml(input) {
+            const obj = JSON.parse(input);
+            
+            function objectToXml(obj, indent = 0) {
+                const spaces = '  '.repeat(indent);
+                let xml = '';
+
+                for (const key in obj) {
+                    const value = obj[key];
+                    xml += `${spaces}<${key}>`;
+
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        xml += '\n' + objectToXml(value, indent + 1) + spaces;
+                    } else if (Array.isArray(value)) {
+                        xml += '\n';
+                        value.forEach(item => {
+                            xml += `${spaces}  <item>`;
+                            if (typeof item === 'object') {
+                                xml += '\n' + objectToXml(item, indent + 2) + spaces + '  ';
+                            } else {
+                                xml += item;
+                            }
+                            xml += `</item>\n`;
+                        });
+                        xml += spaces;
+                    } else {
+                        xml += value;
+                    }
+
+                    xml += `</${key}>\n`;
+                }
+
+                return xml;
+            }
+
+            return '<?xml version="1.0" encoding="UTF-8"?>\n<root>\n' + objectToXml(obj, 1) + '</root>';
+        }
+
+        function convertJsonToYaml(input) {
+            const obj = JSON.parse(input);
+            return jsyaml.dump(obj, { indent: 2 });
+        }
+
+        function convertJsonToCsv(input) {
+            const arr = JSON.parse(input);
+            
+            if (!Array.isArray(arr) || arr.length === 0) {
+                throw new Error('JSON deve ser um array não vazio');
+            }
+
+            const headers = Object.keys(arr[0]);
+            let csv = headers.join(',') + '\n';
+
+            arr.forEach(obj => {
+                const values = headers.map(header => {
+                    const value = obj[header];
+                    return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
+                });
+                csv += values.join(',') + '\n';
+            });
+
+            return csv;
+        }
+
+        function convertCsvToSql(input) {
+            const lines = input.trim().split('\n');
+            
+            if (lines.length < 2) {
+                throw new Error('CSV deve ter cabeçalho e dados');
+            }
+
+            const tableName = 'tabela';
+            const headers = lines[0].split(',').map(h => h.trim());
+            let sql = '';
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',').map(v => {
+                    v = v.trim();
+                    return isNaN(v) ? `'${v}'` : v;
+                });
+
+                sql += `INSERT INTO ${tableName} (${headers.join(', ')}) VALUES (${values.join(', ')});\n`;
+            }
+
+            return sql;
+        }
+
+        function minifyJson(input) {
+            const obj = JSON.parse(input);
+            return JSON.stringify(obj);
+        }
+
+        function beautifyJson(input) {
+            const obj = JSON.parse(input);
+            return JSON.stringify(obj, null, 2);
+        }
+
+        function validateJson(input) {
+            try {
+                JSON.parse(input);
+                return '✓ JSON válido!\n\nSua sintaxe está correta.';
+            } catch (e) {
+                return '✗ JSON inválido\n\nErro: ' + e.message;
+            }
+        }
+
+        function convertBase64(input) {
+            try {
+                const decoded = atob(input);
+                return 'DECODE (Base64 → Texto):\n\n' + decoded;
+            } catch {
+                const encoded = btoa(input);
+                return 'ENCODE (Texto → Base64):\n\n' + encoded;
+            }
+        }
+
+        function updateStats(input, output) {
+            const chars = input.length;
+            const lines = input.split('\n').length;
+            
+            const statsElement = document.querySelector('#statsJson');
+            if (statsElement) {
+                const values = statsElement.querySelectorAll('.stat-value');
+                values[0].textContent = chars.toLocaleString();
+                values[1].textContent = lines.toLocaleString();
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('inputText').value = '';
+            document.getElementById('outputText').value = '';
+            updateStats('', '');
+            
+            const conversionsDiv = document.getElementById('baseConversions');
+            if (conversionsDiv) conversionsDiv.innerHTML = '';
+        }
+
+        function copyOutput() {
+            const output = document.getElementById('outputText');
+            output.select();
+            document.execCommand('copy');
+            
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        }
+
+        function downloadOutput() {
+            const output = document.getElementById('outputText').value;
+            
+            if (!output) {
+                alert('Nada para baixar');
+                return;
+            }
+
+            const extensions = {
+                'json-xml': 'xml',
+                'json-yaml': 'yaml',
+                'json-csv': 'csv',
+                'csv-sql': 'sql',
+                'number-bases': 'txt',
+                'text-binary': 'txt',
+                'text-hex': 'txt',
+                'minify-css': 'css',
+                'minify-js': 'js',
+                'minify-json': 'json',
+                'beautify': 'json',
+                'validate': 'txt',
+                'base64': 'txt'
+            };
+
+            const ext = extensions[currentConverter] || 'txt';
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `output.${ext}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Sample data
+        document.getElementById('inputText').value = JSON.stringify({
+            "nome": "João Silva",
+            "idade": 30,
+            "cidade": "São Paulo",
+            "ativo": true
+        }, null, 2);
+
+        updateStats(document.getElementById('inputText').value, '');
+    </script>
+</body>
+</html>

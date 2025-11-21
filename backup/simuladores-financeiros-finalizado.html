@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simuladores Financeiros - Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --workspace-bg: #0a0a0a;
+            --surface-bg: #141414;
+            --color-bg-page: #0a0a0a;
+            --surface-alt: #1a1a1a;
+            --border-color: #1a1a1a;
+            --border-hover: #10b981;
+            --text-primary: #e0e0e0;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --accent: #10b981;
+            --accent-soft: rgba(16, 185, 129, 0.15);
+            --accent-hover: #34d399;
+            --danger: #ef4444;
+            --color-primary-500: #10b981;
+            --color-primary-400: #34d399;
+            --color-primary-700: #047857;
+            --radius-md: 6px;
+            --radius-sm: 4px;
+            --shadow-hover: 0 4px 12px rgba(16, 185, 129, 0.2);
+            --space-xs: 3px;
+            --space-sm: 6px;
+            --space-md: 8px;
+            --space-lg: 10px;
+            --space-xl: 12px;
+            --font-xs: 9px;
+            --font-sm: 10px;
+            --font-md: 11px;
+            --font-lg: 12px;
+            --font-xl: 16px;
+            --font-regular: 400;
+            --font-medium: 500;
+            --font-semibold: 600;
+            --font-bold: 700;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--workspace-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--font-md);
+            font-weight: var(--font-regular);
+            line-height: 1.4;
+        }
+
+        .app-header {
+            background: var(--surface-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 12px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-left i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .header-title {
+            font-size: var(--font-xl);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-button,
+        .theme-toggle,
+        .user-menu {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            transition: all 0.2s ease-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+
+        .back-button:hover,
+        .theme-toggle:hover,
+        .user-menu:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* ✨ LAYOUT AJUSTADO - Coluna central menor */
+        .app-main {
+            height: calc(100vh - 48px);
+            padding: var(--space-md);
+            display: grid;
+            grid-template-columns: 240px 450px 1fr;
+            gap: var(--space-md);
+            background: var(--workspace-bg);
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+            overflow: hidden;
+        }
+
+        .panel-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md) var(--space-lg);
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-header i {
+            color: var(--accent);
+            font-size: var(--font-lg);
+        }
+
+        .section-title {
+            font-size: var(--font-lg);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+        }
+
+        .simulators-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            overflow-y: auto;
+            padding-right: var(--space-xs);
+        }
+
+        .simulator-item {
+            background: var(--surface-bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md);
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .simulator-item:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        .simulator-item.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .simulator-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: var(--font-lg);
+        }
+
+        .simulator-info {
+            flex: 1;
+        }
+
+        .simulator-name {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .simulator-desc {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .center-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: var(--space-sm);
+        }
+
+        .center-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .center-scroll::-webkit-scrollbar-track {
+            background: var(--surface-alt);
+            border-radius: 2px;
+        }
+
+        .center-scroll::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .center-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .form-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+        }
+
+        .form-content {
+            display: none;
+        }
+
+        .form-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-label {
+            display: block;
+            font-size: var(--font-sm);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: var(--space-md);
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: var(--font-md);
+            transition: all 0.2s ease-out;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-helper {
+            display: block;
+            margin-top: var(--space-xs);
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+        }
+
+        .radio-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        .radio-group-container {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: var(--space-lg);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .radio-option input[type="radio"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+        }
+
+        .radio-option label {
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: var(--font-sm);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: var(--accent);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-md) var(--space-xl);
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            margin-top: var(--space-lg);
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-secondary {
+            background: var(--surface-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-bg);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: var(--space-md);
+            margin-top: var(--space-lg);
+        }
+
+        .results-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            display: none;
+        }
+
+        .results-card.active {
+            display: block;
+        }
+
+        /* ✨ GRID DE RESULTADOS - Ajustado para 2 colunas */
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-md);
+        }
+
+        .result-item {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: var(--space-md);
+        }
+
+        .result-label {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xs);
+        }
+
+        .result-value {
+            font-size: var(--font-lg);
+            font-weight: var(--font-bold);
+            color: var(--accent);
+        }
+
+        /* ✨ COLUNA DIREITA - Maior espaço para visualizações */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .viz-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .viz-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .viz-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-container {
+            position: relative;
+            flex: 1;
+            min-height: 400px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            max-height: 100%;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: var(--color-bg-page);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: var(--space-md);
+            text-align: left;
+            font-size: var(--font-xs);
+            font-weight: var(--font-semibold);
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: var(--space-md);
+            font-size: var(--font-xs);
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tbody tr:hover {
+            background: var(--surface-alt);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: var(--space-lg);
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: var(--border-color);
+        }
+
+        .empty-state p {
+            font-size: var(--font-md);
+            text-align: center;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1400px) {
+            .app-main {
+                grid-template-columns: 220px 400px 1fr;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .app-main {
+                grid-template-columns: 200px 350px 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-calculator"></i>
+            <h1 class="header-title">Simuladores Financeiros</h1>
+        </div>
+        <div class="header-right">
+            <button class="back-button" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="user-menu">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="app-main">
+        <!-- PAINEL ESQUERDO - Menu -->
+        <aside class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-list"></i>
+                    <h2 class="section-title">Simuladores</h2>
+                </div>
+                
+                <div class="simulators-list">
+                    <div class="simulator-item active" onclick="selectSimulator('investimentos')">
+                        <div class="simulator-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="simulator-info">
+                            <div class="simulator-name">Investimentos</div>
+                            <div class="simulator-desc">CDB, LCI, LCA, Tesouro</div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-item" onclick="selectSimulator('desconto')">
+                        <div class="simulator-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <div class="simulator-info">
+                            <div class="simulator-name">Desconto Comercial</div>
+                            <div class="simulator-desc">Antecipação de títulos</div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-item" onclick="selectSimulator('conversor')">
+                        <div class="simulator-icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <div class="simulator-info">
+                            <div class="simulator-name">Conversor de Taxas</div>
+                            <div class="simulator-desc">Entre diferentes períodos</div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-item" onclick="selectSimulator('credito')">
+                        <div class="simulator-icon">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <div class="simulator-info">
+                            <div class="simulator-name">Operações de Crédito</div>
+                            <div class="simulator-desc">SAC, PRICE, Carência</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- PAINEL CENTRAL - Parâmetros + Resultados -->
+        <section class="center-panel">
+            <div class="center-scroll">
+                <!-- INVESTIMENTOS -->
+                <div id="form-investimentos" class="form-content active">
+                    <div class="form-card">
+                        <div class="section-header">
+                            <i class="fas fa-chart-line"></i>
+                            <h2 class="section-title">Simulador de Investimentos</h2>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Valor do Investimento (R$)</label>
+                                <input type="number" id="valorInvestimento" class="form-input" placeholder="10000.00" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tipo de Taxa</label>
+                                <select id="tipoTaxa" class="form-select" onchange="updateTaxaFields()">
+                                    <option value="">Selecione...</option>
+                                    <option value="CDI">CDI</option>
+                                    <option value="SELIC">SELIC</option>
+                                    <option value="IPCA">IPCA</option>
+                                    <option value="CDI+">CDI+</option>
+                                    <option value="SELIC+">SELIC+</option>
+                                    <option value="IPCA+">IPCA+</option>
+                                    <option value="Prefixada">Prefixada</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group" id="taxaBaseGroup" style="display: none;">
+                                <label class="form-label">Taxa Base (% a.a.)</label>
+                                <input type="number" id="taxaBase" class="form-input" placeholder="100" step="0.01">
+                                <small class="form-helper">CDI: 14,9% | SELIC: 15,00% | IPCA: 5.20%</small>
+                            </div>
+
+                            <div class="form-group" id="flexGroup" style="display: none;">
+                                <label class="form-label">Flex (%)</label>
+                                <input type="number" id="flex" class="form-input" placeholder="100" step="0.01">
+                            </div>
+
+                            <div class="form-group" id="spreadGroup" style="display: none;">
+                                <label class="form-label">Spread</label>
+                                <input type="number" id="spread" class="form-input" placeholder="0.5" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Data de Vencimento</label>
+                                <input type="date" id="dataVencimento" class="form-input">
+                            </div>
+
+                            <div class="form-group">
+                                <div class="checkbox-group" style="margin-top: 26px;">
+                                    <input type="checkbox" id="isentoIR">
+                                    <label for="isentoIR">Isento de IR</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="calcularInvestimento()">Calcular Investimento</button>
+                    </div>
+
+                    <div id="results-investimentos" class="results-card">
+                        <div class="section-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <h2 class="section-title">Resultados</h2>
+                        </div>
+
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-label">Taxa Real</div>
+                                <div class="result-value" id="taxaReal">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Valor Bruto</div>
+                                <div class="result-value" id="valorBruto">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Rendimento</div>
+                                <div class="result-value" id="rendimento">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">IOF</div>
+                                <div class="result-value" id="iof">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">IRRF</div>
+                                <div class="result-value" id="irrf">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Valor Líquido</div>
+                                <div class="result-value" id="valorLiquido">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DESCONTO COMERCIAL -->
+                <div id="form-desconto" class="form-content">
+                    <div class="form-card">
+                        <div class="section-header">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <h2 class="section-title">Desconto Comercial</h2>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Valor Nominal (R$)</label>
+                                <input type="number" id="valorNominal" class="form-input" placeholder="10000.00" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Data de Vencimento</label>
+                                <input type="date" id="dataVencimentoDesconto" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Taxa de Desconto (% a.m.)</label>
+                                <input type="number" id="taxaDesconto" class="form-input" placeholder="2.5" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tarifas Adicionais (R$)</label>
+                                <input type="number" id="tarifasAdicionais" class="form-input" placeholder="0.00" step="0.01" value="0">
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="calcularDesconto()">Calcular Desconto</button>
+                    </div>
+
+                    <div id="results-desconto" class="results-card">
+                        <div class="section-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <h2 class="section-title">Resultados</h2>
+                        </div>
+
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-label">Prazo (dias)</div>
+                                <div class="result-value" id="prazoMedio">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Juros/Custos</div>
+                                <div class="result-value" id="jurosCustos">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">IOF Fixo</div>
+                                <div class="result-value" id="iofFixo">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">IOF Adicional</div>
+                                <div class="result-value" id="iofAdicional">-</div>
+                            </div>
+                            <div class="result-item" style="grid-column: span 2;">
+                                <div class="result-label">Valor Descontado</div>
+                                <div class="result-value" id="valorDescontado">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONVERSOR DE TAXAS -->
+                <div id="form-conversor" class="form-content">
+                    <div class="form-card">
+                        <div class="section-header">
+                            <i class="fas fa-sync-alt"></i>
+                            <h2 class="section-title">Conversor de Taxas</h2>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Taxa de Entrada (%)</label>
+                            <input type="number" id="taxaEntrada" class="form-input" placeholder="10.5" step="0.01">
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Período de Origem</label>
+                                <select id="periodoOrigem" class="form-select">
+                                    <option value="diario">Diário</option>
+                                    <option value="semanal">Semanal</option>
+                                    <option value="mensal" selected>Mensal</option>
+                                    <option value="bimestral">Bimestral</option>
+                                    <option value="trimestral">Trimestral</option>
+                                    <option value="semestral">Semestral</option>
+                                    <option value="anual">Anual</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Período de Destino</label>
+                                <select id="periodoDestino" class="form-select">
+                                    <option value="diario">Diário</option>
+                                    <option value="semanal">Semanal</option>
+                                    <option value="mensal">Mensal</option>
+                                    <option value="bimestral">Bimestral</option>
+                                    <option value="trimestral">Trimestral</option>
+                                    <option value="semestral">Semestral</option>
+                                    <option value="anual" selected>Anual</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="converterTaxas()">Converter Taxa</button>
+                    </div>
+
+                    <div id="results-conversor" class="results-card">
+                        <div class="section-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <h2 class="section-title">Resultados</h2>
+                        </div>
+
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-label">Taxa Convertida</div>
+                                <div class="result-value" id="taxaConvertida">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Equiv. Mensal</div>
+                                <div class="result-value" id="equivalenteMensal">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Equiv. Anual</div>
+                                <div class="result-value" id="equivalenteAnual">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OPERAÇÕES DE CRÉDITO -->
+                <div id="form-credito" class="form-content">
+                    <div class="form-card">
+                        <div class="section-header">
+                            <i class="fas fa-hand-holding-usd"></i>
+                            <h2 class="section-title">Operações de Crédito</h2>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Valor Financiado (R$)</label>
+                                <input type="number" id="creditValue" class="form-input" placeholder="100000.00" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Tipo de Amortização</label>
+                                <select id="amortizationType" class="form-select">
+                                    <option value="SAC">SAC</option>
+                                    <option value="PRICE">PRICE</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Dia Base</label>
+                                <select id="baseDay" class="form-select">
+                                    <option value="1">1º dia do mês</option>
+                                    <option value="15">15º dia do mês</option>
+                                    <option value="30">Último dia do mês</option>
+                                    <option value="contratacao" selected>Data de contratação</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Carência (meses)</label>
+                                <input type="number" id="gracePeriod" class="form-input" placeholder="0" min="0" max="120" step="1" value="0">
+                            </div>
+                        </div>
+
+                        <div class="radio-grid">
+                            <div class="radio-group-container">
+                                <label class="form-label">Juros na Carência</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="interestYes" name="interestOnGrace" value="yes" checked>
+                                        <label for="interestYes">Sim - Calcular juros</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="interestNo" name="interestOnGrace" value="no">
+                                        <label for="interestNo">Não - Não calcular</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="radio-group-container">
+                                <label class="form-label">Forma de Cobrança</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="chargeFirst" name="interestCharge" value="first" checked>
+                                        <label for="chargeFirst">Na primeira parcela</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="chargeDiluted" name="interestCharge" value="amortization">
+                                        <label for="chargeDiluted">Diluído</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Amortização</label>
+                                <select id="amortizationFrequency" class="form-select">
+                                    <option value="mensal" selected>Mensal</option>
+                                    <option value="bimestral">Bimestral</option>
+                                    <option value="trimestral">Trimestral</option>
+                                    <option value="semestral">Semestral</option>
+                                    <option value="anual">Anual</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Prazo Total (meses)</label>
+                                <input type="number" id="totalTerm" class="form-input" placeholder="36" min="1" max="360" step="1" value="36">
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">TAC (R$)</label>
+                                <input type="number" id="tac" class="form-input" placeholder="0.00" step="0.01" value="0">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">FLAT (R$)</label>
+                                <input type="number" id="flatCommission" class="form-input" placeholder="0.00" step="0.01" value="0">
+                            </div>
+                        </div>
+
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">Taxa (% a.m.)</label>
+                                <input type="number" id="interestRate" class="form-input" placeholder="1.5" step="0.01">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Sobretaxa (% a.m.)</label>
+                                <input type="number" id="surchargeRate" class="form-input" placeholder="0" step="0.01" value="0">
+                            </div>
+                        </div>
+
+                        <button class="btn" onclick="calculateCredit()">Calcular Operação</button>
+                    </div>
+
+                    <div id="results-credito" class="results-card">
+                        <div class="section-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <h2 class="section-title">Resultados</h2>
+                        </div>
+
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-label">CET Mensal</div>
+                                <div class="result-value" id="cetMensal">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">CET Anual</div>
+                                <div class="result-value" id="cetAnual">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Total Juros</div>
+                                <div class="result-value" id="totalJuros">-</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-label">Total Pago</div>
+                                <div class="result-value" id="totalPago">-</div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="exportarCronograma()" style="margin-top: 12px;">
+                            <i class="fas fa-download"></i> Exportar CSV
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAINEL DIREITO - Visualizações -->
+        <aside class="right-panel">
+            <div class="viz-card">
+                <div class="section-header">
+                    <i class="fas fa-eye"></i>
+                    <h2 class="section-title">Visualização</h2>
+                </div>
+
+                <!-- Empty State -->
+                <div id="viz-empty" class="viz-content active">
+                    <div class="empty-state">
+                        <i class="fas fa-chart-area"></i>
+                        <p>Calcule para visualizar<br>gráficos e cronogramas</p>
+                    </div>
+                </div>
+
+                <!-- Gráfico Investimentos -->
+                <div id="viz-investimentos" class="viz-content">
+                    <div class="chart-container">
+                        <canvas id="chartInvestimentos"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico Desconto -->
+                <div id="viz-desconto" class="viz-content">
+                    <div class="chart-container">
+                        <canvas id="chartDesconto"></canvas>
+                    </div>
+                </div>
+
+                <!-- Tabela Conversor -->
+                <div id="viz-conversor" class="viz-content">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Período</th>
+                                    <th>Taxa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaConversao"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Cronograma Crédito -->
+                <div id="viz-credito" class="viz-content">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Parc.</th>
+                                    <th>Venc.</th>
+                                    <th>Amort.</th>
+                                    <th>Juros</th>
+                                    <th>Parcela</th>
+                                    <th>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cronograma"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // GLOBALS
+        let currentSchedule = [];
+        let currentSimulator = 'investimentos';
+        let chartInvestimentos = null;
+        let chartDesconto = null;
+
+        // CHART CONFIG
+        const chartConfig = {
+            type: 'line',
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#e0e0e0', font: { size: 10 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af', font: { size: 9 } },
+                        grid: { color: '#1a1a1a' }
+                    },
+                    y: {
+                        ticks: { 
+                            color: '#9ca3af', 
+                            font: { size: 9 },
+                            callback: value => 'R$ ' + value.toLocaleString('pt-BR')
+                        },
+                        grid: { color: '#1a1a1a' }
+                    }
+                }
+            }
+        };
+
+        // NAVIGATION
+        function selectSimulator(simulator) {
+            currentSimulator = simulator;
+            document.querySelectorAll('.simulator-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.querySelectorAll('.form-content').forEach(form => form.classList.remove('active'));
+            document.getElementById(`form-${simulator}`).classList.add('active');
+            
+            // Reset visualizações
+            document.querySelectorAll('.viz-content').forEach(viz => viz.classList.remove('active'));
+            const hasResults = document.getElementById(`results-${simulator}`)?.classList.contains('active');
+            
+            if (hasResults) {
+                document.getElementById(`viz-${simulator}`).classList.add('active');
+            } else {
+                document.getElementById('viz-empty').classList.add('active');
+            }
+        }
+
+        function showViz(simulator) {
+            document.querySelectorAll('.viz-content').forEach(viz => viz.classList.remove('active'));
+            document.getElementById(`viz-${simulator}`).classList.add('active');
+        }
+
+        // INVESTIMENTOS
+        function updateTaxaFields() {
+            const tipoTaxa = document.getElementById('tipoTaxa').value;
+            const taxaBaseGroup = document.getElementById('taxaBaseGroup');
+            const flexGroup = document.getElementById('flexGroup');
+            const spreadGroup = document.getElementById('spreadGroup');
+
+            taxaBaseGroup.style.display = 'none';
+            flexGroup.style.display = 'none';
+            spreadGroup.style.display = 'none';
+
+            if (tipoTaxa.includes('+')) {
+                taxaBaseGroup.style.display = 'block';
+                flexGroup.style.display = 'block';
+                spreadGroup.style.display = 'block';
+            } else if (tipoTaxa && tipoTaxa !== 'Prefixada') {
+                flexGroup.style.display = 'block';
+            } else if (tipoTaxa === 'Prefixada') {
+                taxaBaseGroup.style.display = 'block';
+            }
+        }
+
+        function calcularInvestimento() {
+            const valorInvestimento = parseFloat(document.getElementById('valorInvestimento').value);
+            const tipoTaxa = document.getElementById('tipoTaxa').value;
+            const dataVencimento = new Date(document.getElementById('dataVencimento').value);
+            const isentoIR = document.getElementById('isentoIR').checked;
+
+            if (!valorInvestimento || !tipoTaxa || !dataVencimento) {
+                alert('Preencha todos os campos obrigatórios');
+                return;
+            }
+
+            const hoje = new Date();
+            const prazo = Math.floor((dataVencimento - hoje) / (1000 * 60 * 60 * 24));
+
+            let taxaReal = 0;
+            const taxasBase = { CDI: 14.9, SELIC: 15.0, IPCA: 5.2 };
+
+            if (tipoTaxa === 'Prefixada') {
+                taxaReal = parseFloat(document.getElementById('taxaBase').value) || 0;
+            } else if (tipoTaxa.includes('+')) {
+                const base = tipoTaxa.replace('+', '');
+                const taxaBaseValor = taxasBase[base];
+                const flex = parseFloat(document.getElementById('flex').value) || 100;
+                const spread = parseFloat(document.getElementById('spread').value) || 0;
+                taxaReal = (taxaBaseValor * flex / 100) + spread;
+            } else {
+                const flex = parseFloat(document.getElementById('flex').value) || 100;
+                taxaReal = taxasBase[tipoTaxa] * flex / 100;
+            }
+
+            const taxaDiaria = Math.pow(1 + taxaReal / 100, 1 / 252) - 1;
+            const fatorRendimento = Math.pow(1 + taxaDiaria, prazo);
+            const valorBruto = valorInvestimento * fatorRendimento;
+            const rendimento = valorBruto - valorInvestimento;
+
+            let iof = 0;
+            if (prazo < 30) {
+                const tabelaIOF = [96, 93, 90, 86, 83, 80, 76, 73, 70, 66, 63, 60, 56, 53, 50, 46, 43, 40, 36, 33, 30, 26, 23, 20, 16, 13, 10, 6, 3, 0];
+                const aliquotaIOF = prazo < tabelaIOF.length ? tabelaIOF[prazo] : 0;
+                iof = rendimento * (aliquotaIOF / 100);
+            }
+
+            let ir = 0;
+            if (!isentoIR) {
+                let aliquotaIR = 0;
+                if (prazo <= 180) aliquotaIR = 22.5;
+                else if (prazo <= 360) aliquotaIR = 20;
+                else if (prazo <= 720) aliquotaIR = 17.5;
+                else aliquotaIR = 15;
+                ir = rendimento * (aliquotaIR / 100);
+            }
+
+            const valorLiquido = valorBruto - iof - ir;
+
+            document.getElementById('taxaReal').textContent = taxaReal.toFixed(2) + '% a.a.';
+            document.getElementById('valorBruto').textContent = formatCurrency(valorBruto);
+            document.getElementById('rendimento').textContent = formatCurrency(rendimento);
+            document.getElementById('iof').textContent = formatCurrency(iof);
+            document.getElementById('irrf').textContent = formatCurrency(ir);
+            document.getElementById('valorLiquido').textContent = formatCurrency(valorLiquido);
+
+            document.getElementById('results-investimentos').classList.add('active');
+            
+            // Gerar gráfico
+            gerarGraficoInvestimento(valorInvestimento, valorBruto, valorLiquido, prazo, taxaDiaria);
+            showViz('investimentos');
+        }
+
+        function gerarGraficoInvestimento(inicial, bruto, liquido, dias, taxaDiaria) {
+            const meses = Math.ceil(dias / 30);
+            const labels = [];
+            const dataInicial = [];
+            const dataBruto = [];
+            const dataLiquido = [];
+
+            for (let i = 0; i <= meses; i++) {
+                const diasAtual = i * 30;
+                labels.push(`Mês ${i}`);
+                dataInicial.push(inicial);
+                
+                const fator = Math.pow(1 + taxaDiaria, diasAtual);
+                const valorBrutoAtual = inicial * fator;
+                const rendAtual = valorBrutoAtual - inicial;
+                
+                let irAtual = 0;
+                if (diasAtual <= 180) irAtual = rendAtual * 0.225;
+                else if (diasAtual <= 360) irAtual = rendAtual * 0.20;
+                else if (diasAtual <= 720) irAtual = rendAtual * 0.175;
+                else irAtual = rendAtual * 0.15;
+                
+                dataBruto.push(valorBrutoAtual);
+                dataLiquido.push(valorBrutoAtual - irAtual);
+            }
+
+            if (chartInvestimentos) chartInvestimentos.destroy();
+            
+            chartInvestimentos = new Chart(document.getElementById('chartInvestimentos'), {
+                ...chartConfig,
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Valor Inicial',
+                            data: dataInicial,
+                            borderColor: '#6b7280',
+                            backgroundColor: 'rgba(107, 114, 128, 0.1)',
+                            borderDash: [5, 5]
+                        },
+                        {
+                            label: 'Valor Bruto',
+                            data: dataBruto,
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)'
+                        },
+                        {
+                            label: 'Valor Líquido',
+                            data: dataLiquido,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            fill: true
+                        }
+                    ]
+                }
+            });
+        }
+
+        // DESCONTO COMERCIAL
+        function calcularDesconto() {
+            const valorNominal = parseFloat(document.getElementById('valorNominal').value);
+            const dataVencimento = new Date(document.getElementById('dataVencimentoDesconto').value);
+            const taxaDesconto = parseFloat(document.getElementById('taxaDesconto').value) / 100;
+            const tarifas = parseFloat(document.getElementById('tarifasAdicionais').value) || 0;
+
+            if (!valorNominal || !dataVencimento || !taxaDesconto) {
+                alert('Preencha todos os campos obrigatórios');
+                return;
+            }
+
+            const hoje = new Date();
+            const prazo = Math.floor((dataVencimento - hoje) / (1000 * 60 * 60 * 24));
+
+            const descontoComercial = valorNominal * taxaDesconto * (prazo / 30);
+            const iofFixo = 0.0038 * valorNominal;
+            const iofAdicional = 0.000082 * valorNominal * prazo;
+            const valorDescontado = valorNominal - descontoComercial - iofFixo - iofAdicional - tarifas;
+
+            document.getElementById('prazoMedio').textContent = prazo + ' dias';
+            document.getElementById('jurosCustos').textContent = formatCurrency(descontoComercial);
+            document.getElementById('iofFixo').textContent = formatCurrency(iofFixo);
+            document.getElementById('iofAdicional').textContent = formatCurrency(iofAdicional);
+            document.getElementById('valorDescontado').textContent = formatCurrency(valorDescontado);
+
+            document.getElementById('results-desconto').classList.add('active');
+            
+            // Gerar gráfico
+            gerarGraficoDesconto(valorNominal, valorDescontado, prazo);
+            showViz('desconto');
+        }
+
+        function gerarGraficoDesconto(nominal, descontado, dias) {
+            const meses = Math.ceil(dias / 30);
+            const labels = [];
+            const dataNominal = [];
+            const dataRecebido = [];
+
+            for (let i = 0; i <= meses; i++) {
+                labels.push(`Mês ${i}`);
+                dataNominal.push(i === meses ? nominal : 0);
+                dataRecebido.push(i === 0 ? descontado : 0);
+            }
+
+            if (chartDesconto) chartDesconto.destroy();
+            
+            chartDesconto = new Chart(document.getElementById('chartDesconto'), {
+                ...chartConfig,
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Valor Recebido (Antecipação)',
+                            data: dataRecebido,
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: '#10b981'
+                        },
+                        {
+                            label: 'Valor Nominal (Vencimento)',
+                            data: dataNominal,
+                            backgroundColor: 'rgba(52, 211, 153, 0.4)',
+                            borderColor: '#34d399'
+                        }
+                    ]
+                }
+            });
+        }
+
+        // CONVERSOR
+        function converterTaxas() {
+            const taxaEntrada = parseFloat(document.getElementById('taxaEntrada').value) / 100;
+            const periodoOrigem = document.getElementById('periodoOrigem').value;
+            const periodoDestino = document.getElementById('periodoDestino').value;
+
+            if (!taxaEntrada || !periodoOrigem || !periodoDestino) {
+                alert('Preencha todos os campos');
+                return;
+            }
+
+            const periodos = {
+                diario: 1, semanal: 7, mensal: 30, bimestral: 60,
+                trimestral: 90, semestral: 180, anual: 360
+            };
+
+            const diasOrigem = periodos[periodoOrigem];
+            const taxaDiaria = Math.pow(1 + taxaEntrada, 1 / diasOrigem) - 1;
+
+            const diasDestino = periodos[periodoDestino];
+            const taxaConvertida = (Math.pow(1 + taxaDiaria, diasDestino) - 1) * 100;
+
+            const taxaMensal = (Math.pow(1 + taxaDiaria, 30) - 1) * 100;
+            const taxaAnual = (Math.pow(1 + taxaDiaria, 360) - 1) * 100;
+
+            document.getElementById('taxaConvertida').textContent = taxaConvertida.toFixed(4) + '%';
+            document.getElementById('equivalenteMensal').textContent = taxaMensal.toFixed(4) + '%';
+            document.getElementById('equivalenteAnual').textContent = taxaAnual.toFixed(4) + '%';
+
+            const tbody = document.getElementById('tabelaConversao');
+            tbody.innerHTML = '';
+            
+            Object.keys(periodos).forEach(periodo => {
+                const dias = periodos[periodo];
+                const taxa = (Math.pow(1 + taxaDiaria, dias) - 1) * 100;
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = periodo.charAt(0).toUpperCase() + periodo.slice(1);
+                row.insertCell(1).textContent = taxa.toFixed(4) + '%';
+            });
+
+            document.getElementById('results-conversor').classList.add('active');
+            showViz('conversor');
+        }
+
+        // CRÉDITO
+        function calculateCredit() {
+            const creditValue = parseFloat(document.getElementById('creditValue')?.value) || 0;
+            const amortizationType = document.getElementById('amortizationType')?.value;
+            const baseDay = document.getElementById('baseDay')?.value;
+            const gracePeriod = parseInt(document.getElementById('gracePeriod')?.value) || 0;
+            const interestOnGrace = document.querySelector('input[name="interestOnGrace"]:checked')?.value === "yes";
+            const interestCharge = document.querySelector('input[name="interestCharge"]:checked')?.value || "first";
+            const amortizationFrequency = document.getElementById('amortizationFrequency')?.value;
+            const totalTerm = parseInt(document.getElementById('totalTerm')?.value) || 0;
+            const tac = parseFloat(document.getElementById('tac')?.value) || 0;
+            const flatCommission = parseFloat(document.getElementById('flatCommission')?.value) || 0;
+            const interestRate = parseFloat(document.getElementById('interestRate')?.value) / 100 || 0;
+            const surchargeRate = parseFloat(document.getElementById('surchargeRate')?.value) / 100 || 0;
+
+            if (!creditValue || !amortizationType || !totalTerm || !interestRate) {
+                alert('Preencha todos os campos obrigatórios');
+                return;
+            }
+
+            const totalRate = interestRate + surchargeRate;
+            const amortizationTerm = totalTerm - gracePeriod;
+
+            if (amortizationTerm <= 0) {
+                alert('Prazo total deve ser maior que a carência');
+                return;
+            }
+
+            const schedule = generatePaymentSchedule({
+                creditValue, totalRate, amortizationType, gracePeriod,
+                amortizationTerm, amortizationFrequency, interestOnGrace,
+                interestCharge, baseDay
+            });
+
+            currentSchedule = schedule;
+
+            const totalInterest = schedule.reduce((sum, item) => sum + item.juros, 0);
+            const totalPaid = schedule.reduce((sum, item) => sum + item.parcelaValor, 0);
+
+            const cetMonthly = calculateCET(creditValue, totalPaid + tac + flatCommission, totalTerm);
+            const cetAnnual = Math.pow(1 + cetMonthly, 12) - 1;
+
+            document.getElementById('cetMensal').textContent = (cetMonthly * 100).toFixed(4) + '%';
+            document.getElementById('cetAnual').textContent = (cetAnnual * 100).toFixed(4) + '%';
+            document.getElementById('totalJuros').textContent = formatCurrency(totalInterest);
+            document.getElementById('totalPago').textContent = formatCurrency(totalPaid);
+
+            const tbody = document.getElementById('cronograma');
+            tbody.innerHTML = '';
+            
+            schedule.forEach(item => {
+                const row = tbody.insertRow();
+                row.insertCell(0).textContent = item.numero;
+                row.insertCell(1).textContent = formatDate(item.vencimento);
+                row.insertCell(2).textContent = formatCurrency(item.amortizacao);
+                row.insertCell(3).textContent = formatCurrency(item.juros);
+                row.insertCell(4).textContent = formatCurrency(item.parcelaValor);
+                row.insertCell(5).textContent = formatCurrency(item.saldoDevedor);
+            });
+
+            document.getElementById('results-credito').classList.add('active');
+            showViz('credito');
+        }
+
+        function generatePaymentSchedule(params) {
+            const { creditValue, totalRate, amortizationType, gracePeriod,
+                    amortizationTerm, amortizationFrequency, interestOnGrace,
+                    interestCharge, baseDay } = params;
+
+            let saldoDevedor = creditValue;
+            const schedule = [];
+            
+            let jurosAcumuladosCarencia = 0;
+            if (!interestOnGrace && gracePeriod > 0) {
+                jurosAcumuladosCarencia = creditValue * (Math.pow(1 + totalRate, gracePeriod) - 1);
+            }
+
+            let valorBaseAmortizacao = creditValue;
+            if (!interestOnGrace && interestCharge === 'amortization' && gracePeriod > 0) {
+                valorBaseAmortizacao = creditValue + jurosAcumuladosCarencia;
+            }
+            
+            const amortizationAmount = amortizationType === 'SAC' ? valorBaseAmortizacao / amortizationTerm : null;
+            
+            let parcelaPRICE = 0;
+            if (amortizationType === 'PRICE') {
+                parcelaPRICE = valorBaseAmortizacao * (totalRate * Math.pow(1 + totalRate, amortizationTerm)) / 
+                               (Math.pow(1 + totalRate, amortizationTerm) - 1);
+            }
+
+            for (let i = 1; i <= (gracePeriod + amortizationTerm); i++) {
+                const juros = saldoDevedor * totalRate;
+                let amortizacao = 0;
+                let parcela = 0;
+
+                if (i <= gracePeriod) {
+                    amortizacao = 0;
+                    if (interestOnGrace) {
+                        parcela = juros;
+                    } else {
+                        parcela = 0;
+                        saldoDevedor += juros;
+                    }
+                } else {
+                    if (i === gracePeriod + 1 && !interestOnGrace && interestCharge === 'first' && gracePeriod > 0) {
+                        if (amortizationType === 'SAC') {
+                            amortizacao = amortizationAmount + jurosAcumuladosCarencia;
+                            parcela = amortizacao + juros;
+                        } else {
+                            parcela = parcelaPRICE + jurosAcumuladosCarencia;
+                            amortizacao = parcela - juros;
+                        }
+                    } else {
+                        if (amortizationType === 'SAC') {
+                            amortizacao = amortizationAmount;
+                            parcela = amortizacao + juros;
+                        } else {
+                            parcela = parcelaPRICE;
+                            amortizacao = parcela - juros;
+                        }
+                    }
+                    saldoDevedor -= amortizacao;
+                }
+
+                const vencimentoDate = calculateDueDate(new Date(), i, baseDay);
+
+                schedule.push({
+                    numero: i,
+                    vencimento: vencimentoDate,
+                    amortizacao,
+                    juros,
+                    parcelaValor: Math.abs(parcela),
+                    saldoDevedor: Math.max(0, saldoDevedor)
+                });
+            }
+
+            return schedule;
+        }
+
+        function calculateDueDate(startDate, installmentNumber, baseDay) {
+            const date = new Date(startDate);
+            if (baseDay === 'contratacao') {
+                date.setMonth(date.getMonth() + installmentNumber);
+            } else if (baseDay === '1') {
+                date.setMonth(date.getMonth() + installmentNumber);
+                date.setDate(1);
+            } else if (baseDay === '15') {
+                date.setMonth(date.getMonth() + installmentNumber);
+                date.setDate(15);
+            } else if (baseDay === '30') {
+                date.setMonth(date.getMonth() + installmentNumber + 1);
+                date.setDate(0);
+            }
+            return date;
+        }
+
+        function calculateCET(principal, totalPaid, months) {
+            let cetMonthly = 0;
+            let low = -0.1;
+            let high = 1;
+            const tolerance = 0.0001;
+            
+            while (high - low > tolerance) {
+                cetMonthly = (low + high) / 2;
+                const pv = totalPaid / Math.pow(1 + cetMonthly, months);
+                if (pv > principal) {
+                    low = cetMonthly;
+                } else {
+                    high = cetMonthly;
+                }
+            }
+            return cetMonthly;
+        }
+
+        function exportarCronograma() {
+            if (currentSchedule.length === 0) {
+                alert('Nenhum cronograma para exportar');
+                return;
+            }
+
+            let csv = 'Parcela,Data,Amortização,Juros,Parcela,Saldo\n';
+            currentSchedule.forEach(item => {
+                csv += `${item.numero},${formatDate(item.vencimento)},${item.amortizacao.toFixed(2)},${item.juros.toFixed(2)},${item.parcelaValor.toFixed(2)},${item.saldoDevedor.toFixed(2)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cronograma_pagamento.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // UTILITY
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('pt-BR');
+        }
+    </script>
+</body>
+</html>

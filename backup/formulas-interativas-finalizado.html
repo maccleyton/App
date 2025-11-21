@@ -1,0 +1,1987 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fórmulas Interativas - Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --workspace-bg: #0a0a0a;
+            --surface-bg: #141414;
+            --color-bg-page: #0a0a0a;
+            --surface-alt: #1a1a1a;
+            --border-color: #1a1a1a;
+            --border-hover: #10b981;
+            --text-primary: #e0e0e0;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --accent: #10b981;
+            --accent-soft: rgba(16, 185, 129, 0.15);
+            --accent-hover: #34d399;
+            --danger: #ef4444;
+            --color-primary-500: #10b981;
+            --color-primary-400: #34d399;
+            --color-primary-700: #047857;
+            --radius-md: 6px;
+            --radius-sm: 4px;
+            --shadow-hover: 0 4px 12px rgba(16, 185, 129, 0.2);
+            --space-xs: 3px;
+            --space-sm: 6px;
+            --space-md: 8px;
+            --space-lg: 10px;
+            --space-xl: 12px;
+            --font-xs: 9px;
+            --font-sm: 10px;
+            --font-md: 11px;
+            --font-lg: 12px;
+            --font-xl: 16px;
+            --font-regular: 400;
+            --font-medium: 500;
+            --font-semibold: 600;
+            --font-bold: 700;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: var(--workspace-bg);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            font-size: var(--font-md);
+            font-weight: var(--font-regular);
+            line-height: 1.4;
+        }
+
+        .app-header {
+            background: var(--surface-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 12px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-left i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        .header-title {
+            font-size: var(--font-xl);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-button,
+        .theme-toggle,
+        .user-menu {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            transition: all 0.2s ease-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+
+        .back-button:hover,
+        .theme-toggle:hover,
+        .user-menu:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .app-main {
+            height: calc(100vh - 48px);
+            padding: var(--space-md);
+            display: grid;
+            grid-template-columns: 240px 450px 1fr;
+            gap: var(--space-md);
+            background: var(--workspace-bg);
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .panel-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md) var(--space-lg);
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-header i {
+            color: var(--accent);
+            font-size: var(--font-lg);
+        }
+
+        .section-title {
+            font-size: var(--font-lg);
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+        }
+
+        .formulas-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            overflow-y: auto;
+            padding-right: var(--space-xs);
+        }
+
+        .formulas-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .formulas-list::-webkit-scrollbar-track {
+            background: var(--surface-alt);
+        }
+
+        .formulas-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .formulas-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .category-group {
+            margin-bottom: var(--space-md);
+        }
+
+        .category-header {
+            font-size: var(--font-sm);
+            font-weight: var(--font-bold);
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--space-sm);
+            padding: var(--space-xs) 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .formula-item {
+            background: var(--surface-bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            padding: var(--space-md);
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .formula-item:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        .formula-item.active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .formula-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: var(--font-lg);
+            flex-shrink: 0;
+        }
+
+        .formula-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .formula-name {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .formula-desc {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .form-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-card::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .form-card::-webkit-scrollbar-track {
+            background: var(--surface-alt);
+        }
+
+        .form-card::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 2px;
+        }
+
+        .form-card::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .formula-display {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-lg);
+            text-align: center;
+        }
+
+        .formula-equation {
+            font-size: 20px;
+            font-weight: var(--font-semibold);
+            color: var(--accent);
+            margin-bottom: var(--space-md);
+        }
+
+        .formula-description {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .formula-content {
+            display: none;
+        }
+
+        .formula-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: var(--space-lg);
+        }
+
+        .form-label {
+            display: block;
+            font-size: var(--font-sm);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--space-md);
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: var(--font-md);
+            transition: all 0.2s ease-out;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-lg);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+            padding: var(--space-md) var(--space-xl);
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            width: 100%;
+            margin-top: var(--space-lg);
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .resolution-steps {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: var(--space-lg);
+            margin-top: var(--space-lg);
+            display: none;
+        }
+
+        .resolution-steps.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .steps-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+            padding-bottom: var(--space-md);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .steps-header i {
+            color: var(--accent);
+            font-size: var(--font-lg);
+        }
+
+        .steps-title {
+            font-size: var(--font-md);
+            font-weight: var(--font-bold);
+            color: var(--accent);
+        }
+
+        .step-item {
+            margin-bottom: var(--space-lg);
+            padding-left: var(--space-lg);
+            border-left: 2px solid var(--accent);
+            position: relative;
+        }
+
+        .step-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            position: absolute;
+            left: -12px;
+            top: 0;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-xs);
+            font-weight: var(--font-bold);
+        }
+
+        .step-title {
+            font-size: var(--font-md);
+            font-weight: var(--font-semibold);
+            color: var(--text-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .step-content {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .step-result {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--accent-soft);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-sm);
+            color: var(--accent);
+            font-weight: var(--font-semibold);
+            margin-top: var(--space-sm);
+        }
+
+        .step-result i {
+            font-size: var(--font-md);
+        }
+
+        .katex {
+            font-size: 1.1em;
+        }
+
+        .katex-display {
+            margin: var(--space-md) 0;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .viz-card {
+            background: var(--surface-bg);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            padding: var(--space-lg);
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: var(--color-bg-page);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: var(--space-lg);
+            position: relative;
+            min-height: 300px;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .result-display {
+            background: var(--color-bg-page);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: var(--space-lg);
+        }
+
+        .result-label {
+            font-size: var(--font-sm);
+            color: var(--text-secondary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: var(--font-bold);
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+        }
+
+        .result-unit {
+            font-size: var(--font-md);
+            color: var(--text-secondary);
+            margin-left: var(--space-sm);
+        }
+
+        @media (max-width: 1400px) {
+            .app-main {
+                grid-template-columns: 220px 400px 1fr;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .app-main {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+
+            .left-panel {
+                max-height: 150px;
+            }
+
+            .center-panel {
+                order: 2;
+            }
+
+            .right-panel {
+                order: 3;
+                max-height: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-main {
+                padding: var(--space-sm);
+                gap: var(--space-sm);
+            }
+
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .canvas-container {
+                min-height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <i class="fas fa-square-root-alt"></i>
+            <h1 class="header-title">Fórmulas Interativas</h1>
+        </div>
+        <div class="header-right">
+            <button class="back-button" onclick="window.history.back()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="user-menu">
+                <i class="fas fa-user"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <aside class="left-panel">
+            <div class="panel-card">
+                <div class="section-header">
+                    <i class="fas fa-book"></i>
+                    <h2 class="section-title">Fórmulas</h2>
+                </div>
+                
+                <div class="formulas-list">
+                    <div class="category-group">
+                        <div class="category-header">Física</div>
+                        
+                        <div class="formula-item active" onclick="selectFormula('velocidade')">
+                            <div class="formula-icon"><i class="fas fa-tachometer-alt"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Velocidade Média</div>
+                                <div class="formula-desc">v = Δs / Δt</div>
+                            </div>
+                        </div>
+
+                        <div class="formula-item" onclick="selectFormula('mruv')">
+                            <div class="formula-icon"><i class="fas fa-running"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">MRUV</div>
+                                <div class="formula-desc">S = S₀ + v₀t + ½at²</div>
+                            </div>
+                        </div>
+
+                        <div class="formula-item" onclick="selectFormula('forca')">
+                            <div class="formula-icon"><i class="fas fa-hand-rock"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">2ª Lei de Newton</div>
+                                <div class="formula-desc">F = m × a</div>
+                            </div>
+                        </div>
+
+                        <div class="formula-item" onclick="selectFormula('energia-cinetica')">
+                            <div class="formula-icon"><i class="fas fa-bolt"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Energia Cinética</div>
+                                <div class="formula-desc">Ec = ½mv²</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-group">
+                        <div class="category-header">Matemática</div>
+                        
+                        <div class="formula-item" onclick="selectFormula('bhaskara')">
+                            <div class="formula-icon"><i class="fas fa-calculator"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Bhaskara</div>
+                                <div class="formula-desc">x = (-b ± √Δ) / 2a</div>
+                            </div>
+                        </div>
+
+                        <div class="formula-item" onclick="selectFormula('pitagoras')">
+                            <div class="formula-icon"><i class="fas fa-ruler-combined"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Pitágoras</div>
+                                <div class="formula-desc">a² + b² = c²</div>
+                            </div>
+                        </div>
+
+                        <div class="formula-item" onclick="selectFormula('area-circulo')">
+                            <div class="formula-icon"><i class="fas fa-circle"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Área do Círculo</div>
+                                <div class="formula-desc">A = πr²</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-group">
+                        <div class="category-header">Geometria</div>
+                        
+                        <div class="formula-item" onclick="selectFormula('volume-esfera')">
+                            <div class="formula-icon"><i class="fas fa-globe"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Volume da Esfera</div>
+                                <div class="formula-desc">V = 4/3 πr³</div>
+                            </div>
+                        </div>
+
+                        <div class="formula-item" onclick="selectFormula('volume-cilindro')">
+                            <div class="formula-icon"><i class="fas fa-database"></i></div>
+                            <div class="formula-info">
+                                <div class="formula-name">Volume do Cilindro</div>
+                                <div class="formula-desc">V = πr²h</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <section class="center-panel">
+            <div class="form-card">
+                <!-- Continua no próximo comentário devido ao tamanho... -->
+<!-- Continuação do center-panel -->
+
+<!-- VELOCIDADE -->
+<div id="formula-velocidade" class="formula-content active">
+    <div class="section-header">
+        <i class="fas fa-tachometer-alt"></i>
+        <h2 class="section-title">Velocidade Média</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">v = Δs / Δt</div>
+        <div class="formula-description">
+            Velocidade média é a razão entre o deslocamento e o intervalo de tempo.
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Deslocamento (Δs) [m]</label>
+            <input type="number" id="vel-ds" class="form-input" value="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tempo (Δt) [s]</label>
+            <input type="number" id="vel-dt" class="form-input" value="10" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-velocidade" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-velocidade"></div>
+    </div>
+</div>
+
+<!-- MRUV -->
+<div id="formula-mruv" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-running"></i>
+        <h2 class="section-title">Movimento Uniformemente Variado</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">S = S₀ + v₀t + ½at²</div>
+        <div class="formula-description">
+            Equação horária da posição no MRUV.
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Posição Inicial (S₀) [m]</label>
+            <input type="number" id="mruv-s0" class="form-input" value="0" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Velocidade Inicial (v₀) [m/s]</label>
+            <input type="number" id="mruv-v0" class="form-input" value="0" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Aceleração (a) [m/s²]</label>
+            <input type="number" id="mruv-a" class="form-input" value="2" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Tempo (t) [s]</label>
+            <input type="number" id="mruv-t" class="form-input" value="5" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-mruv" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-mruv"></div>
+    </div>
+</div>
+
+<!-- FORÇA -->
+<div id="formula-forca" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-hand-rock"></i>
+        <h2 class="section-title">2ª Lei de Newton</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">F = m × a</div>
+        <div class="formula-description">
+            A força resultante é o produto da massa pela aceleração.
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Massa (m) [kg]</label>
+            <input type="number" id="forca-m" class="form-input" value="10" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Aceleração (a) [m/s²]</label>
+            <input type="number" id="forca-a" class="form-input" value="5" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-forca" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-forca"></div>
+    </div>
+</div>
+
+<!-- ENERGIA CINÉTICA -->
+<div id="formula-energia-cinetica" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-bolt"></i>
+        <h2 class="section-title">Energia Cinética</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">Ec = ½mv²</div>
+        <div class="formula-description">
+            Energia associada ao movimento de um corpo.
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Massa (m) [kg]</label>
+            <input type="number" id="ec-m" class="form-input" value="2" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Velocidade (v) [m/s]</label>
+            <input type="number" id="ec-v" class="form-input" value="10" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-energia-cinetica" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-energia-cinetica"></div>
+    </div>
+</div>
+
+<!-- BHASKARA -->
+<div id="formula-bhaskara" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-calculator"></i>
+        <h2 class="section-title">Fórmula de Bhaskara</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">x = (-b ± √Δ) / 2a</div>
+        <div class="formula-description">
+            Resolve equações do 2º grau: ax² + bx + c = 0
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Coeficiente a</label>
+            <input type="number" id="bhask-a" class="form-input" value="1" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Coeficiente b</label>
+            <input type="number" id="bhask-b" class="form-input" value="-3" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Coeficiente c</label>
+            <input type="number" id="bhask-c" class="form-input" value="2" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-bhaskara" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-bhaskara"></div>
+    </div>
+</div>
+
+<!-- PITÁGORAS -->
+<div id="formula-pitagoras" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-ruler-combined"></i>
+        <h2 class="section-title">Teorema de Pitágoras</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">a² + b² = c²</div>
+        <div class="formula-description">
+            Em um triângulo retângulo, o quadrado da hipotenusa é igual à soma dos quadrados dos catetos.
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Cateto a [m]</label>
+            <input type="number" id="pit-a" class="form-input" value="3" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Cateto b [m]</label>
+            <input type="number" id="pit-b" class="form-input" value="4" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular Hipotenusa
+    </button>
+
+    <div id="steps-pitagoras" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-pitagoras"></div>
+    </div>
+</div>
+
+<!-- ÁREA DO CÍRCULO -->
+<div id="formula-area-circulo" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-circle"></i>
+        <h2 class="section-title">Área do Círculo</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">A = πr²</div>
+        <div class="formula-description">
+            Área de um círculo em função do raio.
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Raio (r) [m]</label>
+        <input type="number" id="circ-r" class="form-input" value="5" step="0.1">
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-area-circulo" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-area-circulo"></div>
+    </div>
+</div>
+
+<!-- VOLUME DA ESFERA -->
+<div id="formula-volume-esfera" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-globe"></i>
+        <h2 class="section-title">Volume da Esfera</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">V = 4/3 πr³</div>
+        <div class="formula-description">
+            Volume de uma esfera em função do raio.
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Raio (r) [m]</label>
+        <input type="number" id="esf-r" class="form-input" value="3" step="0.1">
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-volume-esfera" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-volume-esfera"></div>
+    </div>
+</div>
+
+<!-- VOLUME DO CILINDRO -->
+<div id="formula-volume-cilindro" class="formula-content">
+    <div class="section-header">
+        <i class="fas fa-database"></i>
+        <h2 class="section-title">Volume do Cilindro</h2>
+    </div>
+
+    <div class="formula-display">
+        <div class="formula-equation">V = πr²h</div>
+        <div class="formula-description">
+            Volume de um cilindro circular reto.
+        </div>
+    </div>
+
+    <div class="grid-2">
+        <div class="form-group">
+            <label class="form-label">Raio (r) [m]</label>
+            <input type="number" id="cil-r" class="form-input" value="2" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Altura (h) [m]</label>
+            <input type="number" id="cil-h" class="form-input" value="5" step="0.1">
+        </div>
+    </div>
+
+    <button class="btn" onclick="calcular()">
+        <i class="fas fa-calculator"></i> Calcular
+    </button>
+
+    <div id="steps-volume-cilindro" class="resolution-steps">
+        <div class="steps-header">
+            <i class="fas fa-list-ol"></i>
+            <h3 class="steps-title">Resolução Passo a Passo</h3>
+        </div>
+        <div id="steps-content-volume-cilindro"></div>
+    </div>
+</div>
+
+            </div>
+        </section>
+
+        <aside class="right-panel">
+            <div class="viz-card">
+                <div class="section-header">
+                    <i class="fas fa-eye"></i>
+                    <h2 class="section-title">Visualização</h2>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="canvas" width="400" height="300"></canvas>
+                </div>
+
+                <div class="result-display">
+                    <div class="result-label">Resultado</div>
+                    <div class="result-value" id="resultado">
+                        -
+                        <span class="result-unit" id="unidade"></span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        let currentFormula = 'velocidade';
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof renderMathInElement !== 'undefined') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ]
+                });
+            }
+        });
+
+        function selectFormula(formula) {
+            currentFormula = formula;
+            
+            document.querySelectorAll('.formula-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('.formula-content').forEach(content => content.style.display = 'none');
+            document.getElementById(`formula-${formula}`).style.display = 'block';
+
+            document.querySelectorAll('.resolution-steps').forEach(steps => steps.classList.remove('active'));
+
+            clearCanvas();
+            document.getElementById('resultado').textContent = '-';
+            document.getElementById('unidade').textContent = '';
+        }
+
+        function calcular() {
+            let result = 0;
+            let unit = '';
+
+            document.querySelectorAll('.resolution-steps').forEach(steps => steps.classList.remove('active'));
+
+            switch (currentFormula) {
+                case 'velocidade':
+                    const ds = parseFloat(document.getElementById('vel-ds').value);
+                    const dt = parseFloat(document.getElementById('vel-dt').value);
+                    result = ds / dt;
+                    unit = 'm/s';
+                    drawVelocidade(ds, dt, result);
+                    showStepsVelocidade(ds, dt, result);
+                    break;
+
+                case 'mruv':
+                    const s0 = parseFloat(document.getElementById('mruv-s0').value);
+                    const v0 = parseFloat(document.getElementById('mruv-v0').value);
+                    const a = parseFloat(document.getElementById('mruv-a').value);
+                    const t = parseFloat(document.getElementById('mruv-t').value);
+                    result = s0 + v0 * t + 0.5 * a * t * t;
+                    unit = 'm';
+                    drawMRUV(s0, v0, a, t);
+                    showStepsMRUV(s0, v0, a, t, result);
+                    break;
+
+                case 'forca':
+                    const m = parseFloat(document.getElementById('forca-m').value);
+                    const ac = parseFloat(document.getElementById('forca-a').value);
+                    result = m * ac;
+                    unit = 'N';
+                    drawForca(m, ac, result);
+                    showStepsForca(m, ac, result);
+                    break;
+
+                case 'energia-cinetica':
+                    const mass = parseFloat(document.getElementById('ec-m').value);
+                    const vel = parseFloat(document.getElementById('ec-v').value);
+                    result = 0.5 * mass * vel * vel;
+                    unit = 'J';
+                    drawEnergia(mass, vel);
+                    showStepsEnergia(mass, vel, result);
+                    break;
+
+                case 'bhaskara':
+                    const ba = parseFloat(document.getElementById('bhask-a').value);
+                    const bb = parseFloat(document.getElementById('bhask-b').value);
+                    const bc = parseFloat(document.getElementById('bhask-c').value);
+                    const delta = bb * bb - 4 * ba * bc;
+                    
+                    drawParabola(ba, bb, bc);
+                    showStepsBhaskara(ba, bb, bc, delta);
+                    
+                    if (delta < 0) {
+                        document.getElementById('resultado').textContent = 'Sem raízes reais';
+                        document.getElementById('unidade').textContent = '';
+                    } else if (delta === 0) {
+                        const x1 = -bb / (2 * ba);
+                        document.getElementById('resultado').textContent = `x = ${x1.toFixed(2)}`;
+                        document.getElementById('unidade').textContent = '';
+                    } else {
+                        const x1 = (-bb + Math.sqrt(delta)) / (2 * ba);
+                        const x2 = (-bb - Math.sqrt(delta)) / (2 * ba);
+                        document.getElementById('resultado').textContent = `x₁ = ${x1.toFixed(2)}, x₂ = ${x2.toFixed(2)}`;
+                        document.getElementById('unidade').textContent = '';
+                    }
+                    return;
+
+                case 'pitagoras':
+                    const catA = parseFloat(document.getElementById('pit-a').value);
+                    const catB = parseFloat(document.getElementById('pit-b').value);
+                    result = Math.sqrt(catA * catA + catB * catB);
+                    unit = 'm';
+                    drawPitagoras(catA, catB, result);
+                    showStepsPitagoras(catA, catB, result);
+                    break;
+
+                case 'area-circulo':
+                    const r = parseFloat(document.getElementById('circ-r').value);
+                    result = Math.PI * r * r;
+                    unit = 'm²';
+                    drawCirculo(r);
+                    showStepsAreaCirculo(r, result);
+                    break;
+
+                case 'volume-esfera':
+                    const re = parseFloat(document.getElementById('esf-r').value);
+                    result = (4/3) * Math.PI * Math.pow(re, 3);
+                    unit = 'm³';
+                    drawEsfera(re);
+                    showStepsVolumeEsfera(re, result);
+                    break;
+
+                case 'volume-cilindro':
+                    const rc = parseFloat(document.getElementById('cil-r').value);
+                    const h = parseFloat(document.getElementById('cil-h').value);
+                    result = Math.PI * rc * rc * h;
+                    unit = 'm³';
+                    drawCilindro(rc, h);
+                    showStepsVolumeCilindro(rc, h, result);
+                    break;
+            }
+
+            document.getElementById('resultado').textContent = result.toFixed(2);
+            document.getElementById('unidade').textContent = unit;
+        }
+
+        // ✨ FUNÇÕES DE PASSO A PASSO
+
+        function showStepsVelocidade(ds, dt, v) {
+            const content = document.getElementById('steps-content-velocidade');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dados Fornecidos</div>
+                    <div class="step-content">
+                        Deslocamento: $\\Delta s = ${ds}$ m<br>
+                        Tempo: $\\Delta t = ${dt}$ s
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Fórmula da Velocidade Média</div>
+                    <div class="step-content">
+                        $$v = \\frac{\\Delta s}{\\Delta t}$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$v = \\frac{${ds}}{${dt}}$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$v = ${v.toFixed(2)} \\text{ m/s}$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Velocidade média = ${v.toFixed(2)} m/s
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-velocidade').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsMRUV(s0, v0, a, t, s) {
+            const content = document.getElementById('steps-content-mruv');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dados Fornecidos</div>
+                    <div class="step-content">
+                        Posição inicial: $S_0 = ${s0}$ m<br>
+                        Velocidade inicial: $v_0 = ${v0}$ m/s<br>
+                        Aceleração: $a = ${a}$ m/s²<br>
+                        Tempo: $t = ${t}$ s
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Equação Horária do MRUV</div>
+                    <div class="step-content">
+                        $$S = S_0 + v_0 t + \\frac{1}{2}at^2$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$S = ${s0} + ${v0} \\cdot ${t} + \\frac{1}{2} \\cdot ${a} \\cdot ${t}^2$$
+                        $$S = ${s0} + ${v0 * t} + \\frac{1}{2} \\cdot ${a} \\cdot ${t * t}$$
+                        $$S = ${s0} + ${v0 * t} + ${0.5 * a * t * t}$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$S = ${s.toFixed(2)} \\text{ m}$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Posição final = ${s.toFixed(2)} m
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-mruv').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsForca(m, a, f) {
+            const content = document.getElementById('steps-content-forca');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dados Fornecidos</div>
+                    <div class="step-content">
+                        Massa: $m = ${m}$ kg<br>
+                        Aceleração: $a = ${a}$ m/s²
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">2ª Lei de Newton</div>
+                    <div class="step-content">
+                        $$F = m \\cdot a$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$F = ${m} \\cdot ${a}$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$F = ${f.toFixed(2)} \\text{ N}$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Força resultante = ${f.toFixed(2)} N
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-forca').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsEnergia(m, v, ec) {
+            const content = document.getElementById('steps-content-energia-cinetica');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dados Fornecidos</div>
+                    <div class="step-content">
+                        Massa: $m = ${m}$ kg<br>
+                        Velocidade: $v = ${v}$ m/s
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Fórmula da Energia Cinética</div>
+                    <div class="step-content">
+                        $$E_c = \\frac{1}{2}mv^2$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$E_c = \\frac{1}{2} \\cdot ${m} \\cdot ${v}^2$$
+                        $$E_c = \\frac{1}{2} \\cdot ${m} \\cdot ${v * v}$$
+                        $$E_c = ${0.5 * m} \\cdot ${v * v}$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$E_c = ${ec.toFixed(2)} \\text{ J}$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Energia cinética = ${ec.toFixed(2)} J
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-energia-cinetica').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsBhaskara(a, b, c, delta) {
+            const content = document.getElementById('steps-content-bhaskara');
+            let stepsHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Equação Fornecida</div>
+                    <div class="step-content">
+                        Coeficientes: $a = ${a}$, $b = ${b}$, $c = ${c}$<br>
+                        Equação: $${a}x^2 ${b >= 0 ? '+' : ''}${b}x ${c >= 0 ? '+' : ''}${c} = 0$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Cálculo do Discriminante (Δ)</div>
+                    <div class="step-content">
+                        $$\\Delta = b^2 - 4ac$$
+                        $$\\Delta = (${b})^2 - 4 \\cdot ${a} \\cdot ${c}$$
+                        $$\\Delta = ${b * b} - ${4 * a * c}$$
+                        $$\\Delta = ${delta}$$
+                    </div>
+                </div>
+            `;
+
+            if (delta < 0) {
+                stepsHTML += `
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Análise do Resultado</div>
+                        <div class="step-content">
+                            Como $\\Delta < 0$, a equação não possui raízes reais.
+                            <div class="step-result" style="background: rgba(239, 68, 68, 0.15); border-color: var(--danger); color: var(--danger);">
+                                <i class="fas fa-times-circle"></i>
+                                Sem raízes reais
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const x1 = (-b + Math.sqrt(delta)) / (2 * a);
+                const x2 = (-b - Math.sqrt(delta)) / (2 * a);
+                
+                stepsHTML += `
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-title">Aplicar a Fórmula de Bhaskara</div>
+                        <div class="step-content">
+                            $$x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$$
+                            $$x = \\frac{-(${b}) \\pm \\sqrt{${delta}}}{2 \\cdot ${a}}$$
+                            $$x = \\frac{${-b} \\pm ${Math.sqrt(delta).toFixed(2)}}{${2 * a}}$$
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <div class="step-title">Calcular as Raízes</div>
+                        <div class="step-content">
+                            $$x_1 = \\frac{${-b} + ${Math.sqrt(delta).toFixed(2)}}{${2 * a}} = ${x1.toFixed(2)}$$
+                            $$x_2 = \\frac{${-b} - ${Math.sqrt(delta).toFixed(2)}}{${2 * a}} = ${x2.toFixed(2)}$$
+                            <div class="step-result">
+                                <i class="fas fa-check-circle"></i>
+                                Raízes: x₁ = ${x1.toFixed(2)} e x₂ = ${x2.toFixed(2)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            content.innerHTML = stepsHTML;
+            document.getElementById('steps-bhaskara').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsPitagoras(a, b, c) {
+            const content = document.getElementById('steps-content-pitagoras');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dados do Triângulo</div>
+                    <div class="step-content">
+                        Cateto $a = ${a}$ m<br>
+                        Cateto $b = ${b}$ m<br>
+                        Hipotenusa $c = ?$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Teorema de Pitágoras</div>
+                    <div class="step-content">
+                        $$a^2 + b^2 = c^2$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$${a}^2 + ${b}^2 = c^2$$
+                        $$${a * a} + ${b * b} = c^2$$
+                        $$${a * a + b * b} = c^2$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Calcular a Hipotenusa</div>
+                    <div class="step-content">
+                        $$c = \\sqrt{${a * a + b * b}}$$
+                        $$c = ${c.toFixed(2)} \\text{ m}$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Hipotenusa = ${c.toFixed(2)} m
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-pitagoras').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsAreaCirculo(r, a) {
+            const content = document.getElementById('steps-content-area-circulo');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dado Fornecido</div>
+                    <div class="step-content">
+                        Raio: $r = ${r}$ m
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Fórmula da Área do Círculo</div>
+                    <div class="step-content">
+                        $$A = \\pi r^2$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$A = \\pi \\cdot ${r}^2$$
+                        $$A = \\pi \\cdot ${r * r}$$
+                        $$A = ${r * r}\\pi$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$A = ${a.toFixed(2)} \\text{ m}^2$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Área = ${a.toFixed(2)} m²
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-area-circulo').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsVolumeEsfera(r, v) {
+            const content = document.getElementById('steps-content-volume-esfera');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dado Fornecido</div>
+                    <div class="step-content">
+                        Raio: $r = ${r}$ m
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Fórmula do Volume da Esfera</div>
+                    <div class="step-content">
+                        $$V = \\frac{4}{3}\\pi r^3$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$V = \\frac{4}{3}\\pi \\cdot ${r}^3$$
+                        $$V = \\frac{4}{3}\\pi \\cdot ${r * r * r}$$
+                        $$V = \\frac{${4 * r * r * r}}{3}\\pi$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$V = ${v.toFixed(2)} \\text{ m}^3$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Volume = ${v.toFixed(2)} m³
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-volume-esfera').classList.add('active');
+            renderKaTeX();
+        }
+
+        function showStepsVolumeCilindro(r, h, v) {
+            const content = document.getElementById('steps-content-volume-cilindro');
+            content.innerHTML = `
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Dados Fornecidos</div>
+                    <div class="step-content">
+                        Raio: $r = ${r}$ m<br>
+                        Altura: $h = ${h}$ m
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Fórmula do Volume do Cilindro</div>
+                    <div class="step-content">
+                        $$V = \\pi r^2 h$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Substituição dos Valores</div>
+                    <div class="step-content">
+                        $$V = \\pi \\cdot ${r}^2 \\cdot ${h}$$
+                        $$V = \\pi \\cdot ${r * r} \\cdot ${h}$$
+                        $$V = ${r * r * h}\\pi$$
+                    </div>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Resultado</div>
+                    <div class="step-content">
+                        $$V = ${v.toFixed(2)} \\text{ m}^3$$
+                        <div class="step-result">
+                            <i class="fas fa-check-circle"></i>
+                            Volume = ${v.toFixed(2)} m³
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('steps-volume-cilindro').classList.add('active');
+            renderKaTeX();
+        }
+
+        function renderKaTeX() {
+            if (typeof renderMathInElement !== 'undefined') {
+                setTimeout(() => {
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                }, 50);
+            }
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawVelocidade(ds, dt, v) {
+            clearCanvas();
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(50, 250);
+            ctx.lineTo(300, 100);
+            ctx.stroke();
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '14px Inter';
+            ctx.fillText(`v = ${v.toFixed(1)} m/s`, 150, 150);
+        }
+
+        function drawMRUV(s0, v0, a, t) {
+            clearCanvas();
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+
+            const scale = 5;
+            const points = [];
+            for (let time = 0; time <= t; time += 0.1) {
+                const s = s0 + v0 * time + 0.5 * a * time * time;
+                points.push({x: 50 + time * 30, y: 250 - s * scale});
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            points.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.stroke();
+        }
+
+        function drawForca(m, a, f) {
+            clearCanvas();
+            const cx = 200;
+            const cy = 150;
+
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(cx - 40, cy - 30, 80, 60);
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(cx - 40, cy - 30, 80, 60);
+
+            ctx.strokeStyle = '#10b981';
+            ctx.fillStyle = '#10b981';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx + 40, cy);
+            ctx.lineTo(cx + 120, cy);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cx + 120, cy);
+            ctx.lineTo(cx + 110, cy - 8);
+            ctx.lineTo(cx + 110, cy + 8);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '14px Inter';
+            ctx.fillText(`F = ${f.toFixed(1)} N`, cx + 50, cy - 20);
+        }
+
+        function drawEnergia(m, v) {
+            clearCanvas();
+            const cx = 200;
+            const cy = 150;
+            const radius = 20;
+
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                const x = cx - radius - 10 - i * 15;
+                ctx.beginPath();
+                ctx.moveTo(x, cy - 10);
+                ctx.lineTo(x - 10, cy + 10);
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '14px Inter';
+            ctx.fillText(`v = ${v} m/s`, cx - 30, cy + 50);
+        }
+
+        function drawParabola(a, b, c) {
+            clearCanvas();
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const scale = 20;
+            
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 1;
+            
+            for (let x = -10; x <= 10; x++) {
+                ctx.beginPath();
+                ctx.moveTo(centerX + x * scale, 0);
+                ctx.lineTo(centerX + x * scale, height);
+                ctx.stroke();
+            }
+            
+            for (let y = -7; y <= 7; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, centerY - y * scale);
+                ctx.lineTo(width, centerY - y * scale);
+                ctx.stroke();
+            }
+            
+            ctx.strokeStyle = '#6b7280';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, height);
+            ctx.stroke();
+            
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            let firstPoint = true;
+            for (let x = -10; x <= 10; x += 0.05) {
+                const y = a * x * x + b * x + c;
+                if (Math.abs(y) > 15) continue;
+                
+                const px = centerX + x * scale;
+                const py = centerY - y * scale;
+                
+                if (firstPoint) {
+                    ctx.moveTo(px, py);
+                    firstPoint = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            
+            const delta = b * b - 4 * a * c;
+            
+            if (delta >= 0) {
+                const x1 = (-b + Math.sqrt(delta)) / (2 * a);
+                const x2 = (-b - Math.sqrt(delta)) / (2 * a);
+                
+                if (Math.abs(x1) <= 10) {
+                    ctx.fillStyle = '#34d399';
+                    ctx.beginPath();
+                    ctx.arc(centerX + x1 * scale, centerY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                if (delta > 0 && Math.abs(x2) <= 10) {
+                    ctx.fillStyle = '#34d399';
+                    ctx.beginPath();
+                    ctx.arc(centerX + x2 * scale, centerY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawPitagoras(a, b, c) {
+            clearCanvas();
+            const scale = 30;
+            const x1 = 100, y1 = 200;
+            const x2 = x1 + a * scale;
+            const y2 = y1;
+            const x3 = x1;
+            const y3 = y1 - b * scale;
+
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.lineTo(x3, y3);
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '12px Inter';
+            ctx.fillText(`a=${a}`, x1 + a * scale / 2 - 10, y1 + 20);
+            ctx.fillText(`b=${b}`, x1 - 30, y1 - b * scale / 2);
+            ctx.fillText(`c=${c.toFixed(1)}`, x1 + 20, y1 - b * scale / 2 + 20);
+        }
+
+        function drawCirculo(r) {
+            clearCanvas();
+            const cx = 200;
+            const cy = 150;
+            const scale = Math.min(100 / r, 30);
+
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#6b7280';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * scale, cy);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '12px Inter';
+            ctx.fillText(`r=${r}`, cx + r * scale / 2 - 10, cy - 10);
+        }
+
+        function drawEsfera(r) {
+            clearCanvas();
+            const cx = 200;
+            const cy = 150;
+            const scale = Math.min(100 / r, 30);
+
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * scale, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#6b7280';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, r * scale, r * scale * 0.3, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '12px Inter';
+            ctx.fillText(`r=${r}`, cx + 10, cy - r * scale - 10);
+        }
+
+        function drawCilindro(r, h) {
+            clearCanvas();
+            const cx = 200;
+            const cy = 100;
+            const scaleR = Math.min(80 / r, 25);
+            const scaleH = Math.min(150 / h, 25);
+
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, r * scaleR, r * scaleR * 0.3, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + h * scaleH, r * scaleR, r * scaleR * 0.3, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(cx - r * scaleR, cy);
+            ctx.lineTo(cx - r * scaleR, cy + h * scaleH);
+            ctx.moveTo(cx + r * scaleR, cy);
+            ctx.lineTo(cx + r * scaleR, cy + h * scaleH);
+            ctx.stroke();
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '12px Inter';
+            ctx.fillText(`r=${r}`, cx + r * scaleR + 10, cy + 5);
+            ctx.fillText(`h=${h}`, cx - 30, cy + h * scaleH / 2);
+        }
+
+        clearCanvas();
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '14px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('Selecione uma fórmula e calcule', 200, 150);
+    </script>
+</body>
+</html>
